@@ -1,4 +1,4 @@
-package lsmr
+package engine
 
 import (
 	"testing"

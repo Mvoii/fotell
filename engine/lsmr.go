@@ -1,4 +1,4 @@
-package lsmr
+package engine
 
 import (
 	"errors"
@@ -107,7 +107,8 @@ Returs:
 - error: alidation error due to invalid params
 
 Eg:
- engine, err := NewLSMREngine(2, decimal.NewFromInt(100000))
+
+	engine, err := NewLSMREngine(2, decimal.NewFromInt(100000))
 */
 func NewLSMREngine(numOutcomes int, liquidityParam decimal.Decimal) (*LSMREngine, error) {
 	if numOutcomes < 2 {
