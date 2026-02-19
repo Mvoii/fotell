@@ -38,11 +38,13 @@ var ErrMarketAlreadyOpen = errors.New("market is alread opem")
 // returned when a state machine transition is illegal (trying to go from resolved to open)
 var ErrInvalidStatusTransition = errors.New("invalid market status transition")
 
+var ErrMarketAlreadyClosed = errors.New("market already closed")
+
 // --- trade / order errors ---- //
 
 // returned when a user tries to buy zero or null shares
 // the min unit is 0.000001 shares (enforced by minshareamount)
-var ErrinvalidShareAmount = errors.New("share amount must be greater than zero")
+var ErrInvalidShareAmount = errors.New("share amount must be greater than zero")
 
 // returned when an outcome value is not YES or NO
 var ErrInvalidOutcome = errors.New("outcome must be YES or NO")

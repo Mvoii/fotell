@@ -82,12 +82,12 @@ we keep it distinc from outome (resolved result) to make teh AMM self documnting
 type BinaryOutcome uint8
 
 const (
-	BuyYes BinaryOutcome = 0 //maps to lsmr outcome idx 0
-	BuyNo  BinaryOutcome = 1
+	BuyYES BinaryOutcome = 0 //maps to lsmr outcome idx 0
+	BuyNO  BinaryOutcome = 1
 )
 
 func (b BinaryOutcome) String() string {
-	if b == BuyYes {
+	if b == BuyYES {
 		return "YES"
 	}
 	return "NO"
@@ -131,7 +131,7 @@ type PriceQuote struct {
 // / CostPaid is the actual KES debited; callers hould compare this against any Maxcost slippage guard they provide
 type TradeReceipt struct {
 	TradeID       string
-	marketID      string
+	MarketID      string
 	UserID        string
 	Outcome       BinaryOutcome
 	SharesBought  decimal.Decimal // how many shares teh user is now holding
@@ -146,7 +146,7 @@ type TradeReceipt struct {
 // / full ledger is appended on slice in Market. This is teh audit trail.
 type Trade struct {
 	ID             string
-	marketID       string
+	MarketID       string
 	UserID         string
 	Outcome        BinaryOutcome
 	SharesBought   decimal.Decimal
@@ -162,7 +162,7 @@ type Trade struct {
 // / it is mutable inside market (protected by market rwmutex) but returned as a copy to callers
 // / TotalCostBasis: sum of all costpaid across every trade by user
 // / RealizedPnL: non zero only after resolution (payout - totalcostbasis)
-type userPosition struct {
+type UserPosition struct {
 	UserID         string
 	MarketID       string
 	YesShares      decimal.Decimal
