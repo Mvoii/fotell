@@ -119,7 +119,7 @@ type CreateMarketParams struct {
 
 // / invairant: yesPrice + noPrice == 100
 type PriceQuote struct {
-	MarketId  string
+	MarketID  string
 	YesPrice  decimal.Decimal
 	NoPrice   decimal.Decimal
 	Timestamp time.Time

@@ -299,7 +299,7 @@ func (m *Market) Close() error {
 	return nil
 }
 
-// ── Core trading operation ────────────────────────────────────────────────────
+// ── Core trading operation 
 
 /*
 Buy executes a purchase of shares in a binary outcome.
@@ -455,7 +455,108 @@ func (m *Market) Buy(
 	}, nil
 }
 
+// ── Read-only queries 
 
+/*
+GetPrices returns the current YES and NO prices.
+
+Prices are on the 0–100 scale representing implied probability percentages.
+YesPrice + NoPrice == 100 (LSMR invariant).
+
+Thread-safe: acquires read lock.
+*/
+func (m *Market) GetPrices() (*PriceQuote, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	prices, err := m.engine.CalculatePrices()
+	if err != nil {
+		return nil, fmt.Errorf("price calculation failed: %w", err)
+	}
+
+	return &PriceQuote{
+		MarketID:  m.id,
+		YesPrice:  prices[BuyYES.ToOutcomeIndex()],
+		NoPrice:   prices[BuyNO.ToOutcomeIndex()],
+		Timestamp: time.Now().UTC(),
+	}, nil
+}
+
+
+/*
+GetUserPosition returns a copy of the calling user's position in this market.
+Returns a zeroed position (not an error) if the user has never traded here —
+this keeps the API simpler for callers who just want to display "0 shares".
+
+Thread-safe: acquires read lock.
+*/
+func (m *Market) GetUserPosition(userID string) (*UserPosition, error) {
+	if userID == "" {
+		return nil, ErrInvalidUserID
+	}
+
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	pos, exists := m.positions[userID]
+	if !exists {
+		// Return a zeroed position rather than an error
+		return &UserPosition{
+			UserID:   userID,
+			MarketID: m.id,
+		}, nil
+	}
+
+	// Return a copy — caller must not mutate the live position
+	copy := *pos
+	return &copy, nil
+}
+
+/*
+Snapshot returns a complete, immutable description of the market's current state.
+Used by the registry list endpoint and admin UIs.
+
+Thread-safe: acquires read lock.
+*/
+func (m *Market) Snapshot() (*MarketSnapshot, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	snap := &MarketSnapshot{
+		ID:             m.id,
+		Question:       m.question,
+		Status:         m.status,
+		CreatedBy:      m.createdBy,
+		CreatedAt:      m.createdAt,
+		ClosesAt:       m.closesAt,
+		LiquidityParam: m.liquidityParam,
+		TotalTrades:    len(m.trades),
+		TotalVolume:    m.totalVolume,
+		ResolvedBy:     m.resolvedBy,
+	}
+
+	// Include current prices for open markets
+	if m.status == StatusOpen || m.status == StatusClosed {
+		prices, err := m.engine.CalculatePrices()
+		if err != nil {
+			return nil, fmt.Errorf("price calculation failed in snapshot: %w", err)
+		}
+		snap.YesPrice = prices[BuyYES.ToOutcomeIndex()]
+		snap.NoPrice = prices[BuyNO.ToOutcomeIndex()]
+	}
+
+	// Copy resolution data if present
+	if m.outcome != nil {
+		outcomeCopy := *m.outcome
+		snap.Outcome = &outcomeCopy
+	}
+	if m.resolvedAt != nil {
+		tCopy := *m.resolvedAt
+		snap.ResolvedAt = &tCopy
+	}
+
+	return snap, nil
+}
 
 /*
 trades retruns a copy of teh full ledger
