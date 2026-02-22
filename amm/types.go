@@ -50,7 +50,7 @@ func (s MarketStatus) String() string {
 	case StatusResolved:
 		return "RESOLVED"
 	default:
-		return fmt.Sprintf("UNKOWN (%D)", s)
+		return fmt.Sprintf("UNKOWN (%d)", s)
 	}
 }
 

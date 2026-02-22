@@ -134,3 +134,91 @@ func (r *Registry) CloseMarket(id string) error {
 
 	return m.Close()
 }
+
+/*
+ResolveMarket transitions a closed market to StatusResolved and settles positions.
+See Market.Resolve for the full contract.
+*/
+func (r *Registry) ResolveMarket(id string, outcome Outcome, resolvedBy string) error {
+	m, err := r.GetMarket(id)
+	if err != nil {
+		return err
+	}
+	return m.Resolve(outcome, resolvedBy)
+}
+
+// ── List / inspection ─────────────────────────────────────────────────────────
+
+/*
+ListMarkets returns a snapshot of every market in the registry.
+
+Snapshots are point-in-time copies — callers see a consistent view of each
+market as it existed when this call was made.
+
+The registry read lock is held only long enough to copy the market pointers.
+Each snapshot is then taken under the individual market's read lock.
+
+Thread-safe.
+*/
+func (r *Registry) ListMarkets() ([]*MarketSnapshot, error) {
+	// Step 1: Collect all market pointers under the registry read lock.
+	// We copy pointers (not markets) — cheap and avoids holding the
+	// registry lock while snapshotting each market (which would serialize
+	// all reads globally).
+	r.mu.RLock()
+	pointers := make([]*Market, 0, len(r.markets))
+	for _, m := range r.markets {
+		pointers = append(pointers, m)
+	}
+	r.mu.RUnlock()
+
+	// Step 2: Snapshot each market under its own lock.
+	// Multiple markets can be snapshotted in parallel if we ever parallelise
+	// this loop — no registry lock is held here.
+	snapshots := make([]*MarketSnapshot, 0, len(pointers))
+	for _, m := range pointers {
+		snap, err := m.Snapshot()
+		if err != nil {
+			// A single bad market should not prevent listing the rest.
+			// Log and skip (production: use structured logging here).
+			continue
+		}
+		snapshots = append(snapshots, snap)
+	}
+
+	return snapshots, nil
+}
+
+/*
+Count returns the total number of registered markets (all statuses).
+Thread-safe: acquires registry read lock.
+*/
+func (r *Registry) Count() int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return len(r.markets)
+}
+
+/*
+CountByStatus returns the number of markets in a given status.
+Thread-safe.
+*/
+func (r *Registry) CountByStatus(status MarketStatus) int {
+	// Step 1: collect pointers under registry lock
+	r.mu.RLock()
+	pointers := make([]*Market, 0, len(r.markets))
+	for _, m := range r.markets {
+		pointers = append(pointers, m)
+	}
+	r.mu.RUnlock()
+
+	// Step 2: count under each market's lock
+	n := 0
+	for _, m := range pointers {
+		if m.Status() == status {
+			n++
+		}
+	}
+	return n
+}
+

@@ -206,7 +206,7 @@ type Market struct {
 
 // . teh slmr engine is init with two outcomes, (yes = 0, No = 1)
 func newMarket(params CreateMarketParams) (*Market, error) {
-	if len(params.Question) == 10 || len(params.Question) > 500 {
+	if len(params.Question) <= 1 || len(params.Question) > 500 {
 		return nil, ErrInvalidQuestion
 	}
 
@@ -214,7 +214,7 @@ func newMarket(params CreateMarketParams) (*Market, error) {
 		return nil, ErrInvalidUserID
 	}
 
-	if params.ClosesAt.After(time.Now()) {
+	if !params.ClosesAt.After(time.Now().UTC()) {
 		return nil, ErrClosesAtInPast
 	}
 
@@ -230,7 +230,7 @@ func newMarket(params CreateMarketParams) (*Market, error) {
 
 	id, err := generateID()
 	if err != nil {
-		return nil, fmt.Errorf("failed to enerate market id: %w", err)
+		return nil, fmt.Errorf("failed to generate market id: %w", err)
 	}
 
 	return &Market{
@@ -298,6 +298,73 @@ func (m *Market) Close() error {
 	m.status = StatusClosed
 	return nil
 }
+
+/*
+Resolve transitions the market from StatusClosed → StatusResolved and
+records the winning outcome.
+
+Parameters:
+  - outcome:    OutcomeYES or OutcomeNO
+  - resolvedBy: the operator/admin user ID recording the result
+
+What happens here:
+  1. The outcome is recorded on the market.
+  2. Every user's RealizedPnL is computed:
+       - Winners: payout = shares × 100  (each winning share redeems at KES 100)
+       - Losers:  payout = 0
+       - PnL = payout − TotalCostBasis
+
+Thread-safe: acquires write lock.
+*/
+func (m *Market) Resolve(outcome Outcome, resolvedBy string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.status == StatusResolved {
+		return ErrMarketAlreadyResolved
+	}
+
+	if m.status != StatusClosed {
+		return fmt.Errorf("%w: current status is %s", ErrMarketNotClosed, m.status)
+	}
+
+	if resolvedBy == "" {
+		return ErrInvalidUserID
+	}
+
+	// Validate outcome is one of the two legal values
+	if outcome != OutcomeYes && outcome != OutcomeNo {
+		return ErrInvalidOutcome
+	}
+
+	// Record resolution metadata
+	now := time.Now().UTC()
+	m.outcome = &outcome
+	m.resolvedAt = &now
+	m.resolvedBy = resolvedBy
+	m.status = StatusResolved
+
+	// Settle every user position.
+	// Winning share pays out KES 100 each. Losing share pays KES 0.
+	// Payout per outcome is based on which index won.
+	hundredKES := decimal.NewFromInt(100)
+
+	for _, pos := range m.positions {
+		var winningShares decimal.Decimal
+
+		if outcome == OutcomeYes {
+			winningShares = pos.YesShares
+		} else {
+			winningShares = pos.NoShares
+		}
+
+		payout := winningShares.Mul(hundredKES)
+		pos.RealizedPnL = payout.Sub(pos.TotalCostBasis)
+	}
+
+	return nil
+}
+
 
 // ── Core trading operation 
 
