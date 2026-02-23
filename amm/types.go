@@ -1,3 +1,4 @@
+// fotell/amm/types.go
 package amm
 
 import (

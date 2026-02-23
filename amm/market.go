@@ -1,3 +1,4 @@
+// fotell/amm/market.go
 package amm
 
 import (
@@ -672,9 +673,9 @@ func (m *Market) Status() MarketStatus {
 // --- internal helpers --- //
 
 /*
-creates a crypto random 16byte hex string (32 chars)
+creates a crypto random 16 byte hex string (32 chars)
 
-noshared state to lock
+no shared state to lock
 */
 
 func generateID() (string, error) {

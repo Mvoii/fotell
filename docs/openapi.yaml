@@ -1,0 +1,864 @@
+openapi: 3.0.3
+info:
+  title: FoTell Prediction Market API
+  description: |
+    Production-ready REST API for binary prediction markets using LSMR (Logarithmic Market Scoring Rule) automated market maker.
+    
+    ## Authentication
+    All protected endpoints require a JWT Bearer token in the Authorization header:
+    ```
+    Authorization: Bearer <access_token>
+    ```
+    
+    ## Rate Limiting
+    - **Public endpoints**: 100 requests/minute per IP
+    - **Authenticated endpoints**: 200 requests/minute per user
+    - Rate limit headers returned: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+    
+    ## Error Responses
+    All errors follow this structure:
+    ```json
+    {
+      "error": "Human-readable error message",
+      "details": {
+        "error_code": "MACHINE_READABLE_CODE",
+        "field": "specific_field_if_applicable"
+      }
+    }
+    ```
+    
+    ## Financial Precision
+    All monetary values use **integer representation** to avoid floating-point errors:
+    - Values are in "smallest unit" (10^-18 KES)
+    - To convert to KES: `value_smallest_unit / 1000000000000000000`
+    - Example: `5000000000000000000000` = 5000 KES
+  
+  version: 1.0.0
+  contact:
+    name: FoTell API Support
+    email: api@fotell.com
+  
+servers:
+  - url: https://api.fotell.com/api/v1
+    description: Production server
+  - url: http://localhost:8080/api/v1
+    description: Local development server
+
+tags:
+  - name: Authentication
+    description: User authentication and token management
+  - name: Markets
+    description: Prediction market operations
+  - name: Trading
+    description: Buy shares and manage positions
+  - name: Users
+    description: User profile and balance management
+  - name: Admin
+    description: Administrative operations (admin-only)
+
+paths:
+  # ══════════════════════════════════════════════════════════════════════════
+  # AUTHENTICATION
+  # ══════════════════════════════════════════════════════════════════════════
+  
+  /auth/register:
+    post:
+      tags: [Authentication]
+      summary: Register new user account
+      description: |
+        Create a new user account with email and password.
+        
+        **Initial balance**: New users receive 5000 KES play money.
+        
+        **Email validation**: Must be valid email format.
+        **Password requirements**: Minimum 8 characters.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, username]
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "alice@example.com"
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                  example: "SecurePassword123!"
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 50
+                  example: "alice_trader"
+                full_name:
+                  type: string
+                  example: "Alice Johnson"
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email or username already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login with email and password
+      description: |
+        Authenticate and receive access token + refresh token.
+        
+        **Access token**: Expires in 15 minutes.
+        **Refresh token**: Expires in 7 days, used to get new access tokens.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  
+  /auth/refresh:
+    post:
+      tags: [Authentication]
+      summary: Refresh access token
+      description: |
+        Use refresh token to obtain a new access token without re-login.
+        
+        **Security**: Refresh tokens can be revoked. Access tokens cannot.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+                  example: "refresh_1234567890"
+      responses:
+        '200':
+          description: New access token issued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  expires_in:
+                    type: integer
+                    example: 900
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: Logout (revoke refresh token)
+      description: |
+        Revoke the refresh token to prevent further token refreshes.
+        
+        **Note**: Access tokens cannot be revoked (they're stateless).
+        Access tokens expire in 15 minutes.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refresh_token]
+              properties:
+                refresh_token:
+                  type: string
+                  example: "a3f5e8d9c1b2..."
+      responses:
+        '200':
+          description: Logged out successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  
+  # ══════════════════════════════════════════════════════════════════════════
+  # MARKETS
+  # ══════════════════════════════════════════════════════════════════════════
+  
+  /markets:
+    get:
+      tags: [Markets]
+      summary: List all markets
+      description: |
+        Retrieve all prediction markets with optional filtering.
+        
+        **Pagination**: Use `limit` and `offset` for large result sets.
+        **Filtering**: Filter by status (PENDING, OPEN, CLOSED, RESOLVED).
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, OPEN, CLOSED, RESOLVED]
+          description: Filter by market status
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: List of markets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  markets:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Market'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+  
+  /markets/{marketID}:
+    get:
+      tags: [Markets]
+      summary: Get market details
+      description: |
+        Retrieve complete information about a specific market including:
+        - Current prices (if market is OPEN or CLOSED)
+        - Trade statistics
+        - Resolution outcome (if RESOLVED)
+      parameters:
+        - $ref: '#/components/parameters/MarketID'
+      responses:
+        '200':
+          description: Market details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  
+  /markets/{marketID}/prices:
+    get:
+      tags: [Markets]
+      summary: Get current market prices
+      description: |
+        Retrieve current YES and NO prices for a market.
+        
+        **Prices**: Represented as probabilities on 0-100 scale.
+        **Invariant**: YES price + NO price = 100
+        
+        **Example**: YES = 62.5 means market implies 62.5% chance of YES outcome.
+      parameters:
+        - $ref: '#/components/parameters/MarketID'
+      responses:
+        '200':
+          description: Current prices
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  market_id:
+                    type: string
+                    format: uuid
+                  yes_price:
+                    type: number
+                    format: float
+                    example: 62.5
+                  no_price:
+                    type: number
+                    format: float
+                    example: 37.5
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: Market not open for trading
+        '404':
+          $ref: '#/components/responses/NotFound'
+  
+  /markets/{marketID}/trades:
+    get:
+      tags: [Markets]
+      summary: List market trades
+      description: |
+        Retrieve trade history for a market.
+        
+        **Privacy**: Only shows your own trades unless you're an admin.
+      parameters:
+        - $ref: '#/components/parameters/MarketID'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Trade history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trade'
+  
+    post:
+      tags: [Trading]
+      summary: Place a trade
+      description: |
+        Buy shares in a binary outcome (YES or NO).
+        
+        **Atomicity**: Trade execution updates:
+        1. Market prices (LSMR engine)
+        2. User position
+        3. User balance (debited)
+        4. Trade ledger (append-only)
+        
+        **Slippage protection**: Set `max_cost` to limit how much you're willing to pay.
+        If actual cost exceeds `max_cost`, trade is rejected with zero side effects.
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/MarketID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome, shares]
+              properties:
+                outcome:
+                  type: string
+                  enum: [YES, NO]
+                  example: "YES"
+                shares:
+                  type: integer
+                  minimum: 1
+                  example: 100
+                  description: Number of shares to buy (integer, minimum 1)
+                max_cost:
+                  type: integer
+                  example: 5500000000000000000000
+                  description: |
+                    Maximum acceptable cost in smallest unit (slippage guard).
+                    Set to 0 to disable.
+      responses:
+        '201':
+          description: Trade executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeReceipt'
+        '400':
+          description: Invalid trade parameters or market not open
+        '403':
+          description: Insufficient balance
+        '409':
+          description: Slippage limit exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: "Trade cost exceeds maximum acceptable cost"
+                  details:
+                    type: object
+                    properties:
+                      error_code:
+                        type: string
+                        example: "SLIPPAGE_EXCEEDED"
+                      projected_cost:
+                        type: integer
+                      max_cost:
+                        type: integer
+  
+  # ══════════════════════════════════════════════════════════════════════════
+  # USER
+  # ══════════════════════════════════════════════════════════════════════════
+  
+  /users/me:
+    get:
+      tags: [Users]
+      summary: Get current user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+  
+  /users/me/balance:
+    get:
+      tags: [Users]
+      summary: Get current user balance
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Current balance
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  balance_smallest_unit:
+                    type: integer
+                    example: 4500000000000000000000
+                  balance_kes:
+                    type: number
+                    format: float
+                    example: 4500.0
+  
+  /users/me/positions:
+    get:
+      tags: [Users]
+      summary: Get user positions
+      description: List all positions (active and settled) for the current user
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User positions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Position'
+  
+  /users/me/trades:
+    get:
+      tags: [Users]
+      summary: Get user trade history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        '200':
+          description: Trade history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trade'
+  
+  # ══════════════════════════════════════════════════════════════════════════
+  # ADMIN
+  # ══════════════════════════════════════════════════════════════════════════
+  
+  /admin/markets:
+    post:
+      tags: [Admin]
+      summary: Create new market
+      description: |
+        Create a new prediction market.
+        
+        **Initial status**: PENDING (must call /open to accept trades)
+        **Lifecycle**: PENDING → OPEN → CLOSED → RESOLVED
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, closes_at, liquidity_param]
+              properties:
+                question:
+                  type: string
+                  minLength: 1
+                  maxLength: 500
+                  example: "Will Bitcoin reach $100k by end of month?"
+                description:
+                  type: string
+                  example: "Market resolves YES if BTC/USD >= 100000 on any exchange"
+                closes_at:
+                  type: string
+                  format: date-time
+                  example: "2026-03-01T00:00:00Z"
+                liquidity_param:
+                  type: integer
+                  example: 500000000000000000000000
+                  description: LSMR b parameter in smallest unit
+      responses:
+        '201':
+          description: Market created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Market'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  
+  /admin/markets/{marketID}/open:
+    post:
+      tags: [Admin]
+      summary: Open market for trading
+      description: Transition market from PENDING to OPEN
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/MarketID'
+      responses:
+        '200':
+          description: Market opened
+        '400':
+          description: Market already open or invalid state
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  
+  /admin/markets/{marketID}/close:
+    post:
+      tags: [Admin]
+      summary: Close market
+      description: |
+        Transition market from OPEN to CLOSED.
+        
+        **Effect**: No new trades accepted after this point.
+        **Next step**: Call /resolve to settle positions.
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/MarketID'
+      responses:
+        '200':
+          description: Market closed
+        '400':
+          description: Market not open or invalid state
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  
+  /admin/markets/{marketID}/resolve:
+    post:
+      tags: [Admin]
+      summary: Resolve market
+      description: |
+        Transition market from CLOSED to RESOLVED and settle all positions.
+        
+        **Payout calculation**:
+        - Winning shares: 100 KES each
+        - Losing shares: 0 KES
+        - PnL = payout - total_cost_basis
+        
+        **Irreversible**: Once resolved, outcome cannot be changed.
+      security:
+        - BearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/MarketID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome]
+              properties:
+                outcome:
+                  type: string
+                  enum: [YES, NO]
+      responses:
+        '200':
+          description: Market resolved
+        '400':
+          description: Market not closed or already resolved
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+# ══════════════════════════════════════════════════════════════════════════
+# COMPONENTS
+# ══════════════════════════════════════════════════════════════════════════
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT Bearer token obtained from /auth/login or /auth/register.
+        Include in all protected endpoints:
+        ```
+        Authorization: Bearer <access_token>
+        ```
+  
+  parameters:
+    MarketID:
+      name: marketID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Market UUID
+  
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        full_name:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        created_at:
+          type: string
+          format: date-time
+    
+    Market:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        question:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, OPEN, CLOSED, RESOLVED]
+        created_by:
+          type: string
+          format: uuid
+        created_at:
+          type: string
+          format: date-time
+        closes_at:
+          type: string
+          format: date-time
+        liquidity_param_smallest_unit:
+          type: integer
+        yes_price:
+          type: number
+          format: float
+          nullable: true
+        no_price:
+          type: number
+          format: float
+          nullable: true
+        resolved_outcome:
+          type: string
+          enum: [YES, NO]
+          nullable: true
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+        total_volume_smallest_unit:
+          type: integer
+        total_trades:
+          type: integer
+    
+    Trade:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        market_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        outcome:
+          type: string
+          enum: [YES, NO]
+        shares_bought_smallest_unit:
+          type: integer
+        cost_paid_smallest_unit:
+          type: integer
+        yes_price_before:
+          type: number
+          format: float
+        yes_price_after:
+          type: number
+          format: float
+        created_at:
+          type: string
+          format: date-time
+    
+    TradeReceipt:
+      type: object
+      properties:
+        trade_id:
+          type: string
+          format: uuid
+        market_id:
+          type: string
+          format: uuid
+        outcome:
+          type: string
+          enum: [YES, NO]
+        shares_bought:
+          type: integer
+        cost_paid_smallest_unit:
+          type: integer
+        cost_paid_kes:
+          type: number
+          format: float
+        yes_price_after:
+          type: number
+        no_price_after:
+          type: number
+        timestamp:
+          type: string
+          format: date-time
+    
+    Position:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        market_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        yes_shares_smallest_unit:
+          type: integer
+        no_shares_smallest_unit:
+          type: integer
+        total_cost_basis_smallest_unit:
+          type: integer
+        realized_pnl_smallest_unit:
+          type: integer
+          nullable: true
+    
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+          example: 900
+        token_type:
+          type: string
+          example: "Bearer"
+        user:
+          $ref: '#/components/schemas/User'
+    
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
+  
+  responses:
+    BadRequest:
+      description: Bad request (validation error)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

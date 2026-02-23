@@ -1,3 +1,4 @@
+// fotell/amm/registry.go
 package amm
 
 import (

@@ -1,3 +1,4 @@
+// fotell/amm/errors.go
 package amm
 
 import "errors"
