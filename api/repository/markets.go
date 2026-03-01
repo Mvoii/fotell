@@ -442,7 +442,6 @@ func (r *MarketRepository) GetAllActive(ctx context.Context) ([]*Market, error) 
 
 	return markets, nil
 }
-<<<<<<< HEAD
 
 /*
 UpdateQuantitiesStateTx persists AMM state within a transaction.
@@ -461,5 +460,3 @@ func (r *MarketRepository) UpdateQuantitiesStateTx(ctx context.Context, tx *sql.
 	_, err := tx.ExecContext(ctx, query, quantitiesJSON, id)
 	return err
 }
-=======
->>>>>>> 9804961 (lots of shit; trust the process)
