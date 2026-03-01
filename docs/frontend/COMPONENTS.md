@@ -1,6 +1,7 @@
 # Component Catalogue
 
-> Reusable UI component specifications, prop interfaces, and usage notes.
+> **v2** — Updated for founder feedback: LimitOrderForm, WatchlistCard, PriceAlertSheet,
+> StatsBar, OrdersTable, BottomNav, GlobalTradeSheet, OpenOrderCard, ActivityFeedItem.
 
 ---
 
@@ -9,17 +10,23 @@
 ```
 src/
 ├── components/
-│   ├── ui/               ← Primitive atoms (Button, Input, Badge, Card…)
-│   ├── layout/           ← Navbar, Footer, Sidebar, PageContainer
+│   ├── ui/               ← Primitive atoms (Button, Input, Badge, Card, Tabs…)
+│   ├── layout/           ← BottomNav, TopNav, LeftRail, PageContainer, AuthGuard
 │   ├── markets/          ← MarketCard, MarketStatusBadge, ProbabilityBar
 │   ├── charts/           ← PriceChart, VolumeChart
-│   ├── trade/            ← TradePanel, TradeConfirmModal, TradeReceipt
-│   ├── portfolio/        ← PositionCard, TradeHistoryTable
+│   ├── trade/            ← MarketOrderForm, LimitOrderForm, TradePanel,
+│   │                        TradeConfirmModal, LimitOrderConfirmModal, TradeReceipt
+│   ├── portfolio/        ← StatsBar, PositionCard, BalanceSummary,
+│   │                        OrdersTable, OpenOrderCard, TradeHistoryTable
+│   ├── watchlist/        ← WatchlistCard, PriceAlertSheet, WatchlistToggle
+│   ├── home/             ← AccountSnapshot, ActivityFeedItem, ActivityFeed,
+│   │                        OpenOrdersMini, TrendingMarkets
 │   ├── auth/             ← LoginForm, RegisterForm
-│   └── admin/            ← CreateMarketWizard, AdminMarketTable
-├── hooks/                ← useAuth, useMarket, useTrade, useBalance
-├── lib/                  ← api client, formatters, validators
-├── store/                ← Zustand stores (auth, ui)
+│   └── admin/            ← CreateMarketWizard, AdminMarketTable, ResolveMarketModal
+├── hooks/                ← useAuth, useMarket, useTrade, useBalance, useOrders,
+│                            useWatchlist, usePriceAlerts, usePositions, useTradeHistory
+├── lib/                  ← api client, formatters, validators, notifications
+├── store/                ← Zustand stores (auth, ui, watchlist, orders)
 └── types/                ← TypeScript interfaces matching API schemas
 ```
 
@@ -33,7 +40,7 @@ src/
 interface ButtonProps {
   variant: 'primary' | 'secondary' | 'yes' | 'no' | 'danger' | 'ghost' | 'icon';
   size: 'sm' | 'md' | 'lg';
-  loading?: boolean;           // shows spinner, disables click
+  loading?: boolean;
   disabled?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
@@ -44,10 +51,7 @@ interface ButtonProps {
 }
 ```
 
-**Visual spec:** See DESIGN_SYSTEM.md §6.
-
 ```tsx
-// Examples
 <Button variant="primary">Sign In</Button>
 <Button variant="yes" size="lg">Buy YES Shares</Button>
 <Button variant="no" size="lg">Buy NO Shares</Button>
@@ -62,9 +66,11 @@ interface ButtonProps {
 
 ```tsx
 interface BadgeProps {
-  variant: 'market-status' | 'outcome' | 'custom';
-  status?: 'PENDING' | 'OPEN' | 'CLOSED' | 'RESOLVED'; // if variant='market-status'
-  outcome?: 'YES' | 'NO';                               // if variant='outcome'
+  variant: 'market-status' | 'order-status' | 'order-type' | 'outcome' | 'custom';
+  status?: 'PENDING' | 'OPEN' | 'CLOSED' | 'RESOLVED';        // market-status
+  orderStatus?: 'PENDING' | 'FILLED' | 'CANCELLED' | 'EXPIRED'; // order-status
+  orderType?: 'MARKET' | 'LIMIT';                               // order-type
+  outcome?: 'YES' | 'NO';                                       // outcome
   size?: 'sm' | 'md';
   children?: React.ReactNode;
 }
@@ -77,11 +83,11 @@ interface BadgeProps {
 ```tsx
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
-  error?: string;        // red border + error message below
-  hint?: string;         // muted text below
+  error?: string;
+  hint?: string;
   leftAddon?: string;    // e.g. "KES"
-  rightAddon?: string;   // e.g. "shares"
-  loading?: boolean;     // shows spinner in right addon area
+  rightAddon?: string;   // e.g. "¢"
+  loading?: boolean;
 }
 ```
 
@@ -92,10 +98,10 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
 ```tsx
 interface CardProps {
   children: React.ReactNode;
-  hover?: boolean;       // adds hover:border-active transition
+  hover?: boolean;
   padding?: 'none' | 'sm' | 'md' | 'lg';
   className?: string;
-  onClick?: () => void;  // makes entire card clickable (cursor-pointer)
+  onClick?: () => void;
 }
 ```
 
@@ -108,7 +114,7 @@ interface SkeletonProps {
   variant: 'text' | 'rect' | 'circle';
   width?: string | number;
   height?: string | number;
-  lines?: number;        // for 'text' variant, renders N skeleton lines
+  lines?: number;
 }
 ```
 
@@ -125,9 +131,25 @@ interface ModalProps {
   size?: 'sm' | 'md' | 'lg' | 'fullscreen';
   children: React.ReactNode;
   footer?: React.ReactNode;
-  closeOnOverlayClick?: boolean;  // default true
+  closeOnOverlayClick?: boolean;
 }
 ```
+
+---
+
+### `BottomSheet`
+
+```tsx
+interface BottomSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+  title?: string;
+  snapPoints?: number[];   // heights in px; default [400, window.innerHeight]
+  children: React.ReactNode;
+}
+```
+
+Used for: Trade Panel (mobile), Price Alert Sheet, Global Trade Sheet.
 
 ---
 
@@ -138,7 +160,7 @@ interface TabsProps {
   tabs: Array<{ key: string; label: string; count?: number }>;
   activeKey: string;
   onChange: (key: string) => void;
-  variant?: 'line' | 'pill';  // line = underline style, pill = pill buttons
+  variant?: 'line' | 'pill';
 }
 ```
 
@@ -150,7 +172,7 @@ interface TabsProps {
 interface StatCardProps {
   label: string;
   value: string | number;
-  subValue?: string;            // e.g. change % in smaller text
+  subValue?: string;
   trend?: 'up' | 'down' | 'neutral';
   icon?: React.ReactNode;
   loading?: boolean;
@@ -161,21 +183,49 @@ interface StatCardProps {
 
 ## 2. Layout Components (`components/layout/`)
 
-### `Navbar`
+### `BottomNav`
 
 ```tsx
-interface NavbarProps {
-  transparent?: boolean;   // for landing page hero
+interface BottomNavProps {
+  activeTab: 'home' | 'markets' | 'trade' | 'watchlist' | 'portfolio';
+  pendingOrdersCount?: number;    // badge on Portfolio tab
+  unreadAlertsCount?: number;     // badge on Home tab
+  onTradePress: () => void;       // opens GlobalTradeSheet instead of routing
 }
 ```
 
-**Internal state:** uses `useAuthStore()` to determine which nav items to show.
+**Behaviour:**
+- Fixed bottom, height 56 px, `bg-surface`, `border-t border-muted`
+- Active tab: icon + label in `accent-blue`, filled dot indicator below label
+- Trade tab calls `onTradePress` instead of routing
+- Hidden on desktop (≥ 1024 px); replaced by `LeftRail`
+
+---
+
+### `LeftRail`
+
+```tsx
+interface LeftRailProps {
+  activeRoute: string;    // current pathname
+  isAdmin?: boolean;
+}
+```
 
 **Behaviour:**
-- Desktop: horizontal link strip + avatar dropdown
-- Mobile: hamburger → slide-in right drawer
-- Sticky top, `backdrop-blur-md` on scroll (when transparent=false)
-- Active route link has `accent-blue` underline indicator
+- Visible on desktop (≥ 1024 px) only
+- 64 px collapsed (icons only), 220 px on hover (icons + labels)
+- `transition-width duration-200`
+
+---
+
+### `TopNav`
+
+```tsx
+interface TopNavProps {
+  transparent?: boolean;    // landing page hero
+  showSearch?: boolean;     // desktop global search bar
+}
+```
 
 ---
 
@@ -185,7 +235,7 @@ interface NavbarProps {
 interface PageContainerProps {
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'full';
-  padding?: boolean;   // default true — adds horizontal padding
+  padding?: boolean;
 }
 ```
 
@@ -197,11 +247,9 @@ interface PageContainerProps {
 interface AuthGuardProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
-  fallback?: React.ReactNode;  // what to render while checking auth
+  fallback?: React.ReactNode;
 }
 ```
-
-Usage: wraps page components in `app/` layout files.
 
 ---
 
@@ -211,18 +259,15 @@ Usage: wraps page components in `app/` layout files.
 
 ```tsx
 interface MarketCardProps {
-  market: Market;        // API type from types/api.ts
-  showActions?: boolean; // show "Trade Now" button
-  compact?: boolean;     // narrower variant for dashboard lists
+  market: Market;
+  showActions?: boolean;
+  compact?: boolean;
+  isWatched?: boolean;
+  onWatchToggle?: (marketId: string) => void;
 }
 ```
 
-**Layout (see WIREFRAMES.md §3):**
-- Status badge + closing date top row
-- Question text (line-clamp-2 for compact)
-- ProbabilityBar
-- Volume + trade count footer
-- Optional CTA button
+**New in v2:** `isWatched` shows filled 👁 icon; `onWatchToggle` fires on icon press (auth-gated).
 
 ---
 
@@ -231,16 +276,10 @@ interface MarketCardProps {
 ```tsx
 interface ProbabilityBarProps {
   yesPrice: number;     // 0–100
-  noPrice: number;      // 0–100
-  showLabels?: boolean; // "YES 62.5¢" / "NO 37.5¢" on either side
-  size?: 'sm' | 'md';   // sm: h-1.5, md: h-2.5
+  noPrice: number;
+  showLabels?: boolean;
+  size?: 'sm' | 'md';
 }
-```
-
-**Renders:**
-```
-[──── YES fill (green) ────][──── NO fill (red) ────]
- 62.5%                                         37.5%
 ```
 
 ---
@@ -250,19 +289,13 @@ interface ProbabilityBarProps {
 ```tsx
 interface PriceChartProps {
   marketId: string;
-  // fetches trade history from GET /markets/:id/trades internally
   period?: '24h' | '7d' | '30d' | 'all';
-  height?: number;         // default 220
-  showVolume?: boolean;    // renders volume bars below price line
+  height?: number;
+  showVolume?: boolean;
 }
 ```
 
-**Implementation:**
-- Uses `recharts` `ComposedChart`
-- YES probability line: `stroke="#00c853"`, area fill `rgba(0,200,83,0.08)`
-- NO probability line: `stroke="#ff1744"`, area fill `rgba(255,23,68,0.08)`
-- Tooltip: styled dark card showing timestamp, YES price, NO price, last trade cost
-- Period toggle: tab pills above chart
+Uses `recharts` `ComposedChart`. YES line: `#00c853`, NO line: `#ff1744`.
 
 ---
 
@@ -286,30 +319,93 @@ interface MarketFiltersProps {
 }
 ```
 
-**Renders:** search input + status chip pills + sort dropdown.
-
 ---
 
 ## 4. Trade Components (`components/trade/`)
 
 ### `TradePanel`
 
+> Container component that renders either `MarketOrderForm` or `LimitOrderForm`
+> based on the selected tab.
+
 ```tsx
 interface TradePanelProps {
   market: Market;
   currentPrices: { yes_price: number; no_price: number };
-  userBalance: number | null;   // null = not authenticated
+  userBalance: number | null;
   userPosition: Position | null;
+  defaultTab?: 'market' | 'limit';
+  defaultOutcome?: 'YES' | 'NO';
 }
 ```
 
-**Internal state:**
-- `selectedOutcome: 'YES' | 'NO'` — toggled by YES/NO tab buttons
-- `shares: number` — controlled input (integer only, min 1)
-- `maxSlippagePct: number` — default 5%
-- `estimatedCost: number` — recalculated on `shares` change via `useTradeEstimate` hook
+Internal state:
+- `orderType: 'market' | 'limit'` — tab selection
+- Renders `<MarketOrderForm>` or `<LimitOrderForm>` based on `orderType`
 
-**On submit:** opens `TradeConfirmModal`.
+---
+
+### `MarketOrderForm`
+
+```tsx
+interface MarketOrderFormProps {
+  market: Market;
+  currentPrices: { yes_price: number; no_price: number };
+  userBalance: number | null;
+  onSubmit: (params: MarketOrderParams) => void;
+}
+
+interface MarketOrderParams {
+  outcome: 'YES' | 'NO';
+  shares: number;
+  maxSlippagePct: number;
+}
+```
+
+Internal state:
+- `outcome: 'YES' | 'NO'`
+- `shares: number` (integer, min 1)
+- `maxSlippagePct: number` (default 5)
+- `estimatedCost: number` — from `useTradeEstimate` hook
+
+On submit → opens `<TradeConfirmModal>`.
+
+---
+
+### `LimitOrderForm`
+
+> **New in v2.** Allows placing orders that execute when price hits a target.
+
+```tsx
+interface LimitOrderFormProps {
+  market: Market;
+  currentPrices: { yes_price: number; no_price: number };
+  userBalance: number | null;
+  onSubmit: (params: LimitOrderParams) => void;
+}
+
+interface LimitOrderParams {
+  marketId: string;
+  outcome: 'YES' | 'NO';
+  shares: number;
+  triggerPrice: number;    // in cents (0–100)
+  expiry: '1h' | '24h' | '7d' | 'GTC';
+}
+```
+
+Internal state:
+- `outcome: 'YES' | 'NO'`
+- `shares: number`
+- `triggerPrice: number` — defaults to `currentPrice - 10%`
+- `expiry: '1h' | '24h' | '7d' | 'GTC'` — pill toggle
+- `estimatedMaxCost: shares * triggerPrice / 100 * 100`
+
+On submit → opens `<LimitOrderConfirmModal>`.
+
+**Validation:**
+- `triggerPrice` must be in range [1, 99]
+- For BUY YES: default trigger = current YES price − 10% (enter cheaper)
+- For BUY NO: default trigger = current NO price − 10%
 
 ---
 
@@ -331,8 +427,32 @@ interface TradeConfirmModalProps {
 }
 ```
 
-**States:** idle → loading → success → error  
-**On success:** shows `TradeReceiptCard` inside modal.
+States: idle → loading → success → error
+On success: renders `<TradeReceiptCard>` inside modal.
+
+---
+
+### `LimitOrderConfirmModal`
+
+> **New in v2.**
+
+```tsx
+interface LimitOrderConfirmModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => Promise<void>;
+  orderDetails: {
+    market: Market;
+    outcome: 'YES' | 'NO';
+    shares: number;
+    triggerPrice: number;
+    estimatedMaxCost: number;
+    expiry: string;
+  };
+}
+```
+
+States: idle → loading → success (order placed) → error
 
 ---
 
@@ -340,30 +460,130 @@ interface TradeConfirmModalProps {
 
 ```tsx
 interface TradeReceiptCardProps {
-  receipt: TradeReceipt;  // API response type
+  receipt: TradeReceipt | LimitOrderReceipt;
+  type: 'market' | 'limit';
   onViewPortfolio: () => void;
+  onViewOrders?: () => void;    // limit only
   onTradeAgain: () => void;
 }
 ```
 
 ---
 
+### `GlobalTradeSheet`
+
+> **New in v2.** Full-height bottom sheet opened by Trade tab in BottomNav.
+
+```tsx
+interface GlobalTradeSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+```
+
+Internal behaviour:
+1. Renders a market search input
+2. Shows recently-viewed markets list
+3. On market select → renders full `<TradePanel>` below search results
+4. After successful trade → shows receipt, then auto-closes after 3s
+
+---
+
 ## 5. Portfolio Components (`components/portfolio/`)
+
+### `StatsBar`
+
+> **New in v2.** IBKR-style horizontal scrolling stats strip.
+
+```tsx
+interface StatsBarProps {
+  stats: Array<{
+    key: string;
+    label: string;
+    value: string;
+    trend?: 'up' | 'down' | 'neutral';
+    tooltip?: string;   // definition shown on tap
+  }>;
+  loading?: boolean;
+}
+```
+
+Stats included:
+- Unrealized P&L, Realized P&L, Market Value, Buying Power
+- Daily P&L, Total Cash, Open Orders count
+
+**Renders:** horizontal scroll row of `StatChip` sub-components.
+On chip tap → tooltip/popover with label definition.
+
+---
 
 ### `PositionCard`
 
 ```tsx
 interface PositionCardProps {
   position: Position;
-  market: Market;           // joined for display name + current price
-  currentPrice: number;     // yes_price or no_price depending on position side
+  market: Market;
+  currentPrice: number;
+  onViewMarket: () => void;
+  onTradeMore: () => void;
+  onClosePosition: () => void;
 }
 ```
 
-**Computed values displayed:**
-- `currentValue = shares * currentPrice / 100 * 100` (shares × KES 1 if resolved YES)
-- `unrealizedPnL = currentValue - costBasis`
-- PnL shown in green if positive, red if negative
+Computed display values:
+- `currentValue = shares × currentPrice / 100`
+- `unrealizedPnL = currentValue − costBasis`
+- PnL: green if positive, red if negative, neutral if ±0
+
+---
+
+### `BalanceSummary`
+
+> **New in v2.** Static summary card for Balances tab.
+
+```tsx
+interface BalanceSummaryProps {
+  cashBalance: number;
+  positionsValue: number;
+  realizedPnL: number;
+  unrealizedPnL: number;
+  loading?: boolean;
+}
+```
+
+---
+
+### `OrdersTable`
+
+> **New in v2.** Full table of orders with status filter.
+
+```tsx
+interface OrdersTableProps {
+  orders: Order[];
+  loading: boolean;
+  filter: 'open' | 'filled' | 'cancelled';
+  onFilterChange: (filter: 'open' | 'filled' | 'cancelled') => void;
+  onCancel: (orderId: string) => Promise<void>;
+  onEditTrigger: (orderId: string) => void;
+}
+```
+
+---
+
+### `OpenOrderCard`
+
+> **New in v2.** Single order row with cancel / edit actions.
+
+```tsx
+interface OpenOrderCardProps {
+  order: Order;
+  market: Market;
+  onCancel: () => void;
+  onEditTrigger?: () => void;
+}
+```
+
+State: idle | confirming-cancel (shows inline confirm)
 
 ---
 
@@ -376,14 +596,139 @@ interface TradeHistoryTableProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  sortBy?: 'date' | 'market' | 'cost';
+  onSortChange?: (sort: 'date' | 'market' | 'cost') => void;
 }
 ```
 
-**Columns:** Date/Time | Market | Side (YES/NO badge) | Shares | Cost | Price Before | Price After
+Columns: Date/Time | Market | Side | Shares | Cost | Type (MKT/LMT)
 
 ---
 
-## 6. Admin Components (`components/admin/`)
+## 6. Watchlist Components (`components/watchlist/`)
+
+### `WatchlistCard`
+
+> **New in v2.** Extends `MarketCard` with alert badge and watch/remove actions.
+
+```tsx
+interface WatchlistCardProps {
+  market: Market;
+  currentPrices: { yes_price: number; no_price: number };
+  alert: PriceAlert | null;
+  onTrade: (marketId: string) => void;
+  onSetAlert: (marketId: string) => void;
+  onRemove: (marketId: string) => void;
+}
+```
+
+Displays: 24 h price change %, active alert if set, Trade / Edit Alert / Remove actions.
+
+---
+
+### `PriceAlertSheet`
+
+> **New in v2.** Bottom sheet for creating or editing a price alert.
+
+```tsx
+interface PriceAlertSheetProps {
+  isOpen: boolean;
+  onClose: () => void;
+  market: Market;
+  existingAlert?: PriceAlert;
+  onSave: (alert: CreateAlertParams) => Promise<void>;
+  onDelete?: () => Promise<void>;
+}
+
+interface CreateAlertParams {
+  marketId: string;
+  side: 'YES' | 'NO';
+  condition: 'gte' | 'lte';    // ≥ or ≤
+  targetPrice: number;          // in cents
+  notifyInApp: boolean;
+  notifyEmail: boolean;
+}
+```
+
+---
+
+### `WatchlistToggle`
+
+> **New in v2.** Standalone icon button to add/remove a market from watchlist.
+> Used inline in `MarketCard` and `Market Detail` header.
+
+```tsx
+interface WatchlistToggleProps {
+  marketId: string;
+  isWatched: boolean;
+  onToggle: (marketId: string, watched: boolean) => void;
+  size?: 'sm' | 'md';
+}
+```
+
+Renders: 👁 outline (not watched) → 👁 filled accent-blue (watched).
+Auth-gated: if user not logged in, shows toast "Log in to watch markets."
+
+---
+
+## 7. Home Components (`components/home/`)
+
+### `AccountSnapshot`
+
+> **New in v2.** Horizontal scroll of 3 stat chips at top of Home feed.
+
+```tsx
+interface AccountSnapshotProps {
+  cashBalance: number;
+  portfolioValue: number;
+  dailyPnL: number;
+  dailyPnLPct: number;
+  loading?: boolean;
+  onChipPress?: (key: 'cash' | 'portfolio' | 'pnl') => void;
+}
+```
+
+---
+
+### `ActivityFeedItem`
+
+> **New in v2.** Single row in the Recent Activity list.
+
+```tsx
+type ActivityEvent =
+  | { type: 'TRADE'; trade: Trade; market: Market }
+  | { type: 'PAYOUT'; amount: number; market: Market; outcome: 'YES' | 'NO' }
+  | { type: 'ORDER_FILLED'; order: Order; market: Market }
+  | { type: 'ORDER_EXPIRED'; order: Order; market: Market };
+
+interface ActivityFeedItemProps {
+  event: ActivityEvent;
+}
+```
+
+Icon colours: 🟢 trade executed, 🔵 trade info, ✅ payout received, 🔔 order filled.
+
+---
+
+### `OpenOrdersMini`
+
+> **New in v2.** Compact open-orders section on Home feed.
+
+```tsx
+interface OpenOrdersMiniProps {
+  orders: Order[];
+  markets: Record<string, Market>;
+  onCancel: (orderId: string) => void;
+  onViewAll: () => void;
+}
+```
+
+Renders up to 3 most recent pending orders. "View All" routes to `/portfolio?tab=orders`.
+Hidden when `orders.length === 0`.
+
+---
+
+## 8. Admin Components (`components/admin/`)
 
 ### `AdminMarketTable`
 
@@ -401,24 +746,21 @@ interface AdminMarketTableProps {
 
 ### `CreateMarketWizard`
 
-Steps managed by local `step: 1 | 2 | 3` state.
-
 ```tsx
-// Step data shape
 interface CreateMarketFormData {
-  question: string;        // 1–500 chars
+  question: string;
   description?: string;
-  closes_at: string;       // ISO 8601 datetime
-  liquidity_param: number; // converted to smallest unit on submit
+  closes_at: string;       // ISO 8601
+  liquidity_param: number;
 }
 ```
 
-**Validation (Zod schema):**
+Zod validation schema:
 ```ts
 const createMarketSchema = z.object({
   question: z.string().min(1).max(500),
   description: z.string().optional(),
-  closes_at: z.string().datetime({ message: "Must be a future date/time" })
+  closes_at: z.string().datetime()
     .refine(d => new Date(d) > new Date(), "Close date must be in the future"),
   liquidity_param: z.number().int().min(1),
 })
@@ -437,56 +779,211 @@ interface ResolveMarketModalProps {
 }
 ```
 
-**Danger UX:** Irreversible warning banner, red "Resolve Market" confirm button only activates after user selects an outcome.
+Danger UX: irreversible warning, confirm button only activates after outcome is selected.
 
 ---
 
-## 7. Custom Hooks (`hooks/`)
+## 9. Custom Hooks (`hooks/`)
 
 ### `useAuthStore()`
 
-Zustand store selector. Returns:
 ```ts
 {
   user: UserInfo | null;
   accessToken: string | null;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  login: (credentials) => Promise<void>;
+  login: (credentials: LoginParams) => Promise<void>;
   logout: () => Promise<void>;
   refreshToken: () => Promise<string>;
 }
 ```
 
+---
+
 ### `useBalance()`
 
-TanStack Query wrapper for `GET /users/me/balance`.  
-Auto-refetches every 30 seconds while window is focused.
+TanStack Query — `GET /users/me/balance`. Auto-refetches every 30 s on focus.
+
+---
 
 ### `useMarkets(filters)`
 
-TanStack Query wrapper for `GET /markets?status=…&limit=…&offset=…`.
+TanStack Query — `GET /markets?status=…&sort=…&q=…&limit=…&offset=…`.
+
+---
 
 ### `useMarket(id)`
 
-TanStack Query wrapper for `GET /markets/:id` + `GET /markets/:id/prices`.
+TanStack Query — `GET /markets/:id` + `GET /markets/:id/prices`.
+
+---
 
 ### `useTrade(marketId)`
 
-Mutation + helper:
 ```ts
 {
-  placeTrade: (params: TradeParams) => Promise<TradeReceipt>;
+  placeTrade: (params: MarketOrderParams) => Promise<TradeReceipt>;
   isLoading: boolean;
   error: ApiError | null;
   estimateCost: (shares: number, outcome: 'YES' | 'NO') => number;
 }
 ```
 
+---
+
+### `useLimitOrder()` ← **New in v2**
+
+```ts
+{
+  placeOrder: (params: LimitOrderParams) => Promise<LimitOrderReceipt>;
+  cancelOrder: (orderId: string) => Promise<void>;
+  editTrigger: (orderId: string, newPrice: number) => Promise<void>;
+  isLoading: boolean;
+  error: ApiError | null;
+}
+```
+
+---
+
+### `useOrders(filter?)` ← **New in v2**
+
+TanStack Query — `GET /users/me/orders?status=PENDING|FILLED|CANCELLED`.
+
+```ts
+{
+  orders: Order[];
+  isLoading: boolean;
+  refetch: () => void;
+}
+```
+
+---
+
+### `useWatchlist()` ← **New in v2**
+
+```ts
+{
+  watchlist: WatchlistEntry[];   // { marketId, market, alert? }
+  isWatched: (marketId: string) => boolean;
+  addToWatchlist: (marketId: string) => Promise<void>;
+  removeFromWatchlist: (marketId: string) => Promise<void>;
+  isLoading: boolean;
+}
+```
+
+---
+
+### `usePriceAlerts()` ← **New in v2**
+
+```ts
+{
+  alerts: PriceAlert[];
+  createAlert: (params: CreateAlertParams) => Promise<void>;
+  updateAlert: (alertId: string, params: Partial<CreateAlertParams>) => Promise<void>;
+  deleteAlert: (alertId: string) => Promise<void>;
+  isLoading: boolean;
+}
+```
+
+---
+
 ### `usePositions()`
 
-TanStack Query wrapper for `GET /users/me/positions`.
+TanStack Query — `GET /users/me/positions`.
+
+---
 
 ### `useTradeHistory(limit?)`
 
-TanStack Query wrapper for `GET /users/me/trades?limit=…`.
+TanStack Query — `GET /users/me/trades?limit=…&page=…`.
+
+---
+
+### `usePortfolioStats()` ← **New in v2**
+
+Aggregates balance + positions + orders for the StatsBar:
+
+```ts
+{
+  cashBalance: number;
+  positionsValue: number;
+  totalValue: number;
+  unrealizedPnL: number;
+  realizedPnL: number;
+  dailyPnL: number;
+  openOrdersCount: number;
+  isLoading: boolean;
+}
+```
+
+---
+
+## 10. TypeScript Types (`types/`)
+
+```ts
+// Existing
+interface Market { id: string; question: string; description?: string;
+  status: 'PENDING'|'OPEN'|'CLOSED'|'RESOLVED'; closes_at: string;
+  liquidity_param: number; yes_price: number; no_price: number;
+  volume_kes: number; trade_count: number; }
+
+interface Position { id: string; market_id: string; user_id: string;
+  outcome: 'YES'|'NO'; shares: number; cost_basis_kes: number; }
+
+interface Trade { id: string; market_id: string; user_id: string;
+  outcome: 'YES'|'NO'; shares: number; cost_kes: number;
+  price_before: number; price_after: number; created_at: string; }
+
+// New in v2
+interface Order {
+  id: string;
+  market_id: string;
+  user_id: string;
+  type: 'MARKET' | 'LIMIT';
+  outcome: 'YES' | 'NO';
+  shares: number;
+  trigger_price: number;   // cents, limit orders only
+  status: 'PENDING' | 'FILLED' | 'CANCELLED' | 'EXPIRED';
+  placed_at: string;
+  expires_at: string | null;
+  filled_at: string | null;
+  filled_price: number | null;
+}
+
+interface WatchlistEntry {
+  id: string;
+  user_id: string;
+  market_id: string;
+  market: Market;
+  created_at: string;
+  alert: PriceAlert | null;
+}
+
+interface PriceAlert {
+  id: string;
+  watchlist_entry_id: string;
+  market_id: string;
+  side: 'YES' | 'NO';
+  condition: 'gte' | 'lte';
+  target_price: number;    // cents
+  notify_in_app: boolean;
+  notify_email: boolean;
+  triggered_at: string | null;
+  created_at: string;
+}
+
+interface LimitOrderReceipt {
+  order: Order;
+  message: string;
+}
+
+interface PortfolioStats {
+  cash_balance: number;
+  positions_value: number;
+  unrealized_pnl: number;
+  realized_pnl: number;
+  daily_pnl: number;
+  open_orders_count: number;
+}
+```

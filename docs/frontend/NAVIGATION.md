@@ -1,6 +1,7 @@
 # Navigation Flow & Routing
 
-> URL structure, page transitions, auth guards, and state-driven navigation rules.
+> **v2** — Updated for 5-tab mobile-first bottom navigation, limit orders, Watchlist,
+> and IBKR-style Portfolio with tabbed sub-views.
 
 ---
 
@@ -8,15 +9,27 @@
 
 ```
 / (root)
-├── /                           → Landing Page
+├── /                           → Landing Page (public, no app shell)
 ├── /auth
 │   ├── /auth/login             → Login
 │   └── /auth/register          → Register
+│
+├── /home                       → Home Feed  (auth guard)
+│
 ├── /markets                    → Market List (public)
-│   └── /markets/[id]           → Market Detail + Trade Panel (public)
-├── /dashboard                  → User Dashboard (auth guard)
-├── /portfolio                  → Portfolio & Trade History (auth guard)
-│   └── /portfolio/[positionId] → Position Detail (auth guard)
+│   └── /markets/[id]           → Market Detail + Trade Panel (public; trade = auth)
+│
+├── /watchlist                  → Watchlist  (auth guard)
+│
+├── /portfolio                  → Portfolio  (auth guard)
+│   ├── ?tab=positions          →   Positions tab  (default)
+│   ├── ?tab=balances           →   Balances tab
+│   ├── ?tab=orders             →   Orders tab
+│   │     ├── ?filter=open      →     Open orders (default)
+│   │     ├── ?filter=filled    →     Filled orders
+│   │     └── ?filter=cancelled →     Cancelled orders
+│   └── ?tab=history            →   Trade History tab
+│
 └── /admin                      → Admin Panel (admin guard)
     └── /admin/markets
         └── /admin/markets/create  → Create Market Wizard (admin guard)
@@ -27,71 +40,110 @@
 ## 2. Route Guards
 
 ```
-RouteType       Guard Condition              Redirect-to-on-fail
+RouteType       Guard Condition              Redirect-on-fail
 ──────────────────────────────────────────────────────────────────
 Public          none                         —
 Auth-required   isAuthenticated === false    /auth/login?next={currentPath}
-Admin-required  user.role !== 'ADMIN'        /dashboard (or 403 page)
+Admin-required  user.role !== 'ADMIN'        /home (or 403 page)
 ```
 
-Implementation: Next.js middleware (`middleware.ts`) reads the JWT from `httpOnly` cookie or `localStorage`. If the token is expired, attempt a silent refresh via `POST /auth/refresh`. If refresh fails, clear tokens and redirect to login.
+**Implementation:** Next.js `middleware.ts` reads the JWT from `httpOnly` cookie or
+`localStorage`. If token is expired, attempt a silent refresh via `POST /auth/refresh`.
+If refresh fails, clear tokens and redirect to `/auth/login?next={currentPath}`.
 
 ---
 
 ## 3. Navigation Flow Diagram
 
 ```
-[Landing Page]
+[Landing /]
      │
-     ├─[Sign Up]──────────────────────→ [Register] → [Dashboard]
-     │                                                    │
-     ├─[Log In]───────────────────────→ [Login]    → [Dashboard]
-     │                                                    │
-     └─[Browse Markets]───────────────→ [Markets List]    │
-                                              │           │
-                                              ├──────────────────────────
-                                              │
-                                         [Market Detail]
-                                              │
-                                    ┌─────────┴─────────┐
-                                    │                   │
-                               (not auth)          (auth + open)
-                                    │                   │
-                            [Login prompt]       [Trade Panel]
-                                                        │
-                                                [Confirm Modal]
-                                                        │
-                                          ┌─────────────┴──────────────┐
-                                          │                            │
-                                    [Trade Success]            [Trade Failed]
-                                          │
-                                  [Dashboard / Portfolio update]
+     ├─[Sign Up]────────────────────────→ [Register] ──────→ [Home Feed]
+     │                                                            │
+     ├─[Log In]─────────────────────────→ [Login] ────────→ [Home Feed]
+     │                                                            │
+     └─[Browse Markets]─────────────────→ [Markets List]         │
+                                               │                 │
+                                          [Market Detail]        │
+                                               │                 │
+                                     ┌─────────┴──────────┐      │
+                                (not auth)          (auth + open)│
+                                     │                    │      │
+                             [Login prompt]       [Trade Panel]  │
+                                                       │         │
+                                          ┌────────────┴──────┐  │
+                                   [Market Order]    [Limit Order]│
+                                          │                 │    │
+                                   [Confirm Modal]  [Confirm Modal]
+                                          │                 │
+                                    [Success]          [Order Placed]
+                                          │                 │
+                                   [Home Feed / Portfolio]──┘
 
-
-[Dashboard]
+[Home Feed /home]
      │
-     ├─[View Market]────────────────→ [Market Detail]
-     ├─[Browse Markets]─────────────→ [Markets List]
-     └─[View All Activity]──────────→ [Portfolio]
+     ├─[Open Position card]──────→ [Market Detail]
+     ├─[Open Order cancel]───────→ inline confirm → DELETE /orders/:id
+     ├─[View All (positions)]────→ /portfolio?tab=positions
+     ├─[View All (orders)]───────→ /portfolio?tab=orders
+     └─[Browse Markets]──────────→ /markets
 
+[Markets /markets]
+     └─[Market card]─────────────→ [Market Detail /markets/:id]
 
-[Admin Panel]  (admin only)
-     │
-     ├─[+ Create Market]────────────→ [Create Market Wizard]
-     │                                         │
-     │                               Step 1 → Step 2 → Step 3 → [Admin Panel]
-     │
-     ├─[Open Market]────────────────→ API call → refresh table row
-     ├─[Close Market]───────────────→ API call → refresh table row
-     └─[Resolve Market]─────────────→ Resolve Modal → API call → refresh
+[Watchlist /watchlist]
+     ├─[Market card → Trade]─────→ [Market Detail /markets/:id]
+     ├─[Set/Edit Alert]──────────→ Price Alert Bottom Sheet
+     └─[Remove]──────────────────→ DELETE watchlist entry → refresh
+
+[Portfolio /portfolio]
+     ├─[Positions tab]
+     │   ├─[View Market]──────────→ /markets/:id
+     │   ├─[Trade More]────────────→ /markets/:id (pre-open trade panel)
+     │   └─[Close Position]────────→ Trade Panel (pre-filled opposite side)
+     ├─[Balances tab]─────────────→ static summary
+     ├─[Orders tab]
+     │   ├─[Cancel Order]──────────→ inline confirm → DELETE /orders/:id
+     │   └─[Edit Trigger]──────────→ Edit Trigger Bottom Sheet
+     └─[History tab]──────────────→ paginated trade list
+
+[Admin /admin]
+     ├─[+ Create Market]─────────→ /admin/markets/create
+     │                                  Step 1 → Step 2 → Step 3 → [Admin]
+     ├─[▶ Open Market]────────────→ API PATCH → refresh table
+     ├─[⏸ Close Market]───────────→ API PATCH → refresh table
+     └─[✓ Resolve Market]─────────→ Resolve Modal → API PATCH → refresh
 ```
 
 ---
 
-## 4. Auth Token Lifecycle
+## 4. Bottom Navigation — Tab Behaviour
 
 ```
-Login/Register
+Tab         Route          Guard         Trade Tab Behaviour
+──────────────────────────────────────────────────────────────────
+Home        /home          Auth          Navigate
+Markets     /markets       Public        Navigate
+Trade       (sheet)        Auth          Opens Global Trade Sheet overlay
+Watchlist   /watchlist     Auth          Navigate
+Portfolio   /portfolio     Auth          Navigate
+```
+
+**Trade tab special behaviour:**
+- Does NOT navigate to a `/trade` route
+- On tap, slides up the Global Trade Sheet (full-height overlay)
+- Sheet contains market search + Trade Panel (Market / Limit tabs)
+- Closing the sheet returns user to wherever they were
+
+**Active indicator:** accent-blue icon + label, filled dot below label text.
+**Notification badges:** shown on Home (unread alerts count) and Portfolio (pending orders count).
+
+---
+
+## 5. Auth Token Lifecycle
+
+```
+Login / Register
      │
      ├─ Store access_token  → memory (Zustand store)  [expires 15 min]
      └─ Store refresh_token → httpOnly cookie          [expires 7 days]
@@ -104,64 +156,70 @@ Login/Register
                          │        │            retry original request
                          │        │
                          │        └─ Failure → clearAuthState()
-                         │                    redirect to /auth/login
+                         │                     redirect to /auth/login?next=…
                          │
 Logout
      │
-     ├─ POST /auth/logout (with refresh_token from cookie)
+     ├─ POST /auth/logout (sends refresh_token cookie)
      ├─ Clear access_token from Zustand
-     └─ Clear refresh_token cookie
+     ├─ Clear refresh_token cookie
      └─ Redirect to /
 ```
 
 ---
 
-## 5. Query Parameter Conventions
+## 6. Query Parameter Conventions
 
-| Page | Params | Behaviour |
+| Page / Tab | Params | Behaviour |
 |---|---|---|
 | `/markets` | `?status=OPEN&sort=newest&offset=0` | Filter + pagination |
-| `/markets` | `?q=bitcoin` | Text search (client-side filter) |
+| `/markets` | `?q=bitcoin` | Text search |
 | `/auth/login` | `?next=/markets/abc` | Redirect after login |
-| `/portfolio` | `?tab=history` | Active tab state in URL |
+| `/portfolio` | `?tab=positions` | Active tab (default: positions) |
+| `/portfolio` | `?tab=orders&filter=open` | Orders sub-filter |
+| `/portfolio` | `?tab=history&page=2` | History pagination |
+| `/watchlist` | `?alerts=true` | Filter watchlist to items with alerts |
 
 ---
 
-## 6. Loading & Error States Per Route
+## 7. Deep Link Map (notification → route)
+
+| Notification Event | Deep Link |
+|---|---|
+| Limit order filled | `/portfolio?tab=orders&filter=filled` |
+| Limit order expired | `/portfolio?tab=orders&filter=cancelled` |
+| Price alert triggered | `/markets/:id` |
+| Market resolved (payout received) | `/portfolio?tab=history` |
+| New market created (admin broadcast) | `/markets?status=OPEN` |
+
+---
+
+## 8. Loading & Error States Per Route
 
 Every data-driven page must implement:
 
 ```
-[Loading state]
-  → Skeleton placeholders matching the final layout
-  → Never spinners alone — use full-layout skeletons
+[Loading]
+  → Full-layout skeleton placeholders matching final layout
+  → Never standalone spinners
 
-[Error state]
-  → Inline error card: icon + message + retry button
-  → Network errors → "Unable to connect. Retry?"
-  → 404 markets → "Market not found" with [Browse Markets] CTA
-  → 403 admin pages → "Access denied" with [Back to Dashboard]
+[Error]
+  → Inline error card: icon + message + [Retry] button
+  → Network error    → "Unable to connect. Check your internet."
+  → 404 markets      → "Market not found" + [Browse Markets] CTA
+  → 403 admin pages  → "Access denied" + [Back to Home]
+  → Expired session  → toast warning + redirect to /auth/login
 
-[Empty state]
-  → Markets list empty → "No markets match your filters" + clear filters button
-  → Portfolio empty → "You have no positions yet" + [Browse Markets] CTA
-  → Trade history empty → "No trades yet" + [Browse Markets] CTA
+[Empty]
+  → Contextual empty state (see WIREFRAMES.md §14 table)
+
+[Offline]
+  → Persistent top-of-screen banner: "You're offline. Showing cached data."
 ```
 
 ---
 
-## 7. Toast / Notification System
+## 9. Toast / Notification System
 
-Global toast provider (top-right, auto-dismiss 4s):
-
-| Event | Toast Type | Message |
-|---|---|---|
-| Login success | success | "Welcome back, {username}!" |
-| Register success | success | "Account created! You have 5,000 KES to start." |
-| Trade success | success | "Bought {n} {YES/NO} shares for KES {cost}" |
-| Trade slippage | error | "Trade rejected: price moved too much." |
-| Market created | success | "Market created. Remember to open it for trading." |
-| Market opened | info | "Market is now OPEN for trading." |
-| Market resolved | info | "Market resolved: {outcome}. Payouts sent." |
-| Network error | error | "Connection lost. Check your internet." |
-| Session expired | warning | "Session expired. Please log in again." |
+Global toast provider (top-right desktop, top-center mobile, auto-dismiss 4 s).
+See full event table in WIREFRAMES.md §15.
