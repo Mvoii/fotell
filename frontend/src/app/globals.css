@@ -2,26 +2,85 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design system CSS custom properties ────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* backgrounds */
+  --bg-base:     #0d0f12;
+  --bg-surface:  #1a1d23;
+  --bg-elevated: #22262f;
+  --bg-overlay:  rgba(0, 0, 0, 0.6);
+
+  /* text */
+  --text-primary:   #f0f2f5;
+  --text-secondary: #8b92a5;
+  --text-muted:     #4a5063;
+  --text-inverse:   #0d0f12;
+
+  /* brand */
+  --accent-blue:      #2196f3;
+  --accent-blue-hover:#1976d2;
+
+  /* binary outcomes */
+  --yes-strong: #00c853;
+  --no-strong:  #ff1744;
+
+  /* status */
+  --success: #4caf50;
+  --warning: #ff9800;
+  --error:   #f44336;
+  --info:    #29b6f6;
+
+  /* borders */
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-active: rgba(255, 255, 255, 0.18);
+
+  /* layout */
+  --bottom-nav-height: 56px;
+  --left-rail-collapsed: 64px;
+  --left-rail-expanded:  220px;
+  --max-content-width: 1400px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── Base reset ─────────────────────────────────────────────────────── */
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--bg-base);
+    color: var(--text-primary);
+    font-family: var(--font-geist-sans), Inter, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Reserve space at bottom of scrollable content for fixed BottomNav */
+  .has-bottom-nav {
+    padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* Numeric / financial text — all prices, balances, odds */
+  .font-numeric {
+    font-family: var(--font-geist-mono), "JetBrains Mono", "Fira Code", monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
+/* ── Utility layer additions ────────────────────────────────────────── */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Scrollbar hide for horizontal scroll chips */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
 }
