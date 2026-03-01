@@ -1,0 +1,4 @@
+[00:00:02.907] Server  LOG     ✓ Ready in 1354ms
+[00:10:29.441] Server  ERROR   Error: ENOENT: no such file or directory, scandir '/home/esiepe/Documents/fotell/frontend-v2-13032026/src/app'
+[00:10:29.454] Server  ERROR   ⨯ "unhandledRejection:" Error: ENOENT: no such file or directory, scandir '/home/esiepe/Documents/fotell/frontend-v2-13032026/src/app'
+[00:10:29.461] Server  ERROR   ⨯ "unhandledRejection: " Error: ENOENT: no such file or directory, scandir '/home/esiepe/Documents/fotell/frontend-v2-13032026/src/app'
