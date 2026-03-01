@@ -30,6 +30,10 @@
 │   │     └── ?filter=cancelled →     Cancelled orders
 │   └── ?tab=history            →   Trade History tab
 │
+├── /notifications                  → Notifications Center (auth guard)
+│
+├── /settings                       → User Settings (auth guard)
+│
 └── /admin                      → Admin Panel (admin guard)
     └── /admin/markets
         └── /admin/markets/create  → Create Market Wizard (admin guard)
@@ -50,6 +54,8 @@ Admin-required  user.role !== 'ADMIN'        /home (or 403 page)
 **Implementation:** Next.js `middleware.ts` reads the JWT from `httpOnly` cookie or
 `localStorage`. If token is expired, attempt a silent refresh via `POST /auth/refresh`.
 If refresh fails, clear tokens and redirect to `/auth/login?next={currentPath}`.
+
+> `/notifications` and `/settings` follow the same `Auth-required` guard as `/home`.
 
 ---
 
@@ -82,6 +88,8 @@ If refresh fails, clear tokens and redirect to `/auth/login?next={currentPath}`.
 
 [Home Feed /home]
      │
+     ├─[🔔 badge tap]─────────────→ /notifications
+     │   └─[notification item]────→ deep link (see §7)
      ├─[Open Position card]──────→ [Market Detail]
      ├─[Open Order cancel]───────→ inline confirm → DELETE /orders/:id
      ├─[View All (positions)]────→ /portfolio?tab=positions
@@ -106,6 +114,13 @@ If refresh fails, clear tokens and redirect to `/auth/login?next={currentPath}`.
      │   ├─[Cancel Order]──────────→ inline confirm → DELETE /orders/:id
      │   └─[Edit Trigger]──────────→ Edit Trigger Bottom Sheet
      └─[History tab]──────────────→ paginated trade list
+
+[Settings /settings]
+     ├─[Edit Profile]─────────────→ inline edit form
+     ├─[Change Password]──────────→ modal form
+     ├─[Slippage / Expiry prefs]──→ persisted in localStorage
+     ├─[Notification toggles]─────→ PATCH /users/me/notification-preferences
+     └─[Sign Out]─────────────────→ POST /auth/logout → clearAuthState → /
 
 [Admin /admin]
      ├─[+ Create Market]─────────→ /admin/markets/create
@@ -179,6 +194,8 @@ Logout
 | `/portfolio` | `?tab=orders&filter=open` | Orders sub-filter |
 | `/portfolio` | `?tab=history&page=2` | History pagination |
 | `/watchlist` | `?alerts=true` | Filter watchlist to items with alerts |
+| `/notifications` | `?type=alert\|order\|resolved` | Filter notification list by type |
+| `/settings` | `?section=trading` | Scroll-anchor to a settings section |
 
 ---
 
@@ -191,6 +208,8 @@ Logout
 | Price alert triggered | `/markets/:id` |
 | Market resolved (payout received) | `/portfolio?tab=history` |
 | New market created (admin broadcast) | `/markets?status=OPEN` |
+| 🔔 bell tap from Home header | `/notifications` |
+| ⚙ settings tap from sidebar/nav | `/settings` |
 
 ---
 
