@@ -667,6 +667,34 @@ MOBILE
 - Orders tab: defaults to "Open"; filter pills switch to Filled / Cancelled
 - History: sortable by Date (default), Market, Cost; 50 rows/page
 
+### Edit Trigger Price — Bottom Sheet
+
+> Accessible from Portfolio → Orders tab → [Edit Trigger] and from Home → Open Orders → long-press.
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  ▼  Edit Trigger Price                                           │
+│  Order #4f8a · Will ETH flip BTC? · BUY YES                     │
+│                                                                  │
+│  Current trigger:  ≤ 42.0¢                                       │
+│  Current YES price:  44.2¢                                       │
+│                                                                  │
+│  New Trigger Price                                               │
+│  [ YES price ▾ ] [ ≤ ▾ ]  < 40 >  ¢                             │
+│  ℹ Must be below current price (44.2¢) to buy the dip.          │
+│                                                                  │
+│  Updated Max Cost: KES 80.00  (200 shares × 40¢)                │
+│                                                                  │
+│  [  Cancel  ]          [  Save New Trigger  ]                    │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Validation:**
+- For `BUY YES`: trigger must be `< currentYesPrice` (buying a dip)
+- For `BUY NO`: trigger must be `< currentNoPrice`
+- Min: 1¢, Max: 99¢
+- On save → `PATCH /orders/:id` with `{ trigger_price: newCents }`
+
 ---
 
 ## 9. Orders Management Detail (`/portfolio?tab=orders`)
@@ -811,7 +839,144 @@ RESOLVE MODAL:
 
 ---
 
-## 13. Responsive Breakpoints
+## 13. Notifications Center (`/notifications`)
+
+**Access:** Authenticated
+**Trigger:** Tap 🔔 badge on Home Feed header.
+
+```
+MOBILE
+┌──────────────────────────────────────────────────────────────────┐
+│  ← Back        Notifications             [Mark all read]         │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  TODAY                                                           │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ 🟡  10:32 AM  · UNREAD                                   │   │
+│  │  🔔 Price Alert: Will BTC reach $100k?                   │   │
+│  │  YES price hit 70¢ (your alert threshold).               │   │
+│  │  [View Market]                                           │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │ 🟡  09:55 AM  · UNREAD                                   │   │
+│  │  ✅ Limit Order Filled                                    │   │
+│  │  200 YES @ 42.0¢ on "Will ETH flip BTC?" — KES 84.00     │   │
+│  │  [View Position]                                         │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  YESTERDAY                                                       │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │     Feb 23 15:00  · read                                 │   │
+│  │  ℹ Limit Order Expired                                    │   │
+│  │  100 YES @ 38¢ on "Will Ruto win?" expired unfilled.     │   │
+│  │  [View Orders]                                           │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │     Feb 22 09:00  · read                                 │   │
+│  │  🏆 Market Resolved: BTC Q4 → YES                        │   │
+│  │  Payout received: +KES 240                               │   │
+│  │  [View History]                                          │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ── Empty State ───────────────────────────────────────────     │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │   🔔                                                     │   │
+│  │   No notifications yet.                                  │   │
+│  │   Set price alerts on watched markets to get notified.   │   │
+│  │   [  Browse Watchlist  ]                                 │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Notification types & icons:**
+
+| Type | Icon | Colour dot |
+|---|---|---|
+| Price alert triggered | 🔔 | yellow |
+| Limit order filled | ✅ | green |
+| Limit order expired | ℹ | grey |
+| Limit order cancelled | ✕ | grey |
+| Market resolved (payout) | 🏆 | blue |
+| Market resolved (loss) | ❌ | red |
+
+**Behaviour:** Read notifications fade to `opacity-60`. Tapping any item marks it read + deep-links.
+
+---
+
+## 14. Settings (`/settings`)
+
+**Access:** Authenticated
+**Trigger:** ⚙ Settings in desktop sidebar or avatar dropdown in TopNav.
+
+```
+MOBILE
+┌──────────────────────────────────────────────────────────────────┐
+│  ← Back              Settings                                    │
+├──────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ACCOUNT                                                         │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  👤  Profile                                             │   │
+│  │  alice_trader  ·  alice@example.com         [Edit →]     │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  🔑  Password                              [Change →]    │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  TRADING DEFAULTS                                                │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Default Slippage Tolerance                              │   │
+│  │  < 5 > %    (applies to all market orders)               │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Default Order Expiry                                    │   │
+│  │  [1h] [24h ●] [7d] [GTC]                                 │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  NOTIFICATIONS                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Price Alerts                     [●───] On              │   │
+│  │  Order Fills                      [●───] On              │   │
+│  │  Market Resolved                  [●───] On              │   │
+│  │  Order Expired / Cancelled        [────] Off             │   │
+│  │                                                          │   │
+│  │  Email Notifications              [────] Off             │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  APPEARANCE                                                      │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Theme                                                   │   │
+│  │  [Dark ●]   [Light]   [System]                           │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  SUPPORT                                                         │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Help & Feedback                            [→]          │   │
+│  ├──────────────────────────────────────────────────────────┤   │
+│  │  API Documentation                          [→]          │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  [  Sign Out  ]                         ← danger btn     │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+**Notes:**
+- Slippage + default expiry persist in `localStorage`; pre-populate Trade Panel defaults
+- Notification toggles call `PATCH /users/me/notification-preferences` (future endpoint)
+- Theme toggle writes to `localStorage`; "System" follows `prefers-color-scheme`
+- Sign Out: `POST /auth/logout` → clears Zustand auth state → redirect to `/`
+
+---
+
+## 15. Responsive Breakpoints
 
 | Breakpoint | Min Width | Layout Changes |
 |---|---|---|
@@ -823,14 +988,14 @@ RESOLVE MODAL:
 
 ---
 
-## 14. Loading & Error States
+## 16. Loading & Error States
 
 Every data-driven screen implements:
 
 ```
 [Loading] → Full-layout skeleton (never spinners alone)
 [Error]   → Inline error card: icon + message + [Retry] button
-[Empty]   → Contextual empty state with primary CTA (see per-screen above)
+[Empty]   → Contextual empty state with primary CTA (see per-screen above, and §16 table)
 [Offline] → Top banner: "You're offline. Some data may be stale."
 ```
 
@@ -847,7 +1012,7 @@ Per-screen empty state CTAs:
 
 ---
 
-## 15. Toast / Notification System
+## 17. Toast / Notification System
 
 Global toast (top-right desktop, top-center mobile, auto-dismiss 4s):
 
