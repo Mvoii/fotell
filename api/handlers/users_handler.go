@@ -5,6 +5,7 @@ package handlers
 import (
 	"database/sql"
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/Mvoii/fotell/api/middleware"
@@ -125,18 +126,22 @@ func (h *UserHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// if not found, data integrity issue
+			log.Printf("sql err: %v", err)
 			ErrorJSON(w, 500, "Balance not found", map[string]interface{}{
 				"error_code": "BALANCE_MISSING",
 				"hint":       "Contact support",
 			})
 			return
 		}
+		log.Printf("balance err get: %v", err)
 		ErrorJSON(w, 500, "failed to fetch balance", nil)
 		return
 	}
 
 	// conv to KES (div by 10^18)
-	balanceKES := float64(balance.BalanceSmallestUnit) / 1e18
+	// balanceKES := float64(balance.BalanceSmallestUnit) / 1e18
+
+	balanceKES := float64(balance.BalanceSmallestUnit)/100.0
 
 	JSON(w, 200, map[string]interface{}{
 		"balance_smallest_unit": balance.BalanceSmallestUnit,

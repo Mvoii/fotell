@@ -108,6 +108,7 @@ func (b BinaryOutcome) ToOutcomeIndex() int {
 // / - use atleast 50x the expected avg trade size in KES
 // / - mvp recs: 100 000 for low activity markets, 500 000+ for pooular ones
 type CreateMarketParams struct {
+	ID             string
 	Question       string
 	CreatedBy      string // userID
 	ClosesAt       time.Time

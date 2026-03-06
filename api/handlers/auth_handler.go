@@ -200,9 +200,9 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	// ── Success
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201) // 201 Created
-	json.NewEncoder(w).Encode(authResp)
+	// w.Header().Set("Content-Type", "application/json")
+	// w.WriteHeader(201) // 201 Created
+	JSON(w, 210, authResp)
 }
 
 //
