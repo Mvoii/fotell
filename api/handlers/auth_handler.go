@@ -6,6 +6,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -81,6 +82,7 @@ INITIAL BALANCE:
 func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("ERROR: invalid request body %v", err)
 		ErrorJSON(w, 400, "Invalid request body", map[string]interface{}{
 			"error_code": "INVALID_JSON",
 		})
@@ -91,6 +93,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	// Email validation
 	if !isValidEmail(req.Email) {
+		log.Printf("ERROR: invalid email fmt")
 		ErrorJSON(w, 400, "Invalid email format", map[string]interface{}{
 			"error_code": "INVALID_EMAIL",
 			"field":      "email",
@@ -100,6 +103,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	// Password validation (minimum 8 characters)
 	if len(req.Password) < 8 {
+		log.Printf("ERROR: pass len small")
 		ErrorJSON(w, 400, "Password must be at least 8 characters", map[string]interface{}{
 			"error_code": "WEAK_PASSWORD",
 			"field":      "password",
@@ -109,6 +113,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 
 	// Username validation (3-50 characters, alphanumeric + underscore)
 	if len(req.Username) < 3 || len(req.Username) > 50 {
+		log.Printf("ERROR: len(username) not okay")
 		ErrorJSON(w, 400, "Username must be 3-50 characters", map[string]interface{}{
 			"error_code": "INVALID_USERNAME_LENGTH",
 			"field":      "username",
@@ -117,6 +122,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !isValidUsername(req.Username) {
+		log.Printf("ERROR: username need only num, alph and _")
 		ErrorJSON(w, 400, "Username can only contain letters, numbers, and underscores", map[string]interface{}{
 			"error_code": "INVALID_USERNAME_FORMAT",
 			"field":      "username",
@@ -130,6 +136,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	// This prevents brute-force attacks (attacker must spend 250ms per guess)
 	passwordHash, err := bcrypt.GenerateFromPassword([]byte(req.Password), 12)
 	if err != nil {
+		log.Printf("ERROR: pass gen failed %v", err)
 		// This should never happen unless system is out of memory
 		ErrorJSON(w, 500, "Internal server error", nil)
 		return
@@ -145,9 +152,11 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 
 	if err != nil {
+		log.Printf("ERROR: something wrong: %v", err)
 		// Check for unique constraint violations
 		if strings.Contains(err.Error(), "duplicate") || strings.Contains(err.Error(), "unique") {
 			if strings.Contains(err.Error(), "email") {
+				log.Printf("ERROR: email exists")
 				ErrorJSON(w, 409, "Email already registered", map[string]interface{}{
 					"error_code": "EMAIL_EXISTS",
 					"field":      "email",
@@ -155,6 +164,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			if strings.Contains(err.Error(), "username") {
+				log.Printf("ERROR: username taken")
 				ErrorJSON(w, 409, "Username already taken", map[string]interface{}{
 					"error_code": "USERNAME_EXISTS",
 					"field":      "username",
@@ -162,6 +172,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// Generic duplicate error
+			log.Printf("ERROR: acc exists")
 			ErrorJSON(w, 409, "Account already exists", map[string]interface{}{
 				"error_code": "DUPLICATE_ACCOUNT",
 			})
@@ -169,7 +180,10 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Unexpected database error
-		ErrorJSON(w, 500, "Failed to create account", nil)
+		ErrorJSON(w, 500, "Failed to create account", map[string]interface{}{
+			"error_code": "DATABASE_ERROR",
+			"hint":       "Check server logs for details",
+		})
 		return
 	}
 
@@ -179,6 +193,7 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		// User is created but token generation failed
 		// They can login manually
+		log.Printf("ERROR: acc created, tok failed %v", err)
 		ErrorJSON(w, 500, "Account created but failed to generate tokens. Please login.", nil)
 		return
 	}
@@ -600,7 +615,11 @@ func getClientIP(r *http.Request) string {
 	ip := r.RemoteAddr
 	// Remove port if present
 	if idx := strings.LastIndex(ip, ":"); idx != -1 {
-		ip = ip[:idx]
+		//ip = ip[:idx]
+		ip = strings.TrimPrefix(ip[:idx], "[")
 	}
+
+	// remove ipv6 brackets
+	ip = strings.Trim(ip, "[]")
 	return ip
 }
