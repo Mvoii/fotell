@@ -121,19 +121,11 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 				//var ve *jwt.ValidationError
 				switch {
 				case errors.Is(err, jwt.ErrTokenExpired):
-<<<<<<< HEAD
 					writeError(w, 401, "token expired", map[string]interface{}{
 						"error_code": "TOKEN_EXPIRED",
 						"hint":       "call /auth/refresh to get new token",
 					})
 					return
-=======
-						writeError(w, 401, "token expired", map[string]interface{}{
-							"error_code": "TOKEN_EXPIRED",
-							"hint":       "call /auth/refresh to get new token",
-						})
-						return
->>>>>>> 9804961 (lots of shit; trust the process)
 
 				case errors.Is(err, jwt.ErrTokenNotValidYet):
 					writeError(w, 401, "tok not active yet", map[string]interface{}{
