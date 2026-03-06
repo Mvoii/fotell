@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Go build artifacts
 *.exe
 *.exe~
@@ -47,3 +48,7 @@ coverage/
 *.sh
 
 .github/
+=======
+.env*
+*.sh
+>>>>>>> 9804961 (lots of shit; trust the process)

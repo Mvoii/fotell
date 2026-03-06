@@ -40,6 +40,7 @@ type Trade struct {
 }
 
 type CreateTradeParams struct {
+<<<<<<< HEAD
 	UserID         string
 	MarketID       string
 	Outcome        string
@@ -49,13 +50,24 @@ type CreateTradeParams struct {
 	YesPriceAfter  decimal.Decimal
 	NoPriceBefore  decimal.Decimal
 	NoPriceAfter   decimal.Decimal
+=======
+	UserID   string
+	MarketID string
+	Outcome  string
+	Shares   decimal.Decimal
+	CostPaid int64
+>>>>>>> 9804961 (lots of shit; trust the process)
 }
 
 type TradeRepository struct {
 	db *sql.DB
 }
 
+<<<<<<< HEAD
 func NewTradeRepository(db *sql.DB) *TradeRepository {
+=======
+func NewtradeRepository(db *sql.DB) *TradeRepository {
+>>>>>>> 9804961 (lots of shit; trust the process)
 	return &TradeRepository{db: db}
 }
 
@@ -97,18 +109,27 @@ For atomic trades, use CreateTx instead
 func (r *TradeRepository) Create(ctx context.Context, params CreateTradeParams) (*Trade, error) {
 	query := `
 		INSERT INTO trades (
+<<<<<<< HEAD
 			user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit,
 			yes_price_before, yes_price_after, no_price_before, no_price_after
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+=======
+			user_id, market_id, outcome, sares, cost_paid_smallest_unit
+		) VALUES ($1, $2, $3, $4, $5)
+		RETRUNING id, user_id, market_id, outcome, shares, cost_paid_smallest_unit, created_at
+>>>>>>> 9804961 (lots of shit; trust the process)
 	`
 
 	var trade Trade
 	sharesFloat, _ := params.Shares.Float64()
+<<<<<<< HEAD
 	yesPriceBefore, _ := params.YesPriceBefore.Float64()
 	yesPriceAfter, _ := params.YesPriceAfter.Float64()
 	noPriceBefore, _ := params.NoPriceBefore.Float64()
 	noPriceAfter, _ := params.NoPriceAfter.Float64()
+=======
+>>>>>>> 9804961 (lots of shit; trust the process)
 
 	err := r.db.QueryRowContext(
 		ctx,
@@ -118,10 +139,13 @@ func (r *TradeRepository) Create(ctx context.Context, params CreateTradeParams) 
 		params.Outcome,
 		sharesFloat,
 		params.CostPaid,
+<<<<<<< HEAD
 		yesPriceBefore,
 		yesPriceAfter,
 		noPriceBefore,
 		noPriceAfter,
+=======
+>>>>>>> 9804961 (lots of shit; trust the process)
 	).Scan(
 		&trade.ID,
 		&trade.UserID,
@@ -156,6 +180,7 @@ USAGE:
 	...
 	tx.Commit()
 */
+<<<<<<< HEAD
 func (r *TradeRepository) CreateTx(ctx context.Context, tx *sql.Tx, params CreateTradeParams) (*Trade, error) {
 	query := `
 		INSERT INTO trades (
@@ -163,14 +188,25 @@ func (r *TradeRepository) CreateTx(ctx context.Context, tx *sql.Tx, params Creat
 			yes_price_before, yes_price_after, no_price_before, no_price_after
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+=======
+func (r *TradeRepository) CreateTX(ctx context.Context, tx *sql.Tx, params CreateTradeParams) (*Trade, error) {
+	query := `
+		INSERT INTO trades (
+			user_id, market_id, outcome, shares, cost_paid_samllest_unit
+		) VALUES ($1, $2, $3, $4, $5)
+		RETRUNING id, user_id, market_id, outcome, shares, cost_paid_smallest_unit, created_at
+>>>>>>> 9804961 (lots of shit; trust the process)
 	`
 
 	var trade Trade
 	sharesFloat, _ := params.Shares.Float64()
+<<<<<<< HEAD
 	yesPriceBefore, _ := params.YesPriceBefore.Float64()
 	yesPriceAfter, _ := params.YesPriceAfter.Float64()
 	noPriceBefore, _ := params.NoPriceBefore.Float64()
 	noPriceAfter, _ := params.NoPriceAfter.Float64()
+=======
+>>>>>>> 9804961 (lots of shit; trust the process)
 
 	err := tx.QueryRowContext(
 		ctx,
@@ -180,10 +216,13 @@ func (r *TradeRepository) CreateTx(ctx context.Context, tx *sql.Tx, params Creat
 		params.Outcome,
 		sharesFloat,
 		params.CostPaid,
+<<<<<<< HEAD
 		yesPriceBefore,
 		yesPriceAfter,
 		noPriceBefore,
 		noPriceAfter,
+=======
+>>>>>>> 9804961 (lots of shit; trust the process)
 	).Scan(
 		&trade.ID,
 		&trade.UserID,
@@ -215,7 +254,11 @@ RETURNS:
 */
 func (r *TradeRepository) GetByID(ctx context.Context, id string) (*Trade, error) {
 	query := `
+<<<<<<< HEAD
 		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+=======
+		SELECT id, user_id, market_id, outcome, shares, cost_paid_smallest_unti, created_at
+>>>>>>> 9804961 (lots of shit; trust the process)
 		FROM trades
 		WHERE id = $1
 	`
@@ -254,7 +297,11 @@ USAGE:
 */
 func (r *TradeRepository) ListByUserAndMarket(ctx context.Context, userID, marketID string) ([]*Trade, error) {
 	query := `
+<<<<<<< HEAD
 		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+=======
+		SELECT id, user_id, market_id, outcome, shares, cost_paid_smallest_unit, created_at
+>>>>>>> 9804961 (lots of shit; trust the process)
 		FROM trades
 		WHERE user_id = $1 AND market_id = $2
 		ORDER BY created_at DESC
@@ -292,6 +339,7 @@ func (r *TradeRepository) ListByUserAndMarket(ctx context.Context, userID, marke
 
 	return trades, nil
 }
+<<<<<<< HEAD
 
 /*
 ListByMarket retrieves trades for a specific market.
@@ -406,3 +454,5 @@ func (r *TradeRepository) ListByUser(ctx context.Context, userID string, limit, 
 
 	return trades, total, nil
 }
+=======
+>>>>>>> 9804961 (lots of shit; trust the process)
