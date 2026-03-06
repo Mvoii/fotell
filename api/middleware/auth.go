@@ -71,6 +71,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				writeError(w, 401, "Authorization header required", nil)
+				writeError(w, 401, "Authorization header required", nil)
 				return
 			}
 
@@ -91,6 +92,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 				return []byte(jwtSecret), nil
 			})
 
+			/* if err != nil {
 			/* if err != nil {
 				if errors.Is(err, jwt.ErrTokenExpired) {
 					writeError(w, 401, "Token expired", map[string]interface{}{
@@ -120,25 +122,25 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 				// jwt.ParseWithClaims reurns a *jwt.Err on validation problems
 				//var ve *jwt.ValidationError
 				switch {
-				case errors.Is(err, jwt.ErrTokenExpired):
-						writeError(w, 401, "token expired", map[string]interface{}{
-							"error_code": "TOKEN_EXPIRED",
-							"hint":       "call /auth/refresh to get new token",
-						})
-						return
+				case errors.As(err, jwt.ErrTokenExpired):
+					writeError(w, 401, "token expired", map[string]interface{}{
+						"error_code": "TOKEN_EXPIRED",
+						"hint":       "call /auth/refresh to get new token",
+					})
+					return
 
-					case errors.Is(err, jwt.ErrTokenNotValidYet):
-						writeError(w, 401, "tok not active yet", map[string]interface{}{
-							"error_code":"TOKEN_NOT_ACTIVE",
-						})
-						return
+				case errors.Is(err, jwt.ErrTokenNotValidYet):
+					writeError(w, 401, "tok not active yet", map[string]interface{}{
+						"error_code": "TOKEN_NOT_ACTIVE",
+					})
+					return
 
-					case errors.Is(err, jwt.ErrTokenSignatureInvalid):
-						log.Printf("jwt signature invalid: %v", err)
-						writeError(w, 401, "invalid tok signature", nil)
-						return
-					
-					default:
+				case errors.Is(err, jwt.ErrTokenSignatureInvalid):
+					log.Printf("jwt signature invalid: %v", err)
+					writeError(w, 401, "invalid tok signature", nil)
+					return
+
+				default:
 					// other validation errors (malformed, signature invalid, etc)
 					log.Printf("jwt parse error: %v", err)
 					writeError(w, 401, "invalid token", nil)

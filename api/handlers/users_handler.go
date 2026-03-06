@@ -141,7 +141,7 @@ func (h *UserHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 	// conv to KES (div by 10^18)
 	// balanceKES := float64(balance.BalanceSmallestUnit) / 1e18
 
-	balanceKES := float64(balance.BalanceSmallestUnit)/100.0
+	balanceKES := float64(balance.BalanceSmallestUnit) / 100.0
 
 	JSON(w, 200, map[string]interface{}{
 		"balance_smallest_unit": balance.BalanceSmallestUnit,
