@@ -71,6 +71,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
 				writeError(w, 401, "Authorization header required", nil)
+				writeError(w, 401, "Authorization header required", nil)
 				return
 			}
 
@@ -91,6 +92,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 				return []byte(jwtSecret), nil
 			})
 
+			/* if err != nil {
 			/* if err != nil {
 				if errors.Is(err, jwt.ErrTokenExpired) {
 					writeError(w, 401, "Token expired", map[string]interface{}{
