@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	//"github.com/Mvoii/fotell/amm"
+	"github.com/Mvoii/fotell/amm"
 	"github.com/Mvoii/fotell/api/handlers"
 	"github.com/Mvoii/fotell/api/middleware"
 	"github.com/Mvoii/fotell/api/repository"
@@ -60,18 +60,18 @@ func main() {
 
 	// Initialize repositories (data access layer)
 	userRepo := repository.NewUserRepository(db)
-	// marketRepo := repository.NewMarketRepository(db)
+	marketRepo := repository.NewMarketRepository(db)
 	// tradeRepo := repository.NewTradeRepository(db)
 	balanceRepo := repository.NewBalanceRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 
 	// Initialize AMM registry (in-memory market state)
 	// In production, this would be populated from the database on startup
-	// registry := amm.NewRegistry()
+	registry := amm.NewRegistry()
 
 	// Initialize handlers (HTTP request handlers)
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
-	// marketHandler := handlers.NewMarketHandler(marketRepo, registry)
+	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
 	// tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, registry)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
 
@@ -127,10 +127,10 @@ func main() {
 		//r.Get("/users/me/trades", userHandler.GetMyTrades)
 
 		// Public market data (read-only)
-		//r.Get("/markets", marketHandler.ListMarkets)
-		//r.Get("/markets/{marketID}", marketHandler.GetMarket)
-		//r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
-		//r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
+		r.Get("/markets", marketHandler.ListMarkets)
+		r.Get("/markets/{marketID}", marketHandler.GetMarket)
+		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
+		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
 
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
@@ -154,10 +154,10 @@ func main() {
 				r.Use(middleware.RequireAdmin)
 
 				// Market management
-				// r.Post("/admin/markets", marketHandler.CreateMarket)
-				// r.Post("/admin/markets/{marketID}/open", marketHandler.OpenMarket)
-				// r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
-				// r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
+				r.Post("/admin/markets", marketHandler.CreateMarket)
+				r.Post("/admin/markets/{marketID}/open", marketHandler.OpenMarket)
+				r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
+				r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
 
 				// User management
 				// r.Get("/admin/users", userHandler.ListUsers)

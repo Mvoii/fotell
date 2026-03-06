@@ -120,7 +120,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 				// jwt.ParseWithClaims reurns a *jwt.Err on validation problems
 				//var ve *jwt.ValidationError
 				switch {
-				case errors.As(err, jwt.ErrTokenExpired):
+				case errors.Is(err, jwt.ErrTokenExpired):
 						writeError(w, 401, "token expired", map[string]interface{}{
 							"error_code": "TOKEN_EXPIRED",
 							"hint":       "call /auth/refresh to get new token",

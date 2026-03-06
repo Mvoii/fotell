@@ -207,6 +207,11 @@ type Market struct {
 
 // . teh slmr engine is init with two outcomes, (yes = 0, No = 1)
 func newMarket(params CreateMarketParams) (*Market, error) {
+	// Validate ID is provided (must come from database)
+	if params.ID == "" {
+		return nil, fmt.Errorf("market ID is required")
+	}
+
 	if len(params.Question) <= 1 || len(params.Question) > 500 {
 		return nil, ErrInvalidQuestion
 	}
@@ -229,13 +234,13 @@ func newMarket(params CreateMarketParams) (*Market, error) {
 		return nil, fmt.Errorf("failed to init lsmr: %w", err)
 	}
 
-	id, err := generateID()
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate market id: %w", err)
-	}
+	// id, err := generateID()
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to generate market id: %w", err)
+	// }
 
 	return &Market{
-		id:             id,
+		id:             params.ID,
 		question:       params.Question,
 		createdBy:      params.CreatedBy,
 		createdAt:      time.Now().UTC(),
