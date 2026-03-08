@@ -15,6 +15,7 @@ import (
 	"github.com/Mvoii/fotell/api/handlers"
 	"github.com/Mvoii/fotell/api/middleware"
 	"github.com/Mvoii/fotell/api/repository"
+	"github.com/Mvoii/fotell/api/startup"
 	"github.com/joho/godotenv"
 
 	"github.com/go-chi/chi/v5"
@@ -61,7 +62,8 @@ func main() {
 	// Initialize repositories (data access layer)
 	userRepo := repository.NewUserRepository(db)
 	marketRepo := repository.NewMarketRepository(db)
-	// tradeRepo := repository.NewTradeRepository(db)
+	tradeRepo := repository.NewTradeRepository(db)
+	positionRepo := repository.NewPositionRepository(db)
 	balanceRepo := repository.NewBalanceRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 
@@ -69,16 +71,21 @@ func main() {
 	// In production, this would be populated from the database on startup
 	registry := amm.NewRegistry()
 
+	// load all OPEN markets from datanses into registry
+	if err := startup.LoadActiveMarkets(context.Background(), marketRepo, registry); err != nil {
+		log.Fatalf("CRITICAL: Failed to load active markets: %v", err)
+	}
+
 	// Initialize handlers (HTTP request handlers)
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
-	// tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, registry)
+	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
 
 	// Build router with middleware stack
 	r := chi.NewRouter()
 
-	// ── Global middleware (applied to all routes) ─────────────────────
+	// Global middleware (applied to all routes)
 	r.Use(chimiddleware.RequestID)                 // Inject request ID for tracing
 	r.Use(chimiddleware.RealIP)                    // Get real client IP (behind proxy)
 	r.Use(chimiddleware.Logger)                    // Log every request
@@ -147,7 +154,7 @@ func main() {
 			r.Get("/users/me/trades", userHandler.GetMyTrades)
 
 			// Trading
-			// r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
+			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
 
 			// ── Admin routes (admin role required)
 			r.Group(func(r chi.Router) {
