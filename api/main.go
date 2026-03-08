@@ -62,12 +62,8 @@ func main() {
 	// Initialize repositories (data access layer)
 	userRepo := repository.NewUserRepository(db)
 	marketRepo := repository.NewMarketRepository(db)
-<<<<<<< HEAD
 	tradeRepo := repository.NewTradeRepository(db)
 	positionRepo := repository.NewPositionRepository(db)
-=======
-	// tradeRepo := repository.NewTradeRepository(db)
->>>>>>> 9804961 (lots of shit; trust the process)
 	balanceRepo := repository.NewBalanceRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	commentRepo := repository.NewCommentRepository(db)
