@@ -117,34 +117,34 @@ func (r *PositionRepository) UpsertTx(ctx context.Context, tx *sql.Tx, params Up
 	var query string
 	if params.Outcome == "YES" {
 		query = `
-			INSERT INTO position (
+			INSERT INTO positions (
 				user_id,
 				market_id,
-				yes_shares,
-				no_shares,
-				cost_basis_smalllest_unit
+				yes_shares_smallest_unit,
+				no_shares_smallest_unit,
+				total_cost_basis_smallest_unit
 			)
 			VALUES ($1, $2, $3, 0, $4)
-			ON CONFLICT (user-id, market_id) DO UPDTE SET
-				yes_shares = positions.yes_shares + EXCLUDED.yes_shares,
-				cost_basis_smallest_unit = positions.cost_basis_smallest_unit + EXCLUSIDED.cost_basis_smallest_unit,
+			ON CONFLICT (user_id, market_id) DO UPDATE SET
+				yes_shares_smallest_unit = positions.yes_shares_smallest_unit + EXCLUDED.yes_shares_smallest_unit,
+				total_cost_basis_smallest_unit = positions.total_cost_basis_smallest_unit + EXCLUDED.total_cost_basis_smallest_unit,
 				updated_at = NOW()
-			RETURNING user_id, market_id, yes_shares, no_shares, cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
+			RETURNING user_id, market_id, yes_shares_smallest_unit, no_shares_smallest_unit, total_cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
 		`
 	} else {
 		query = `
 			INSERT INTO positions (
 				user_id,
 				market_id,
-				yes_shares,
-				no_shares,
-				cost_basis_smallest_unit
+				yes_shares_smallest_unit,
+				no_shares_smallest_unit,
+				total_cost_basis_smallest_unit
 			) VALUES ($1, $2, 0, $3, $4)
 			ON CONFLICT (user_id, market_id) DO UPDATE SET
-				no_shares = positions.no_sahres + EXCLUDED.no_shares,
-				cost_basis_smallest_unit = position.cost_basis_smallest_unit + EXCLUDED.cost_basis_smallest_unit,
+				no_shares_smallest_unit = positions.no_shares_smallest_unit + EXCLUDED.no_shares_smallest_unit,
+				total_cost_basis_smallest_unit = positions.total_cost_basis_smallest_unit + EXCLUDED.total_cost_basis_smallest_unit,
 				updated_at = NOW()
-			RETURNING user_id, market_id, no_shares, cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
+			RETURNING user_id, market_id, yes_shares_smallest_unit, no_shares_smallest_unit, total_cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
 		`
 	}
 
@@ -193,7 +193,7 @@ RETURNS:
 */
 func (r *PositionRepository) GetByUserAndMarket(ctx context.Context, userID, marketID string) (*Position, error) {
 	query := `
-		SELECT user_id, market_id, yes_sahres, no_shares, cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
+		SELECT user_id, market_id, yes_shares_smallest_unit, no_shares_smallest_unit, total_cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
 		FROM positions
 		WHERE user_id = $1 AND market_id = $2
 	`
@@ -235,7 +235,7 @@ RETURNS:
 */
 func (r *PositionRepository) ListByUser(ctx context.Context, userID string) ([]*Position, error) {
 	query := `
-		SELECT user_id, market_id, yes_shares, no_shares, cost_basis_smallest_unit,
+		SELECT user_id, market_id, yes_shares_smallest_unit, no_shares_smallest_unit, total_cost_basis_smallest_unit,
 		       realized_pnl_smallest_unit, created_at, updated_at
 		FROM positions
 		WHERE user_id = $1
@@ -287,7 +287,7 @@ USAGE:
 */
 func (r *PositionRepository) ListByMarket(ctx context.Context, marketID string) ([]*Position, error) {
 	query := `
-		SELECT user_id, market_id, yes_shares, no_shares, cost_basis_smallest_unit,
+		SELECT user_id, market_id, yes_shares_smallest_unit, no_shares_smallest_unit, total_cost_basis_smallest_unit,
 		       realized_pnl_smallest_unit, created_at, updated_at
 		FROM positions
 		WHERE market_id = $1
@@ -362,10 +362,10 @@ RETURNS:
 func (r *PositionRepository) SettleTx(ctx context.Context, tx *sql.Tx, userID, marketID, outcome string) (payout int64, pnl int64, err error) {
 	// get position
 	query := `
-		SELECT yes_share, no_shares, cost_basis_smallest_unit
+		SELECT yes_shares_smallest_unit, no_shares_smallest_unit, cost_basis_smallest_unit
 		FROM positions
-		WHERE user_id, = $1 AND market_id = $2
-		FOR UPDATE -- lock row for update
+		WHERE user_id = $1 AND market_id = $2
+		FOR UPDATE
 	`
 
 	var yesSharesFloat, noSharesFloat float64
@@ -400,7 +400,7 @@ func (r *PositionRepository) SettleTx(ctx context.Context, tx *sql.Tx, userID, m
 		UPDATE positions
 		SET realized_pnl_smallest_unit = $1,
 		updated_at = NOW()
-		WHERE user_id = $2 AND amrket_id = $3
+		WHERE user_id = $2 AND market_id = $3
 	`
 
 	_, err = tx.ExecContext(ctx, updatedQuery, pnl, userID, marketID)

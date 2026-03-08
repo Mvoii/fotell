@@ -442,3 +442,21 @@ func (r *MarketRepository) GetAllActive(ctx context.Context) ([]*Market, error) 
 
 	return markets, nil
 }
+
+/*
+UpdateQuantitiesStateTx persists AMM state within a transaction.
+
+CRITICAL:
+  - Called after every trade
+  - Atomic with trade execution
+*/
+func (r *MarketRepository) UpdateQuantitiesStateTx(ctx context.Context, tx *sql.Tx, id string, quantitiesJSON string) error {
+	query := `
+		UPDATE markets
+		SET quantities_state = $1::jsonb, updated_at = NOW()
+		WHERE id = $2
+	`
+
+	_, err := tx.ExecContext(ctx, query, quantitiesJSON, id)
+	return err
+}

@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -102,7 +103,7 @@ func (r *BalanceRepository) Debit(ctx context.Context, userID string, amount int
 	query := `
 		UPDATE balances
 		SET balance_smallest_unit = balance_smallest_unit - $1,
-			updates_at = NOW()
+			updated_at = NOW()
 		WHERE user_id = $2
 		RETURNING balance_smallest_unit
 	`
@@ -185,4 +186,79 @@ func (r *BalanceRepository) recordTransaction(ctx context.Context, tx *sql.Tx, u
 	)
 
 	return err
+}
+
+//
+// TRANSACTION METHODS
+//
+
+/*
+DebitTx debits balance within a transaction (for atomic trades).
+
+ATOMICITY:
+  - Part of trade transaction
+  - Fails if balance would go negative (CHECK constraint)
+  - Returns new balance after debit
+*/
+func (r *BalanceRepository) DebitTx(ctx context.Context, tx *sql.Tx, userID string, amount int64) (int64, error) {
+	query := `
+		UPDATE balances
+		SET balance_smallest_unit = balance_smallest_unit - $1,
+		    updated_at = NOW()
+		WHERE user_id = $2
+		RETURNING balance_smallest_unit
+	`
+
+	var newBalance int64
+	err := tx.QueryRowContext(ctx, query, amount, userID).Scan(&newBalance)
+	if err != nil {
+		// Check constraint violation = insufficient balance
+		if strings.Contains(err.Error(), "balance_positive") {
+			return 0, fmt.Errorf("insufficient balance")
+		}
+		return 0, fmt.Errorf("failed to debit balance: %w", err)
+	}
+
+	// Record transaction (audit trail)
+	err = r.recordTransactionTx(ctx, tx, userID, -amount, newBalance, "", "TRADE_DEBIT", "")
+	if err != nil {
+		return 0, fmt.Errorf("failed to record transaction: %w", err)
+	}
+
+	return newBalance, nil
+}
+
+/*
+CreditTx credits balance within a transaction (for payouts).
+*/
+func (r *BalanceRepository) CreditTx(ctx context.Context, tx *sql.Tx, userID string, amount int64) (int64, error) {
+	query := `
+		UPDATE balances
+		SET balance_smallest_unit = balance_smallest_unit + $1,
+		    updated_at = NOW()
+		WHERE user_id = $2
+		RETURNING balance_smallest_unit
+	`
+
+	var newBalance int64
+	err := tx.QueryRowContext(ctx, query, amount, userID).Scan(&newBalance)
+	if err != nil {
+		return 0, fmt.Errorf("failed to credit balance: %w", err)
+	}
+
+	// Record transaction
+	err = r.recordTransactionTx(ctx, tx, userID, amount, newBalance, "", "PAYOUT_CREDIT", "")
+	if err != nil {
+		return 0, fmt.Errorf("failed to record transaction: %w", err)
+	}
+
+	return newBalance, nil
+}
+
+/*
+recordTransactionTx creates audit record within a transaction.
+*/
+func (r *BalanceRepository) recordTransactionTx(ctx context.Context, tx *sql.Tx, userID string, amount int64, balanceAfter int64, referenceID string, txType string, description string) error {
+	// Reuse existing recordTransaction logic with tx
+	return r.recordTransaction(ctx, tx, userID, amount, balanceAfter, referenceID, txType, description)
 }
