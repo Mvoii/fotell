@@ -37,7 +37,7 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4()
 
     email VARCHAR(255) NOT NULL UNIQUE,
-    passward_hash VARCHAR(255) NOT NUL,
+    passward_hash VARCHAR(255) NOT NULL,
     usernmae VARCHAR(50) NOT NULL UNIQUE,
     first_name VARCHAR(255),
     last_name VARCHAR(255),
@@ -308,7 +308,7 @@ CREATE OR REPLACE FUNCTION update_update_at_column()
 RETURNS TRIGGER AS $$
 
 BEGIN
-    NEW.updated_at = NOW();
+    NEW.updated_at = NOW().;
     RETURNS NEW;
 END;
 $$ LANGUAGE plpgsql;

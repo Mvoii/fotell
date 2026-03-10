@@ -32,7 +32,7 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 
 		// xss protection
-		w.Header().Set("X-XSS_Protection", "1; mode=block")
+		w.Header().Set("X-XSS-Protection", "1; mode=block")
 
 		// referrer policy
 		w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")

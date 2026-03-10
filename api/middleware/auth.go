@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -69,7 +70,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 			// extract token from authorization header
 			authHeader := r.Header.Get("Authorization")
 			if authHeader == "" {
-				writeError(w, 401, "Authprization header required", nil)
+				writeError(w, 401, "Authorization header required", nil)
 				return
 			}
 
@@ -90,7 +91,7 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 				return []byte(jwtSecret), nil
 			})
 
-			if err != nil {
+			/* if err != nil {
 				if errors.Is(err, jwt.ErrTokenExpired) {
 					writeError(w, 401, "Token expired", map[string]interface{}{
 						"error_code": "TOKEN_EXPIRED",
@@ -106,6 +107,58 @@ func AuthMiddleware(jwtSecret string) func(http.Handler) http.Handler {
 			claims, ok := token.Claims.(*Claims)
 			if !ok || !token.Valid {
 				writeError(w, 401, "invalid token claims", nil)
+				return
+			}
+
+			claims, ok := token.Claims.(*Claims)
+			if !ok || !token.Valid {
+				writeError(w, 401, "invalid token claims", nil)
+				return
+			} */
+
+			if err != nil {
+				// jwt.ParseWithClaims reurns a *jwt.Err on validation problems
+				//var ve *jwt.ValidationError
+				switch {
+				case errors.Is(err, jwt.ErrTokenExpired):
+						writeError(w, 401, "token expired", map[string]interface{}{
+							"error_code": "TOKEN_EXPIRED",
+							"hint":       "call /auth/refresh to get new token",
+						})
+						return
+
+					case errors.Is(err, jwt.ErrTokenNotValidYet):
+						writeError(w, 401, "tok not active yet", map[string]interface{}{
+							"error_code":"TOKEN_NOT_ACTIVE",
+						})
+						return
+
+					case errors.Is(err, jwt.ErrTokenSignatureInvalid):
+						log.Printf("jwt signature invalid: %v", err)
+						writeError(w, 401, "invalid tok signature", nil)
+						return
+					
+					default:
+					// other validation errors (malformed, signature invalid, etc)
+					log.Printf("jwt parse error: %v", err)
+					writeError(w, 401, "invalid token", nil)
+					return
+				}
+			}
+
+			claims, ok := token.Claims.(*Claims)
+			if !ok || !token.Valid {
+				log.Printf("invalid token claims: %v", token.Claims)
+				writeError(w, 401, "invalid token claims", nil)
+				return
+			}
+
+			// defensive: ensure user id calim exists
+			if claims.UserID == "" {
+				log.Printf("token parse but miss user_id: %#v", claims)
+				writeError(w, 401, "Authentication required", map[string]interface{}{
+					"error_code": "UNAUTHORIZED",
+				})
 				return
 			}
 

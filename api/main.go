@@ -3,6 +3,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 	"os"
@@ -10,10 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	//"github.com/Mvoii/fotell/amm"
+	"github.com/Mvoii/fotell/amm"
 	"github.com/Mvoii/fotell/api/handlers"
 	"github.com/Mvoii/fotell/api/middleware"
 	"github.com/Mvoii/fotell/api/repository"
+	"github.com/Mvoii/fotell/api/startup"
 	"github.com/joho/godotenv"
 
 	"github.com/go-chi/chi/v5"
@@ -59,25 +61,31 @@ func main() {
 
 	// Initialize repositories (data access layer)
 	userRepo := repository.NewUserRepository(db)
-	// marketRepo := repository.NewMarketRepository(db)
-	// tradeRepo := repository.NewTradeRepository(db)
-	// balanceRepo := repository.NewBalanceRepository(db)
+	marketRepo := repository.NewMarketRepository(db)
+	tradeRepo := repository.NewTradeRepository(db)
+	positionRepo := repository.NewPositionRepository(db)
+	balanceRepo := repository.NewBalanceRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 
 	// Initialize AMM registry (in-memory market state)
 	// In production, this would be populated from the database on startup
-	// registry := amm.NewRegistry()
+	registry := amm.NewRegistry()
+
+	// load all OPEN markets from datanses into registry
+	if err := startup.LoadActiveMarkets(context.Background(), marketRepo, registry); err != nil {
+		log.Fatalf("CRITICAL: Failed to load active markets: %v", err)
+	}
 
 	// Initialize handlers (HTTP request handlers)
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
-	// marketHandler := handlers.NewMarketHandler(marketRepo, registry)
-	// tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, registry)
-	// userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
+	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
+	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
+	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
 
 	// Build router with middleware stack
 	r := chi.NewRouter()
 
-	// ── Global middleware (applied to all routes) ─────────────────────
+	// Global middleware (applied to all routes)
 	r.Use(chimiddleware.RequestID)                 // Inject request ID for tracing
 	r.Use(chimiddleware.RealIP)                    // Get real client IP (behind proxy)
 	r.Use(chimiddleware.Logger)                    // Log every request
@@ -105,7 +113,9 @@ func main() {
 
 		// Health check
 		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			handlers.JSON(w, 200, map[string]string{
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(200)
+			json.NewEncoder(w).Encode(map[string]string{
 				"status": "healthy",
 				"time":   time.Now().UTC().Format(time.RFC3339),
 			})
@@ -115,12 +125,19 @@ func main() {
 		r.Post("/auth/register", authHandler.Register)
 		r.Post("/auth/login", authHandler.Login)
 		r.Post("/auth/refresh", authHandler.RefreshToken)
+		r.Post("/auth/logout", authHandler.Logout)
+
+		// user endpoints
+		//r.Get("/users/me", userHandler.GetMe)
+		//r.Get("/users/me/balance", userHandler.GetBalance)
+		//r.Get("/users/me/positions", userHandler.GetPositions)
+		//r.Get("/users/me/trades", userHandler.GetMyTrades)
 
 		// Public market data (read-only)
-		//r.Get("/markets", marketHandler.ListMarkets)
-		//r.Get("/markets/{marketID}", marketHandler.GetMarket)
-		//r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
-		//r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
+		r.Get("/markets", marketHandler.ListMarkets)
+		r.Get("/markets/{marketID}", marketHandler.GetMarket)
+		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
+		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
 
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
@@ -131,23 +148,23 @@ func main() {
 			r.Use(httprate.LimitByIP(200, 1*time.Minute))
 
 			// User routes
-			//r.Get("/users/me", userHandler.GetMe)
-			//r.Get("/users/me/balance", userHandler.GetBalance)
-			//r.Get("/users/me/positions", userHandler.GetPositions)
-			//r.Get("/users/me/trades", userHandler.GetMyTrades)
+			r.Get("/users/me", userHandler.GetMe)
+			r.Get("/users/me/balance", userHandler.GetBalance)
+			r.Get("/users/me/positions", userHandler.GetPositions)
+			r.Get("/users/me/trades", userHandler.GetMyTrades)
 
 			// Trading
-			// r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
+			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
 
 			// ── Admin routes (admin role required)
 			r.Group(func(r chi.Router) {
 				r.Use(middleware.RequireAdmin)
 
 				// Market management
-				// r.Post("/admin/markets", marketHandler.CreateMarket)
-				// r.Post("/admin/markets/{marketID}/open", marketHandler.OpenMarket)
-				// r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
-				// r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
+				r.Post("/admin/markets", marketHandler.CreateMarket)
+				r.Post("/admin/markets/{marketID}/open", marketHandler.OpenMarket)
+				r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
+				r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
 
 				// User management
 				// r.Get("/admin/users", userHandler.ListUsers)
@@ -182,7 +199,7 @@ func main() {
 		}
 	}()
 
-	log.Printf("🚀 Server starting on port %s (env: %s)", cfg.Port, cfg.Environment)
+	log.Printf(" Server starting on port %s (env: %s)", cfg.Port, cfg.Environment)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
 	}
