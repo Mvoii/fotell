@@ -44,3 +44,6 @@ coverage/
 
 # OS
 *.pem
+*.sh
+
+.github/
