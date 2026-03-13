@@ -155,6 +155,10 @@ func main() {
 =======
 >>>>>>> 9804961 (lots of shit; trust the process)
 
+		// public comments routes
+		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
+		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
+
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
 			// JWT authentication middleware
