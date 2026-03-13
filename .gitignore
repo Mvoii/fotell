@@ -1,2 +1,49 @@
-.env*
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+/bin/
+/dist/
+
+# Go module cache
+vendor/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE / editor
+.idea/
+.vscode/settings.json
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Node / frontend (handled by frontend/.gitignore too, belt-and-suspenders)
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp
+.pnp.js
+
+# Next.js build output (in case someone runs build from root)
+frontend/.next/
+frontend/out/
+frontend/build/
+
+# Test coverage
+coverage/
+
+# OS
+*.pem
 *.sh
+
+.github/

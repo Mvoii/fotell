@@ -832,6 +832,261 @@ paths:
         '403':
           description: Requires admin role
 
+  /markets/{marketID}/comments:
+    get:
+      tags:
+        - Markets
+      summary: List top-level comments for a market
+      description: Retrieve top-level (parent_id = null) comments for a market. Supports pagination.
+      operationId: listMarketComments
+      parameters:
+        - $ref: '#/components/parameters/marketID'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Maximum number of results
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+          description: Pagination offset
+      responses:
+        '200':
+          description: Comments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  comments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+                    example: 42
+                  limit:
+                    type: integer
+                    example: 20
+                  offset:
+                    type: integer
+                    example: 0
+        '404':
+          description: Market not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Markets
+      summary: Create a top-level comment on a market
+      description: Create a new comment on a market. Authentication required.
+      operationId: createMarketComment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/marketID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+
+  /comments/{commentID}/replies:
+    get:
+      tags:
+        - Markets
+      summary: List replies to a comment
+      description: Retrieve direct replies (one level) to a comment. Supports pagination.
+      operationId: listCommentReplies
+      parameters:
+        - $ref: '#/components/parameters/commentID'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Replies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  replies:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Comment'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      tags:
+        - Markets
+      summary: Create a reply to a comment
+      description: Create a reply to an existing comment. Authentication required.
+      operationId: createCommentReply
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/commentID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '201':
+          description: Reply created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Validation error or maximum nesting exceeded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+
+  /comments/{commentID}:
+    patch:
+      tags:
+        - Markets
+      summary: Update a comment
+      description: Update an existing comment (owner only). Authentication required.
+      operationId: updateComment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/commentID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCommentRequest'
+      responses:
+        '200':
+          description: Comment updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Validation error
+        '401':
+          description: Authentication required
+        '403':
+          description: Not authorized to edit this comment
+
+    delete:
+      tags:
+        - Markets
+      summary: Delete (soft) a comment
+      description: Soft-delete a comment (owner only). Authentication required.
+      operationId: deleteComment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/commentID'
+      responses:
+        '200':
+          description: Comment deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Comment deleted successfully
+        '401':
+          description: Authentication required
+        '403':
+          description: Not authorized to delete this comment
+
+  /comments/{commentID}/vote:
+    post:
+      tags:
+        - Markets
+      summary: Vote on a comment
+      description: Upvote or downvote a comment. Clicking the same vote again removes the vote. Authentication required.
+      operationId: voteComment
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/commentID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoteRequest'
+      responses:
+        '200':
+          description: Vote applied successfully (returns updated comment)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '400':
+          description: Invalid vote type
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Authentication required
+        '404':
+          description: Comment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 # ==============================================================================
 # COMPONENTS
 # ==============================================================================
@@ -860,6 +1115,15 @@ components:
         format: uuid
       description: Market UUID
       example: f6ca8e7b-38bc-4c4d-ab42-0ec1ca8e877d
+      commentID:
+      name: commentID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Comment UUID
+      example: c3f9f2d7-8f3a-4b2d-9c1a-1234567890ab
 
   schemas:
     # ==========================================================================
@@ -1065,6 +1329,72 @@ components:
           type: string
           format: date-time
           example: 2026-03-08T15:35:00Z
+    # -----------------------------------------------------------------------
+    # Comments
+    # -----------------------------------------------------------------------
+    Comment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: c3f9f2d7-8f3a-4b2d-9c1a-1234567890ab
+        market_id:
+          type: string
+          format: uuid
+          example: f6ca8e7b-38bc-4c4d-ab42-0ec1ca8e877d
+        user_id:
+          type: string
+          format: uuid
+          example: 02104dfb-cc72-44f8-8c8d-d57ae4450493
+        parent_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Parent comment ID for replies (null for top-level)
+        content:
+          type: string
+          example: This is a comment.
+        is_deleted:
+          type: boolean
+          example: false
+        vote_count:
+          type: integer
+          example: 5
+        current_user_vote:
+          type: string
+          enum: [UPVOTE, DOWNVOTE, NONE]
+          nullable: true
+          description: The authenticated user's vote on this comment (if any)
+        created_at:
+          type: string
+          format: date-time
+          example: 2026-03-08T15:30:00Z
+        updated_at:
+          type: string
+          format: date-time
+          example: 2026-03-08T15:35:00Z
+
+    CreateCommentRequest:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 5000
+          example: This is my comment
+
+    VoteRequest:
+      type: object
+      required:
+        - vote_type
+      properties:
+        vote_type:
+          type: string
+          enum: [UPVOTE, DOWNVOTE]
+          example: UPVOTE
 
     # ==========================================================================
     # ERROR SCHEMAS
