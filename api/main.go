@@ -66,6 +66,7 @@ func main() {
 	positionRepo := repository.NewPositionRepository(db)
 	balanceRepo := repository.NewBalanceRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
+	commentRepo := repository.NewCommentRepository(db)
 
 	// Initialize AMM registry (in-memory market state)
 	// In production, this would be populated from the database on startup
@@ -81,6 +82,7 @@ func main() {
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
+	CommentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 
 	// Build router with middleware stack
 	r := chi.NewRouter()
@@ -139,6 +141,10 @@ func main() {
 		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
 		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
 
+		// public comments routes
+		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
+		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
+
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
 			// JWT authentication middleware
@@ -155,6 +161,15 @@ func main() {
 
 			// Trading
 			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
+
+			// comments
+			r.Post("/markets/{marketID}/comments", CommentHandler.CreateComment)
+			r.Post("/comments/{commentID}/replies", CommentHandler.CreateReply)
+
+			r.Patch("/comments/{commentID}", CommentHandler.UpdateComment)
+			r.Delete("/comments/{commentID}", CommentHandler.DeleteComment)
+
+			r.Post("/comments/{commentID}/vote", CommentHandler.VoteComment)
 
 			// ── Admin routes (admin role required)
 			r.Group(func(r chi.Router) {
