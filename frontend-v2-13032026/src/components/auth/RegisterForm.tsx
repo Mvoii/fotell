@@ -14,6 +14,7 @@ import { useRouter } from "next/navigation";
  * - On success: redirects to /home, triggers welcome toast
  */
 export function RegisterForm() {
+//   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
   const router = useRouter();
   const { register, loading, error } = useRegister();
   const [form, setForm] = useState<RegisterRequest>({
@@ -22,7 +23,7 @@ export function RegisterForm() {
     username: "",
     full_name: "",
   });
-//   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
 
   // Simple inline validation
   const validate = (values: RegisterRequest) => {
@@ -49,13 +50,13 @@ export function RegisterForm() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    // setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
+    setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validate(form);
-    // setFieldErrors(errors);
+    setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
     const res = await register(form);
     if (res) {
@@ -65,70 +66,89 @@ export function RegisterForm() {
 
   return (
     <form
-      className="bg-surface rounded-lg shadow-lg p-6 max-w-md mx-auto space-y-4"
+      className="bg-surface rounded-lg shadow-lg p-6 max-w-md mx-auto space-y-6"
       onSubmit={handleSubmit}
       autoComplete="off"
     >
-      <div className="text-center mb-2">
-        <span className="text-accent font-bold text-2xl">🔮 FoTell</span>
-        <div className="text-heading-lg mt-2">Create your account</div>
-        <div className="text-body-md text-secondary">Start with 5,000 KES free</div>
+      <div className="text-center mb-4">
+        <span className="font-bold text-2xl text-accent-blue dark:text-accent-blue">🔮 FoTell</span>
+        <div className="mt-2 text-heading-lg text-primary font-semibold dark:text-primary">Create your account</div>
+        <div className="text-body-md text-accent-blue mt-1 dark:text-accent-blue">Start with 5,000 KES free</div>
       </div>
 
-      <Input
-        // label="Full Name"
-        name="full_name"
-        value={form.full_name}
-        onChange={handleChange}
-        // error={fieldErrors.full_name}
-        autoComplete="name"
-        required
-      />
+      <div className="space-y-2">
+        <label htmlFor="full_name" className="block text-heading-md text-primary mb-1">Full Name</label>
+        <Input
+          name="full_name"
+          value={form.full_name}
+          onChange={handleChange}
+          autoComplete="name"
+          required
+          aria-invalid={!!fieldErrors.full_name}
+        />
+        {fieldErrors.full_name && (
+          <div className="text-error text-sm mt-1">{fieldErrors.full_name}</div>
+        )}
+      </div>
 
-      <Input
-        // label="Username"
-        name="username"
-        value={form.username}
-        onChange={handleChange}
-        // error={fieldErrors.username}
-        autoComplete="username"
-        required
-      />
+      <div className="space-y-2">
+        <label htmlFor="username" className="block text-heading-md text-primary mb-1">Username</label>
+        <Input
+          name="username"
+          value={form.username}
+          onChange={handleChange}
+          autoComplete="username"
+          required
+          aria-invalid={!!fieldErrors.username}
+        />
+        {fieldErrors.username && (
+          <div className="text-error text-sm mt-1">{fieldErrors.username}</div>
+        )}
+      </div>
 
-      <Input
-        // label="Email"
-        name="email"
-        type="email"
-        value={form.email}
-        onChange={handleChange}
-        // error={fieldErrors.email}
-        autoComplete="email"
-        required
-      />
+      <div className="space-y-2">
+        <label htmlFor="email" className="block text-heading-md text-primary mb-1">Email</label>
+        <Input
+          name="email"
+          type="email"
+          value={form.email}
+          onChange={handleChange}
+          autoComplete="email"
+          required
+          aria-invalid={!!fieldErrors.email}
+        />
+        {fieldErrors.email && (
+          <div className="text-error text-sm mt-1">{fieldErrors.email}</div>
+        )}
+      </div>
 
-      <Input
-        // label="Password"
-        name="password"
-        type="password"
-        value={form.password}
-        onChange={handleChange}
-        // error={fieldErrors.password}
-        autoComplete="new-password"
-        required
-        // hint="✓ 8+ chars  ✓ Has number"
-      />
+      <div className="space-y-2">
+        <label htmlFor="password" className="block text-heading-md text-primary mb-1">Password</label>
+        <Input
+          name="password"
+          type="password"
+          value={form.password}
+          onChange={handleChange}
+          autoComplete="new-password"
+          required
+          aria-invalid={!!fieldErrors.password}
+        />
+        <div className="text-body-sm text-muted mt-1">✓ 8+ chars  ✓ Has number</div>
+        {fieldErrors.password && (
+          <div className="text-error text-sm mt-1">{fieldErrors.password}</div>
+        )}
+      </div>
 
       {error && (
-        <div className="text-error text-sm mt-2">{error}</div>
+        <div className="text-error text-sm mt-2 text-center">{error}</div>
       )}
 
       <Button
-        // variant="primary"
+        variant="default"
         size="lg"
         type="submit"
-        // loading={loading}
-        // fullWidth
         disabled={loading}
+        className="w-full mt-2"
       >
         Create Account
       </Button>
@@ -137,7 +157,7 @@ export function RegisterForm() {
         Already have an account?{" "}
         <a
           href="/auth/login"
-          className="text-accent hover:underline"
+          className="text-accent-blue hover:underline"
         >
           Sign in →
         </a>
