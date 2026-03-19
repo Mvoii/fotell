@@ -61,8 +61,9 @@ func main() {
 
 	// Initialize repositories (data access layer)
 	userRepo := repository.NewUserRepository(db)
-	// marketRepo := repository.NewMarketRepository(db)
-	// tradeRepo := repository.NewTradeRepository(db)
+	marketRepo := repository.NewMarketRepository(db)
+	tradeRepo := repository.NewTradeRepository(db)
+	positionRepo := repository.NewPositionRepository(db)
 	balanceRepo := repository.NewBalanceRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	commentRepo := repository.NewCommentRepository(db)
@@ -70,24 +71,18 @@ func main() {
 	// Initialize AMM registry (in-memory market state)
 	// In production, this would be populated from the database on startup
 	registry := amm.NewRegistry()
-<<<<<<< HEAD
 
 	// load all OPEN markets from datanses into registry
 	if err := startup.LoadActiveMarkets(context.Background(), marketRepo, registry); err != nil {
 		log.Fatalf("CRITICAL: Failed to load active markets: %v", err)
 	}
-=======
->>>>>>> 9804961 (lots of shit; trust the process)
 
 	// Initialize handlers (HTTP request handlers)
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
-<<<<<<< HEAD
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
-=======
-	// tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, registry)
->>>>>>> 9804961 (lots of shit; trust the process)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
+	CommentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 
 	// Build router with middleware stack
 	r := chi.NewRouter()
@@ -123,9 +118,6 @@ func main() {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(200)
 			json.NewEncoder(w).Encode(map[string]string{
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(200)
-			json.NewEncoder(w).Encode(map[string]string{
 				"status": "healthy",
 				"time":   time.Now().UTC().Format(time.RFC3339),
 			})
@@ -142,30 +134,12 @@ func main() {
 		//r.Get("/users/me/balance", userHandler.GetBalance)
 		//r.Get("/users/me/positions", userHandler.GetPositions)
 		//r.Get("/users/me/trades", userHandler.GetMyTrades)
-		r.Post("/auth/logout", authHandler.Logout)
-
-		// user endpoints
-		//r.Get("/users/me", userHandler.GetMe)
-		//r.Get("/users/me/balance", userHandler.GetBalance)
-		//r.Get("/users/me/positions", userHandler.GetPositions)
-		//r.Get("/users/me/trades", userHandler.GetMyTrades)
 
 		// Public market data (read-only)
 		r.Get("/markets", marketHandler.ListMarkets)
 		r.Get("/markets/{marketID}", marketHandler.GetMarket)
 		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
 		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
-<<<<<<< HEAD
-
-		// public comments routes
-		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
-=======
->>>>>>> 9804961 (lots of shit; trust the process)
-
-		// public comments routes
-		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
 
 		// public comments routes
 		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
@@ -180,10 +154,6 @@ func main() {
 			r.Use(httprate.LimitByIP(200, 1*time.Minute))
 
 			// User routes
-			r.Get("/users/me", userHandler.GetMe)
-			r.Get("/users/me/balance", userHandler.GetBalance)
-			r.Get("/users/me/positions", userHandler.GetPositions)
-			r.Get("/users/me/trades", userHandler.GetMyTrades)
 			r.Get("/users/me", userHandler.GetMe)
 			r.Get("/users/me/balance", userHandler.GetBalance)
 			r.Get("/users/me/positions", userHandler.GetPositions)
@@ -244,7 +214,6 @@ func main() {
 		}
 	}()
 
-	log.Printf(" Server starting on port %s (env: %s)", cfg.Port, cfg.Environment)
 	log.Printf(" Server starting on port %s (env: %s)", cfg.Port, cfg.Environment)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
