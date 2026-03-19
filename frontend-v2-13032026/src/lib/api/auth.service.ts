@@ -1,5 +1,5 @@
 import { apiRequest } from './client';
-import type { RegisterRequest, AuthResponse } from './types/api';
+import type { RegisterRequest, LoginRequest, AuthResponse } from './types/api';
 
 /**
  * Registration API service.
@@ -8,6 +8,19 @@ import type { RegisterRequest, AuthResponse } from './types/api';
  */
 export async function registerUser(payload: RegisterRequest): Promise<AuthResponse> {
   const { data } = await apiRequest<AuthResponse>('/auth/register', {
+    method: 'POST',
+    body: payload,
+  });
+  return data;
+}
+
+/**
+ * Login API service.
+ * Handles user login for /auth/login page.
+ * Mirrors backend contract and API docs.
+ */
+export async function loginUser(payload: LoginRequest): Promise<AuthResponse> {
+  const { data } = await apiRequest<AuthResponse>('/auth/login', {
     method: 'POST',
     body: payload,
   });

@@ -24,6 +24,7 @@ export function RegisterForm() {
     full_name: "",
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   // Simple inline validation
   const validate = (values: RegisterRequest) => {
@@ -124,15 +125,26 @@ export function RegisterForm() {
 
       <div className="space-y-2">
         <label htmlFor="password" className="block text-heading-md text-primary mb-1">Password</label>
-        <Input
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          autoComplete="new-password"
-          required
-          aria-invalid={!!fieldErrors.password}
-        />
+        <div className="relative">
+          <Input
+            name="password"
+            type={showPassword ? "text" : "password"}
+            value={form.password}
+            onChange={handleChange}
+            autoComplete="new-password"
+            required
+            aria-invalid={!!fieldErrors.password}
+          />
+          <button
+            type="button"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted hover:text-primary focus:outline-none"
+            onClick={() => setShowPassword((v) => !v)}
+            tabIndex={-1}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? "🙈" : "👁"}
+          </button>
+        </div>
         <div className="text-body-sm text-muted mt-1">✓ 8+ chars  ✓ Has number</div>
         {fieldErrors.password && (
           <div className="text-error text-sm mt-1">{fieldErrors.password}</div>
