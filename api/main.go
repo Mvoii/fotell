@@ -72,7 +72,7 @@ func main() {
 	// In production, this would be populated from the database on startup
 	registry := amm.NewRegistry()
 
-	// load all OPEN markets from datanses into registry
+	// Load active markets from DB into registry
 	if err := startup.LoadActiveMarkets(context.Background(), marketRepo, registry); err != nil {
 		log.Fatalf("CRITICAL: Failed to load active markets: %v", err)
 	}
@@ -81,8 +81,8 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
+	commentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
-	CommentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 
 	// Build router with middleware stack
 	r := chi.NewRouter()
@@ -129,12 +129,6 @@ func main() {
 		r.Post("/auth/refresh", authHandler.RefreshToken)
 		r.Post("/auth/logout", authHandler.Logout)
 
-		// user endpoints
-		//r.Get("/users/me", userHandler.GetMe)
-		//r.Get("/users/me/balance", userHandler.GetBalance)
-		//r.Get("/users/me/positions", userHandler.GetPositions)
-		//r.Get("/users/me/trades", userHandler.GetMyTrades)
-
 		// Public market data (read-only)
 		r.Get("/markets", marketHandler.ListMarkets)
 		r.Get("/markets/{marketID}", marketHandler.GetMarket)
@@ -142,8 +136,8 @@ func main() {
 		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
 
 		// public comments routes
-		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
+		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
+		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
 
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
@@ -162,7 +156,7 @@ func main() {
 			// Trading
 			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
 
-			// comments
+			// comments (protected)
 			r.Post("/markets/{marketID}/comments", commentHandler.CreateComment)
 			r.Post("/comments/{commentID}/replies", commentHandler.CreateReply)
 
@@ -214,6 +208,7 @@ func main() {
 		}
 	}()
 
+	log.Printf(" Server starting on port %s (env: %s)", cfg.Port, cfg.Environment)
 	log.Printf(" Server starting on port %s (env: %s)", cfg.Port, cfg.Environment)
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
