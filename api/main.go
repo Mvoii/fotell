@@ -81,8 +81,8 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
-	commentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
+	CommentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 
 	// Build router with middleware stack
 	r := chi.NewRouter()
@@ -129,6 +129,12 @@ func main() {
 		r.Post("/auth/refresh", authHandler.RefreshToken)
 		r.Post("/auth/logout", authHandler.Logout)
 
+		// user endpoints
+		//r.Get("/users/me", userHandler.GetMe)
+		//r.Get("/users/me/balance", userHandler.GetBalance)
+		//r.Get("/users/me/positions", userHandler.GetPositions)
+		//r.Get("/users/me/trades", userHandler.GetMyTrades)
+
 		// Public market data (read-only)
 		r.Get("/markets", marketHandler.ListMarkets)
 		r.Get("/markets/{marketID}", marketHandler.GetMarket)
@@ -136,8 +142,8 @@ func main() {
 		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
 
 		// public comments routes
-		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
+		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
+		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
 
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
