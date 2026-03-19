@@ -163,13 +163,13 @@ func main() {
 			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
 
 			// comments
-			r.Post("/markets/{marketID}/comments", CommentHandler.CreateComment)
-			r.Post("/comments/{commentID}/replies", CommentHandler.CreateReply)
+			r.Post("/markets/{marketID}/comments", commentHandler.CreateComment)
+			r.Post("/comments/{commentID}/replies", commentHandler.CreateReply)
 
-			r.Patch("/comments/{commentID}", CommentHandler.UpdateComment)
-			r.Delete("/comments/{commentID}", CommentHandler.DeleteComment)
+			r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
+			r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
 
-			r.Post("/comments/{commentID}/vote", CommentHandler.VoteComment)
+			r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
 
 			// ── Admin routes (admin role required)
 			r.Group(func(r chi.Router) {
