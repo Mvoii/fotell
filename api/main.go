@@ -61,8 +61,9 @@ func main() {
 
 	// Initialize repositories (data access layer)
 	userRepo := repository.NewUserRepository(db)
-	// marketRepo := repository.NewMarketRepository(db)
-	// tradeRepo := repository.NewTradeRepository(db)
+	marketRepo := repository.NewMarketRepository(db)
+	tradeRepo := repository.NewTradeRepository(db)
+	positionRepo := repository.NewPositionRepository(db)
 	balanceRepo := repository.NewBalanceRepository(db)
 	refreshTokenRepo := repository.NewRefreshTokenRepository(db)
 	commentRepo := repository.NewCommentRepository(db)
@@ -70,23 +71,17 @@ func main() {
 	// Initialize AMM registry (in-memory market state)
 	// In production, this would be populated from the database on startup
 	registry := amm.NewRegistry()
-<<<<<<< HEAD
 
-	// load all OPEN markets from datanses into registry
+	// Load active markets from DB into registry
 	if err := startup.LoadActiveMarkets(context.Background(), marketRepo, registry); err != nil {
 		log.Fatalf("CRITICAL: Failed to load active markets: %v", err)
 	}
-=======
->>>>>>> 9804961 (lots of shit; trust the process)
 
 	// Initialize handlers (HTTP request handlers)
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
-<<<<<<< HEAD
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
-=======
-	// tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, registry)
->>>>>>> 9804961 (lots of shit; trust the process)
+	commentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
 
 	// Build router with middleware stack
@@ -123,9 +118,6 @@ func main() {
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(200)
 			json.NewEncoder(w).Encode(map[string]string{
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(200)
-			json.NewEncoder(w).Encode(map[string]string{
 				"status": "healthy",
 				"time":   time.Now().UTC().Format(time.RFC3339),
 			})
@@ -137,39 +129,15 @@ func main() {
 		r.Post("/auth/refresh", authHandler.RefreshToken)
 		r.Post("/auth/logout", authHandler.Logout)
 
-		// user endpoints
-		//r.Get("/users/me", userHandler.GetMe)
-		//r.Get("/users/me/balance", userHandler.GetBalance)
-		//r.Get("/users/me/positions", userHandler.GetPositions)
-		//r.Get("/users/me/trades", userHandler.GetMyTrades)
-		r.Post("/auth/logout", authHandler.Logout)
-
-		// user endpoints
-		//r.Get("/users/me", userHandler.GetMe)
-		//r.Get("/users/me/balance", userHandler.GetBalance)
-		//r.Get("/users/me/positions", userHandler.GetPositions)
-		//r.Get("/users/me/trades", userHandler.GetMyTrades)
-
 		// Public market data (read-only)
 		r.Get("/markets", marketHandler.ListMarkets)
 		r.Get("/markets/{marketID}", marketHandler.GetMarket)
 		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
 		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
-<<<<<<< HEAD
 
 		// public comments routes
-		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
-=======
->>>>>>> 9804961 (lots of shit; trust the process)
-
-		// public comments routes
-		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
-
-		// public comments routes
-		r.Get("/markets/{marketID}/comments", CommentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", CommentHandler.ListCommentReplies)
+		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
+		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
 
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
@@ -184,22 +152,18 @@ func main() {
 			r.Get("/users/me/balance", userHandler.GetBalance)
 			r.Get("/users/me/positions", userHandler.GetPositions)
 			r.Get("/users/me/trades", userHandler.GetMyTrades)
-			r.Get("/users/me", userHandler.GetMe)
-			r.Get("/users/me/balance", userHandler.GetBalance)
-			r.Get("/users/me/positions", userHandler.GetPositions)
-			r.Get("/users/me/trades", userHandler.GetMyTrades)
 
 			// Trading
 			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
 
-			// comments
-			r.Post("/markets/{marketID}/comments", CommentHandler.CreateComment)
-			r.Post("/comments/{commentID}/replies", CommentHandler.CreateReply)
+			// comments (protected)
+			r.Post("/markets/{marketID}/comments", commentHandler.CreateComment)
+			r.Post("/comments/{commentID}/replies", commentHandler.CreateReply)
 
-			r.Patch("/comments/{commentID}", CommentHandler.UpdateComment)
-			r.Delete("/comments/{commentID}", CommentHandler.DeleteComment)
+			r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
+			r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
 
-			r.Post("/comments/{commentID}/vote", CommentHandler.VoteComment)
+			r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
 
 			// ── Admin routes (admin role required)
 			r.Group(func(r chi.Router) {
