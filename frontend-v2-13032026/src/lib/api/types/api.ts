@@ -7,6 +7,11 @@ export interface RegisterRequest {
   full_name: string;
 }
 
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
 export interface AuthResponse {
   access_token: string;
   refresh_token: string;
