@@ -89,12 +89,12 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
                   <span className="inline-flex items-center px-4 py-2 rounded-md bg-yes-dim border border-[rgba(0,200,83,0.35)] text-yes-strong font-mono font-bold text-lg gap-2">
                     {/* Up icon SVG */}
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3v12M9 3l-4 4M9 3l4 4" stroke="#00c853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    Yes {market.yes_price !== null ? formatPrice(market.yes_price, 'percent') : '--'}
+                    Yes {typeof market.yes_price === 'number' ? formatPrice(market.yes_price, 'percent') : '--'}
                   </span>
                   <span className="inline-flex items-center px-4 py-2 rounded-md bg-no-dim border border-[rgba(255,23,68,0.35)] text-no-strong font-mono font-bold text-lg gap-2">
                     {/* Down icon SVG */}
                     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 15V3M9 15l-4-4M9 15l4-4" stroke="#ff1744" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                    No {market.no_price !== null ? formatPrice(market.no_price, 'percent') : '--'}
+                    No {typeof market.no_price === 'number' ? formatPrice(market.no_price, 'percent') : '--'}
                   </span>
                 </div>
               </div>
