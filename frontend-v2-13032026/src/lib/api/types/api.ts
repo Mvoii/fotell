@@ -36,6 +36,14 @@ export interface MarketsListResponse {
   offset: number;
 }
 
+// Market prices timeline
+export interface MarketPrices {
+  market_id: string;
+  yes_price: number;
+  no_price: number;
+  timestamp: string;
+}
+
 
 export interface LoginRequest {
   email: string;
