@@ -1,8 +1,10 @@
 "use client";
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import type { Market } from '@/lib/api/types/api';
 import { formatPrice } from '@/lib/formatters';
+import ProbabilityBar from '@/components/markets/ProbabilityBar';
 
 interface MarketsListProps {
   markets: Market[];
@@ -17,6 +19,8 @@ interface MarketsListProps {
 export function MarketsList({ markets, total, limit, offset, onPageChange, onFilterChange, status }: MarketsListProps) {
   const pageCount = Math.ceil(total / limit);
   const currentPage = Math.floor(offset / limit) + 1;
+
+  const router = useRouter();
 
   return (
     <div className="space-y-6">
@@ -40,7 +44,12 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
           {markets.map((market) => (
             <li
               key={market.id}
-              className="bg-surface border border-subtle rounded-lg p-6 shadow-lg hover:border-active hover:shadow-2 transition duration-150"
+              className="bg-surface border border-subtle rounded-lg p-6 shadow-lg hover:border-active hover:shadow-2 transition duration-150 cursor-pointer"
+              tabIndex={0}
+              role="button"
+              onClick={() => router.push(`/markets/${market.id}`)}
+              onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') router.push(`/markets/${market.id}`); }}
+              aria-label={`View details for market: ${market.question}`}
             >
               <div className="flex items-center gap-2 mb-2">
                 <span
@@ -63,27 +72,8 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
               </div>
               <div className="text-heading-md font-semibold mb-2 text-primary">{market.question}</div>
               <div className="flex flex-col gap-4 mt-4">
-                {/* Probability Bar with Percentage Labels */}
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-sm font-bold text-yes-strong flex items-center gap-1">
-                    {market.yes_price !== null ? `${Math.round(market.yes_price)}%` : '--'}
-                    {/* Optional: add checkmark or up icon */}
-                  </span>
-                  <span className="font-mono text-sm font-bold text-no-strong flex items-center gap-1">
-                    {market.no_price !== null ? `${Math.round(market.no_price)}%` : '--'}
-                    {/* Optional: add cross or down icon */}
-                  </span>
-                </div>
-                        <div className="relative h-2 w-full rounded-full border border-subtle overflow-hidden z-10">
-                          {/* NO background: red, full width */}
-                          <div className="absolute left-0 top-0 h-full w-full rounded-full bg-red-500" />
-                          {/* YES fill: green, proportional to yes_price */}
-                          <div
-                            className="absolute left-0 top-0 h-full rounded-l-full bg-green-500"
-                            style={{ width: `${market.yes_price ?? 0}%` }}
-                          />
-                          <div className="absolute left-1/2 top-0 h-full w-[2px] bg-surface z-30" />
-                        </div>
+                {/* Shared ProbabilityBar with YES/NO percentages and bar */}
+                <ProbabilityBar yesPrice={market.yes_price} noPrice={market.no_price} />
                 {/* Outcome Pills */}
                 <div className="flex items-center gap-2 mt-2">
                   <span className="inline-flex items-center px-4 py-2 rounded-md bg-yes-dim border border-[rgba(0,200,83,0.35)] text-yes-strong font-mono font-bold text-lg gap-2">

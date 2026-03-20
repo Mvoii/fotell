@@ -1,5 +1,5 @@
 import { apiRequest } from './client';
-import type { Market, MarketStatus } from './types/api';
+import type { Market, MarketStatus, MarketPrices } from './types/api';
 
 export interface MarketsListResponse {
   markets: Market[];
@@ -14,4 +14,7 @@ export const marketsService = {
 
   getById: (id: string) =>
     apiRequest<Market>(`/markets/${id}`, { method: 'GET' }),
+  // Market prices timeline
+  getPrices: (id: string) =>
+    apiRequest<MarketPrices[]>(`/markets/${id}/prices`, { method: 'GET' }),
 };
