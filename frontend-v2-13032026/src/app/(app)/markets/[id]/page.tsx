@@ -10,7 +10,8 @@ interface MarketDetailsPageProps {
 
 import React from 'react';
 export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
-  const { market, prices, isLoading, isError, error, refetch } = useMarketDetails(params.id);
+  const resolvedParams = React.use(params);
+  const { market, prices, isLoading, isError, error, refetch } = useMarketDetails(resolvedParams.id);
 
   if (isLoading) {
     return (
