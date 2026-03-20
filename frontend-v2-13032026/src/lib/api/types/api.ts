@@ -7,6 +7,36 @@ export interface RegisterRequest {
   full_name: string;
 }
 
+// ── Markets
+export type MarketStatus = 'PENDING' | 'OPEN' | 'CLOSED' | 'RESOLVED';
+export type Outcome = 'YES' | 'NO';
+
+export interface Market {
+  id: string;
+  question: string;
+  description?: string;
+  status: MarketStatus;
+  created_by: string;
+  created_at: string;
+  closes_at: string;
+  updated_at?: string;
+  liquidity_param: number;
+  yes_price: number | null;
+  no_price: number | null;
+  resolved_outcome?: Outcome | null;
+  resolved_at?: string | null;
+  total_volume_smallest_unit?: number;
+  total_trades?: number;
+}
+
+export interface MarketsListResponse {
+  markets: Market[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+
 export interface LoginRequest {
   email: string;
   password: string;
