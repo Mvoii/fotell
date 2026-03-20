@@ -15,8 +15,7 @@ src/
 │   ├── markets/          ← MarketCard, MarketStatusBadge, ProbabilityBar
 │   ├── charts/           ← PriceChart, VolumeChart
 │   ├── trade/            ← MarketOrderForm, LimitOrderForm, TradePanel,
-│   │                        TradeConfirmModal, LimitOrderConfirmModal,
-│   │                        EditTriggerSheet, TradeReceipt, GlobalTradeSheet
+│   │                        TradeConfirmModal, LimitOrderConfirmModal, TradeReceipt
 │   ├── portfolio/        ← StatsBar, PositionCard, BalanceSummary,
 │   │                        OrdersTable, OpenOrderCard, TradeHistoryTable
 │   ├── watchlist/        ← WatchlistCard, PriceAlertSheet, WatchlistToggle
@@ -487,41 +486,6 @@ Internal behaviour:
 2. Shows recently-viewed markets list
 3. On market select → renders full `<TradePanel>` below search results
 4. After successful trade → shows receipt, then auto-closes after 3s
-
----
-
-### `EditTriggerSheet`
-
-> **New in v2.** Bottom sheet for modifying the trigger price of an existing pending limit order.
-> Accessible from Portfolio → Orders → [Edit Trigger] and Home → Open Orders → long-press.
-
-```tsx
-interface EditTriggerSheetProps {
-  isOpen: boolean;
-  onClose: () => void;
-  order: Order;                       // existing limit order
-  currentMarketPrice: number;         // current YES or NO price in cents
-  onSave: (newTriggerPrice: number) => Promise<void>;
-}
-```
-
-Internal state:
-- `newTriggerPrice: number` — controlled input, defaults to `order.trigger_price`
-- `estimatedMaxCost: number` — `order.shares × newTriggerPrice / 100`
-
-**Validation (Zod):**
-```ts
-z.object({
-  triggerPrice: z.number()
-    .min(1, 'Min 1¢').max(99, 'Max 99¢')
-    .refine(
-      (p) => p < currentMarketPrice,
-      `Must be below current price (${currentMarketPrice}¢) to buy the dip`
-    )
-})
-```
-
-On save → `PATCH /orders/:id` with `{ trigger_price: newTriggerPriceCents }` → invalidate `queryKeys.user.orders`.
 
 ---
 

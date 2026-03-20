@@ -72,7 +72,7 @@ func main() {
 	// Initialize AMM registry (in-memory market state)
 	registry := amm.NewRegistry()
 
-	// load all OPEN markets from datanses into registry
+	// Load active markets from DB into registry
 	if err := startup.LoadActiveMarkets(context.Background(), marketRepo, registry); err != nil {
 		log.Fatalf("CRITICAL: Failed to load active markets: %v", err)
 	}
@@ -148,6 +148,8 @@ func main() {
 		// public comments routes
 		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
 		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
+		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
+		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
 
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
@@ -162,10 +164,6 @@ func main() {
 			r.Get("/users/me/balance", userHandler.GetBalance)
 			r.Get("/users/me/positions", userHandler.GetPositions)
 			r.Get("/users/me/trades", userHandler.GetMyTrades)
-			r.Get("/users/me", userHandler.GetMe)
-			r.Get("/users/me/balance", userHandler.GetBalance)
-			r.Get("/users/me/positions", userHandler.GetPositions)
-			r.Get("/users/me/trades", userHandler.GetMyTrades)
 
 			// Trading
 			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
@@ -176,7 +174,10 @@ func main() {
 
 			r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
 			r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
+			r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
+			r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
 
+			r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
 			r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
 
 			// ── Admin routes (admin role required)
