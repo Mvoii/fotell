@@ -64,8 +64,8 @@ export default function LeftRail({ forceExpanded }: LeftRailProps) {
     px-4 py-3 rounded-lg cursor-pointer select-none
     transition-colors duration-150
     ${active
-      ? "bg-accent-blue-dim text-accent-blue"
-      : "text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
+      ? "bg-accent-blue-dim text-primary"
+      : "text-text-primary hover:bg-bg-elevated hover:text-text-primary"
     }
   `;
 

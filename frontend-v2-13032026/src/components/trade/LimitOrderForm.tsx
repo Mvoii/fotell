@@ -59,8 +59,8 @@ export function LimitOrderForm({
   // How many shares the user holds for the selected outcome
   const heldShares =
     outcome === 'YES'
-      ? userPosition?.yes_shares_smallest_unit ?? 0
-      : userPosition?.no_shares_smallest_unit ?? 0;
+      ? userPosition?.yes_shares ?? 0
+      : userPosition?.no_shares ?? 0;
 
   // ── Validation
   const isOverLimit = estimatedCost > MAX_TRADE_AMOUNT_KES;

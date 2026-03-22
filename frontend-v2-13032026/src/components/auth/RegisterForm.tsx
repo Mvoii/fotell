@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
  * RegisterForm
  * - Consumes useRegister hook
  * - Inline validation, error display
- * - On success: redirects to /home, triggers welcome toast
+ * - On success: redirects to /dashboard, triggers welcome toast
  */
 export function RegisterForm() {
 //   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
@@ -62,7 +62,7 @@ export function RegisterForm() {
     if (Object.keys(errors).length > 0) return;
     const res = await register(form, rememberMe);
     if (res) {
-      router.push("/home");
+      router.push("/dashboard");
     }
   };
 
@@ -73,9 +73,9 @@ export function RegisterForm() {
       autoComplete="off"
     >
       <div className="text-center mb-4">
-        <span className="font-bold text-2xl text-accent-blue dark:text-accent-blue">🔮 FoTell</span>
+        <span className="font-bold text-2xl text-primary dark:text-primary">🔮 FoTell</span>
         <div className="mt-2 text-heading-lg text-primary font-semibold dark:text-primary">Create your account</div>
-        <div className="text-body-md text-accent-blue mt-1 dark:text-accent-blue">Start with 5,000 KES free</div>
+        <div className="text-body-md text-primary mt-1 dark:text-primary">Start with 5,000 KES free</div>
       </div>
 
       <div className="space-y-2">
@@ -183,7 +183,7 @@ export function RegisterForm() {
         Already have an account?{" "}
         <a
           href="/auth/login"
-          className="text-accent-blue hover:underline"
+          className="text-primary hover:underline"
         >
           Sign in →
         </a>
