@@ -94,8 +94,8 @@ export default function BottomNav({
         const active = isActive(tab);
         const Icon = active ? tab.IconActive : tab.Icon;
         const colorClass = active
-          ? "text-accent-blue"
-          : "text-text-secondary hover:text-text-primary";
+          ? "text-primary"
+          : "text-text-primary hover:text-text-primary";
 
         const inner = (
           <>

@@ -59,8 +59,8 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
                       : market.status === 'PENDING'
                         ? 'bg-[rgba(255,152,0,0.15)] text-warning border-[rgba(255,152,0,0.3)]'
                         : market.status === 'CLOSED'
-                          ? 'bg-[rgba(139,146,165,0.15)] text-secondary border-[rgba(139,146,165,0.3)]'
-                          : 'bg-accent-blue-dim text-accent-blue border-[rgba(33,150,243,0.3)]'
+                          ? 'bg-[rgba(139,146,165,0.15)] text-primary border-[rgba(139,146,165,0.3)]'
+                          : 'bg-accent-blue-dim text-primary border-[rgba(33,150,243,0.3)]'
                   }`}
                 >
                   {market.status}
@@ -100,15 +100,15 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
         <div className="flex justify-center items-center gap-2 mt-6">
           <button
 
-            className="px-3 py-1 rounded-md border border-subtle text-primary bg-transparent hover:bg-accent-blue-dim hover:text-accent-blue transition disabled:opacity-50"
+            className="px-3 py-1 rounded-md border border-subtle text-primary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-50"
             onClick={() => onPageChange?.(offset - limit)}
             disabled={currentPage === 1}
           >
             Prev
           </button>
-          <span className="text-body-md text-secondary">Page {currentPage} of {pageCount}</span>
+          <span className="text-body-md text-primary">Page {currentPage} of {pageCount}</span>
           <button
-            className="px-3 py-1 rounded-md border border-subtle text-primary bg-transparent hover:bg-accent-blue-dim hover:text-accent-blue transition disabled:opacity-50"
+            className="px-3 py-1 rounded-md border border-subtle text-primary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-50"
             onClick={() => onPageChange?.(offset + limit)}
             disabled={currentPage === pageCount}
           >

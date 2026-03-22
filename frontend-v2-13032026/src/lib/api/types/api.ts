@@ -34,12 +34,33 @@ export interface TradePanelProps {
 
 export interface Position {
   id: string;
-  market_id: string;
   user_id: string;
-  yes_shares_smallest_unit: number;
-  no_shares_smallest_unit: number;
-  total_cost_basis_smallest_unit: number;
-  realized_pnl_smallest_unit?: number | null;
+  market_id: string;
+  yes_shares: number;
+  no_shares: number;
+  cost_basis: number;
+  realized_pnl: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Trade {
+  id: string;
+  user_id: string;
+  market_id: string;
+  outcome: 'YES' | 'NO';
+  shares: number;
+  cost_paid: number;
+  created_at: string;
+}
+
+export interface PositionWithMarket extends Position {
+  market?: Market;
+}
+
+export interface UserTradesResponse {
+  trades: Trade[];
+  total: number;
 }
 
 export interface ApiError {
@@ -128,4 +149,56 @@ export interface UserInfo {
   full_name: string;
   role: 'USER' | 'ADMIN';
   created_at: string;
+}
+
+/** Full current user from GET /users/me (superset of fields in UserInfo). */
+export interface UserProfile {
+  id: string;
+  email: string;
+  email_verified: boolean;
+  full_name: string;
+  username: string;
+  role: 'USER' | 'ADMIN';
+  is_active: boolean;
+  created_at: string;
+  last_login_at: string | null;
+}
+
+// Dashboard / User-related types
+export interface BalanceResponse {
+  balance_smallest_unit: number;
+  balance_kes: number;
+}
+
+export interface UserTrade {
+  id: string;
+  user_id: string;
+  market_id: string;
+  outcome: 'YES' | 'NO';
+  shares: number;
+  cost_paid: number; // in cents
+  created_at: string;
+}
+
+export interface UserTradesResponse {
+  trades: UserTrade[];
+  total: number;
+}
+
+export interface PositionWithMarket extends Position {
+  market?: Market;
+}
+
+export interface PortfolioSummary {
+  total_positions: number;
+  total_invested: number;
+  total_pnl: number;
+  active_markets: number;
+}
+
+export interface DashboardStats {
+  balance: BalanceResponse;
+  portfolio: PortfolioSummary;
+  recent_trades: UserTrade[];
+  open_positions: PositionWithMarket[];
 }

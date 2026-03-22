@@ -135,9 +135,11 @@ export function PriceChart({
                 borderRadius: '6px',
               }}
               labelStyle={{ color: '#9fa6b7' }}
-              formatter={(value: number, name: string) => [
-                `${value.toFixed(2)}¢`,
-                name === 'yes' ? 'Yes' : 'No',
+              formatter={(value, name) => [
+                value !== undefined && typeof value === 'number'
+                  ? require('@/lib/formatters').formatPrice(value, 'cents')
+                  : '',
+                name === 'yes' ? 'Yes' : name === 'no' ? 'No' : '',
               ]}
             />
             <Line
