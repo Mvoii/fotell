@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Market, MarketPrices } from '@/lib/api/types/api';
+import type { Market, MarketPrices, TimeRange } from '@/lib/api/types/api';
 import { formatPrice } from '@/lib/formatters';
 import MarketStatusBadge from '@/components/markets/MarketStatusBadge';
 import { PriceChart } from '@/components/charts/PriceChart';
@@ -8,9 +8,16 @@ import ProbabilityBar from '@/components/markets/ProbabilityBar';
 interface MarketDetailsCardProps {
   market: Market;
   prices: MarketPrices[];
+  timeRange?: TimeRange;
+  onTimeRangeChange?: (range: TimeRange) => void;
 }
 
-export function MarketDetailsCard({ market, prices }: MarketDetailsCardProps) {
+export function MarketDetailsCard({
+  market,
+  prices,
+  timeRange = '1D',
+  onTimeRangeChange,
+}: MarketDetailsCardProps) {
   // Debug log for prices array
   React.useEffect(() => {
     // eslint-disable-next-line no-console
@@ -23,7 +30,7 @@ export function MarketDetailsCard({ market, prices }: MarketDetailsCardProps) {
     console.log('[MarketDetailsCard] trades:', market.total_trades, 'volume:', market.total_volume_smallest_unit);
   }, [market.total_trades, market.total_volume_smallest_unit]);
   return (
-    <div className="bg-surface border border-subtle rounded-lg p-6 shadow-lg w-full max-w-xl">
+    <div className="bg-surface border border-subtle rounded-lg p-6 shadow-lg w-full">
       <div className="flex items-center gap-2 mb-2">
         <MarketStatusBadge status={market.status} size="md" />
         {market.status === 'RESOLVED' ? (
@@ -63,7 +70,12 @@ export function MarketDetailsCard({ market, prices }: MarketDetailsCardProps) {
       {/* Price Chart integration */}
       <div className="mt-6">
         {prices && prices.length > 0 ? (
-          <PriceChart prices={prices} height={200} />
+          <PriceChart
+            prices={prices}
+            height={250}
+            timeRange={timeRange}
+            onTimeRangeChange={onTimeRangeChange}
+          />
         ) : (
           <div className="text-muted text-sm">Price chart coming soon...</div>
         )}
