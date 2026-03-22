@@ -1,3 +1,4 @@
+import { getTokens, setTokens, clearTokens } from '../auth';
 /**
  * Connection-only API client for the Go backend.
  *
@@ -81,6 +82,11 @@ export async function apiRequest<T>(
   path: string,
   options: ApiRequestOptions = {},
 ): Promise<ApiResponse<T>> {
+  // Determine if this is an auth endpoint (do not send token for login/register/refresh)
+  const isAuthEndpoint =
+    path.startsWith('/auth/login') ||
+    path.startsWith('/auth/register') ||
+    path.startsWith('/auth/refresh');
   const {
     method = 'GET',
     params,
@@ -98,13 +104,20 @@ export async function apiRequest<T>(
     signal.addEventListener('abort', () => controller.abort(), { once: true });
   }
 
-  const finalHeaders: HeadersInit = {
+  const finalHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
-    ...(headers ?? {}),
+    ...(headers as Record<string, string> ?? {}),
   };
+  // Inject Authorization header if not an auth endpoint and token exists
+  if (!isAuthEndpoint) {
+    const { access_token } = getTokens();
+    if (access_token) {
+      finalHeaders['Authorization'] = `Bearer ${access_token}`;
+    }
+  }
 
   try {
-    const response = await fetch(buildUrl(path, params), {
+    let response = await fetch(buildUrl(path, params), {
       method,
       credentials,
       cache: 'no-store',
@@ -112,6 +125,60 @@ export async function apiRequest<T>(
       body: body === undefined ? undefined : JSON.stringify(body),
       signal: controller.signal,
     });
+
+    // If 401 and not an auth endpoint, try refresh
+    if (!response.ok && response.status === 401 && !isAuthEndpoint) {
+      // Try refresh
+      const { refresh_token } = getTokens();
+      if (refresh_token) {
+        // Call refresh endpoint
+        try {
+          const refreshRes = await fetch(buildUrl('/auth/refresh'), {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ refresh_token }),
+            credentials,
+          });
+          if (refreshRes.ok) {
+            const refreshData = await parseJsonSafe<any>(refreshRes);
+            if (refreshData && typeof refreshData === 'object' && 'access_token' in refreshData && 'refresh_token' in refreshData) {
+              setTokens({
+                access_token: refreshData.access_token,
+                refresh_token: refreshData.refresh_token,
+              }, window.localStorage.getItem('auth_storage_type') === 'local');
+              // Retry original request with new token
+              finalHeaders['Authorization'] = `Bearer ${refreshData.access_token}`;
+              response = await fetch(buildUrl(path, params), {
+                method,
+                credentials,
+                cache: 'no-store',
+                headers: finalHeaders,
+                body: body === undefined ? undefined : JSON.stringify(body),
+                signal: controller.signal,
+              });
+            } else {
+              clearTokens();
+              window.location.href = '/auth/login';
+              throw new ApiRequestError('Session expired. Please log in again.', 401, null);
+            }
+          } else {
+            clearTokens();
+            window.location.href = '/auth/login';
+            throw new ApiRequestError('Session expired. Please log in again.', 401, null);
+          }
+        } catch (refreshErr) {
+          clearTokens();
+          window.location.href = '/auth/login';
+          throw new ApiRequestError('Session expired. Please log in again.', 401, null);
+        }
+      } else {
+        clearTokens();
+        window.location.href = '/auth/login';
+        throw new ApiRequestError('Session expired. Please log in again.', 401, null);
+      }
+    }
 
     const parsed = await parseJsonSafe<T>(response);
 

@@ -1,3 +1,56 @@
+// Trading types
+export interface PlaceTradeRequest {
+  outcome: 'YES' | 'NO';
+  shares: number;
+  max_cost?: number; // smallest unit; 0 = disabled
+}
+
+export interface TradeReceipt {
+  trade_id: string;
+  outcome: 'YES' | 'NO';
+  shares: number;
+  cost_paid: number;
+  avg_price: number;
+  position: Position;
+  balance_after: number;
+  timestamp: string;
+}
+export interface MarketOrderFormProps {
+  market: Market;
+  currentPrices: { yes_price: number; no_price: number };
+  userBalance: number | null;
+  userPosition: Position | null;  // use typed Position, not any
+  onSubmit: (params: PlaceTradeRequest) => void;  // ← matches API exactly
+  tradeHook: ReturnType<typeof import('@/hooks/useTrade').useTrade>;
+}
+export interface TradePanelProps {
+  market: Market;
+  currentPrices: { yes_price: number; no_price: number };
+  userBalance: number | null;
+  userPosition: Position | null;
+  defaultTab?: 'market' | 'limit';
+  defaultOutcome?: 'YES' | 'NO';
+}
+
+export interface Position {
+  id: string;
+  market_id: string;
+  user_id: string;
+  yes_shares_smallest_unit: number;
+  no_shares_smallest_unit: number;
+  total_cost_basis_smallest_unit: number;
+  realized_pnl_smallest_unit?: number | null;
+}
+
+export interface ApiError {
+  error: string;
+  details?: {
+    error_code?: string;
+    field?: string;
+    projected_cost?: number;
+    max_cost?: number;
+  };
+}
 // Auth interfaces for authentication pages (mirrors backend contract)
 
 export interface RegisterRequest {
@@ -42,6 +95,16 @@ export interface MarketPrices {
   yes_price: number;
   no_price: number;
   timestamp: string;
+}
+
+// Time range options for price history
+export type TimeRange = '1D' | '5D' | '1M' | '1Y' | '5Y';
+
+// Parameters for fetching market prices with time range
+export interface TimeRangeParams {
+  from?: string; // ISO timestamp
+  to?: string;   // ISO timestamp
+  range?: TimeRange;
 }
 
 
