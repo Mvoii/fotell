@@ -1,12 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { getTokens } from '@/lib/auth';
 import { userService } from '@/lib/api/user.service';
 import type { UserProfile, BalanceResponse, Position, UserTradesResponse } from '@/lib/api/types/api';
 
 export function useUser(options?: { enabled?: boolean }) {
-  const hasToken =
-    typeof window !== 'undefined' && !!getTokens().access_token;
-  const enabled = options?.enabled ?? hasToken;
+  // Default to enabled, let the query handle token validation
+  const enabled = options?.enabled ?? true;
 
   return useQuery<UserProfile, Error, UserProfile>({
     queryKey: ['users', 'me'],
@@ -15,13 +13,18 @@ export function useUser(options?: { enabled?: boolean }) {
       return data;
     },
     enabled,
+    retry: (failureCount, error) => {
+      // Don't retry if it's an authentication error
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 }
 
 export function useBalance(options?: { enabled?: boolean }) {
-  const hasToken =
-    typeof window !== 'undefined' && !!getTokens().access_token;
-  const enabled = options?.enabled ?? hasToken;
+  const enabled = options?.enabled ?? true;
 
   return useQuery<BalanceResponse, Error, BalanceResponse>({
     queryKey: ['user', 'balance'],
@@ -30,13 +33,17 @@ export function useBalance(options?: { enabled?: boolean }) {
       return data;
     },
     enabled,
+    retry: (failureCount, error) => {
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 }
 
 export function usePositions(options?: { enabled?: boolean }) {
-  const hasToken =
-    typeof window !== 'undefined' && !!getTokens().access_token;
-  const enabled = options?.enabled ?? hasToken;
+  const enabled = options?.enabled ?? true;
 
   return useQuery<Position[], Error, Position[]>({
     queryKey: ['user', 'positions'],
@@ -45,13 +52,17 @@ export function usePositions(options?: { enabled?: boolean }) {
       return data;
     },
     enabled,
+    retry: (failureCount, error) => {
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 }
 
 export function useTrades(limit = 50, offset = 0, options?: { enabled?: boolean }) {
-  const hasToken =
-    typeof window !== 'undefined' && !!getTokens().access_token;
-  const enabled = options?.enabled ?? hasToken;
+  const enabled = options?.enabled ?? true;
 
   return useQuery<UserTradesResponse, Error, UserTradesResponse>({
     queryKey: ['user', 'trades', { limit, offset }],
@@ -60,5 +71,11 @@ export function useTrades(limit = 50, offset = 0, options?: { enabled?: boolean 
       return data;
     },
     enabled,
+    retry: (failureCount, error) => {
+      if (error.message.includes('401') || error.message.includes('Unauthorized')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 }
