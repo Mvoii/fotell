@@ -1,0 +1,374 @@
+import React from 'react';
+import type { Market, Position, PlaceTradeRequest, MarketOrderFormProps } from '@/lib/api/types/api';
+import { formatPrice } from '@/lib/formatters';
+
+// Maximum trade amount in KES per trade
+const MAX_TRADE_AMOUNT_KES = 5000;
+
+// Quick-fill options in KES
+const QUICK_FILL_OPTIONS = [130, 648, 1296, 2592] as const;
+
+// interface MarketOrderFormProps {
+//   market: Market;
+//   currentPrices: { yes_price: number; no_price: number };
+//   userBalance: number | null;
+//   userPosition: Position | null;
+//   onSubmit: (params: PlaceTradeRequest) => void;
+//   tradeHook: ReturnType<typeof import('@/hooks/useTrade').useTrade>;
+// }
+
+export function MarketOrderForm({
+  market,
+  currentPrices,
+  userBalance,
+  userPosition,
+  onSubmit,
+  tradeHook,
+}: MarketOrderFormProps) {
+  void market; // referenced via MarketOrderFormProps but not used directly in JSX yet
+
+  // ── State
+  const [outcome, setOutcome] = React.useState<'YES' | 'NO'>('YES');
+  const [shares, setShares] = React.useState<number>(0);
+  const [instant, setInstant] = React.useState<boolean>(true);
+  // maxCostCap is used only when instant === false (user sets a slippage cap)
+  const [maxCostCap, setMaxCostCap] = React.useState<number>(0);
+  const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+
+  // ── Derived values
+  const currentPrice =
+    outcome === 'YES' ? currentPrices.yes_price : currentPrices.no_price;
+
+  // Estimated cost in smallest unit (prices come as 0-100 scale from API)
+  const estimatedCost = shares * currentPrice;
+  // Each share pays out 100 KES at resolution
+  const estimatedPayout = shares * 100;
+  const estimatedProfit = estimatedPayout - estimatedCost;
+
+  // How many shares the user holds for the selected outcome
+  const heldShares =
+    outcome === 'YES'
+      ? userPosition?.yes_shares_smallest_unit ?? 0
+      : userPosition?.no_shares_smallest_unit ?? 0;
+
+  // ── Validation
+  const isOverLimit = estimatedCost > MAX_TRADE_AMOUNT_KES;
+
+  // ── Handlers
+  const handleOutcomeSelect = (selected: 'YES' | 'NO') => {
+    setOutcome(selected);
+    setErrorMsg(null);
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMsg(null);
+
+    if (shares < 1) {
+      setErrorMsg('Shares must be at least 1');
+      return;
+    }
+
+    if (estimatedCost > MAX_TRADE_AMOUNT_KES) {
+      setErrorMsg(`Trade amount exceeds maximum limit of KES ${MAX_TRADE_AMOUNT_KES}`);
+      return;
+    }
+
+    const payload: PlaceTradeRequest = {
+      outcome,
+      shares,
+      max_cost: instant ? 0 : maxCostCap, // 0 = no cap (instant fill)
+    };
+
+    onSubmit(payload);
+  };
+
+  // Sync API errors into local error state
+  React.useEffect(() => {
+    if (tradeHook.error) {
+      setErrorMsg(tradeHook.error.error);
+    }
+  }, [tradeHook.error]);
+
+  // ── Pill styles
+  const pillBase =
+    'inline-flex items-center px-4 py-2 rounded-md border font-mono font-bold text-lg gap-2 cursor-pointer transition select-none text-primary';
+  const yesPill = `${pillBase} bg-yes-dim border-[rgba(0,200,83,0.35)] ${
+    outcome === 'YES' ? 'ring-2 ring-yes-strong' : 'opacity-60'
+  }`;
+  const noPill = `${pillBase} bg-no-dim border-[rgba(255,23,68,0.35)] ${
+    outcome === 'NO' ? 'ring-2 ring-no-strong' : 'opacity-60'
+  }`;
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="bg-surface border border-subtle rounded-lg p-6 shadow-lg w-full max-w-xl flex flex-col gap-6 text-primary"
+    >
+      {/* ── Outcome pills */}
+      <div>
+        <div className="text-body-md font-semibold mb-3">Select your prediction</div>
+        <div className="flex items-center gap-3">
+          <span
+            className={yesPill}
+            tabIndex={0}
+            role="button"
+            aria-pressed={outcome === 'YES'}
+            onClick={() => handleOutcomeSelect('YES')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') handleOutcomeSelect('YES');
+            }}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9 3v12M9 3l-4 4M9 3l4 4"
+                stroke="#00c853"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Yes{' '}
+            {typeof currentPrices.yes_price === 'number'
+              ? formatPrice(currentPrices.yes_price, 'percent')
+              : '--'}
+          </span>
+
+          <span
+            className={noPill}
+            tabIndex={0}
+            role="button"
+            aria-pressed={outcome === 'NO'}
+            onClick={() => handleOutcomeSelect('NO')}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') handleOutcomeSelect('NO');
+            }}
+          >
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 18 18"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M9 15V3M9 15l-4-4M9 15l4-4"
+                stroke="#ff1744"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            No{' '}
+            {typeof currentPrices.no_price === 'number'
+              ? formatPrice(currentPrices.no_price, 'percent')
+              : '--'}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Instant / Set Price toggle */}
+      <div>
+        <div className="text-body-md font-semibold mb-2">Order type</div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className={`px-4 py-2 rounded font-bold transition ${
+              instant
+                ? 'bg-primary text-white'
+                : 'bg-subtle text-primary border border-subtle'
+            }`}
+            onClick={() => setInstant(true)}
+          >
+            Instant
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-2 rounded font-bold transition ${
+              !instant
+                ? 'bg-primary text-white'
+                : 'bg-subtle text-primary border border-subtle'
+            }`}
+            onClick={() => setInstant(false)}
+          >
+            Set Max Cost
+          </button>
+        </div>
+      </div>
+
+      {/* ── Max cost cap input (only when !instant) */}
+      {!instant && (
+        <div>
+          <label htmlFor="maxCostCap" className="block text-sm font-medium mb-1">
+            Max cost cap{' '}
+            <span className="text-muted text-xs">(trade fails if cost exceeds this)</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <span className="text-body-md font-semibold">KES</span>
+            <input
+              id="maxCostCap"
+              type="number"
+              min={0}
+              value={maxCostCap}
+              onChange={(e) => setMaxCostCap(Number(e.target.value))}
+              className="font-bold border border-subtle rounded px-4 py-2 w-36 text-center bg-white"
+              style={{ fontSize: '1.5rem' }}
+              aria-label="Max cost cap"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Shares input */}
+      <div>
+        <label htmlFor="shares" className="block text-sm font-medium mb-1 text-primary">
+          Shares{' '}
+          <span className="text-primary text-xs">
+            (you hold {heldShares} {outcome})
+          </span>
+        </label>
+        <input
+          id="shares"
+          type="number"
+          min={1}
+          value={shares === 0 ? '' : shares}
+          placeholder="0"
+          onChange={(e) => setShares(Number(e.target.value))}
+          className="w-full border border-subtle rounded px-3 py-2 font-mono text-lg text-primary"
+        />
+
+        {/* Quick-fill buttons */}
+        <div className="flex gap-2 mt-2 flex-wrap">
+          {QUICK_FILL_OPTIONS.map((val) => {
+            const wouldExceedLimit = val > MAX_TRADE_AMOUNT_KES;
+            return (
+              <button
+                key={val}
+                type="button"
+                disabled={wouldExceedLimit}
+                className={`px-3 py-1 rounded border border-subtle font-mono text-sm ${
+                  wouldExceedLimit
+                    ? 'bg-muted text-muted cursor-not-allowed opacity-50'
+                    : 'bg-subtle text-primary'
+                }`}
+                onClick={() => {
+                  // convert KES amount → shares at current price, SUM shares
+                  const approxShares = currentPrice > 0 ? Math.floor(val / currentPrice) : 0;
+                  setShares((prev) => prev + approxShares);
+                }}
+              >
+                ~KES {val}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            className="px-3 py-1 rounded border border-subtle bg-subtle text-primary font-mono text-sm"
+            onClick={() => {
+              // Calculate max shares that would not exceed the limit
+              const maxSharesByLimit =
+                currentPrice > 0 ? Math.floor(MAX_TRADE_AMOUNT_KES / currentPrice) : 0;
+              const maxSharesByBalance =
+                userBalance && currentPrice > 0
+                  ? Math.floor(userBalance / currentPrice)
+                  : 0;
+              // Use the smaller of limit-based or balance-based max
+              setShares(Math.min(maxSharesByLimit, maxSharesByBalance));
+            }}
+          >
+            Max
+          </button>
+        </div>
+        <p className="text-xs text-muted mt-1">
+          Maximum trade amount: KES {MAX_TRADE_AMOUNT_KES.toLocaleString()}
+        </p>
+      </div>
+
+      {/* ── Payout preview */}
+      <div className="bg-subtle rounded-lg p-4 text-primary">
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-body-md font-semibold text-primary">Estimated cost</span>
+          <span className={`font-bold text-lg ${isOverLimit ? 'text-error' : 'text-primary'}`}>
+            KES {estimatedCost.toFixed(2)}
+            {isOverLimit && (
+              <span className="text-error text-sm ml-2">(exceeds limit)</span>
+            )}
+          </span>
+        </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-body-md font-semibold text-primary">
+            Payout if {outcome} wins
+          </span>
+          <span className="font-bold text-success text-lg text-primary">
+            KES {estimatedPayout.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-body-md font-semibold text-primary">Potential profit</span>
+          <span
+            className={`font-bold text-lg ${
+              estimatedProfit >= 0 ? 'text-success' : 'text-error'
+            } text-primary`}
+          >
+            {estimatedProfit >= 0 ? '+' : ''}KES {estimatedProfit.toFixed(2)}
+          </span>
+        </div>
+        {!instant && maxCostCap > 0 && (
+          <div className="text-primary text-xs mt-2">
+            Trade will be rejected if actual cost exceeds KES {maxCostCap}
+          </div>
+        )}
+        <div className="flex gap-3 mt-3 flex-nowrap">
+          <span className="inline-flex items-center px-4 py-2 rounded-full bg-white border border-yes-strong shadow-sm gap-2">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="10" r="10" fill="#00c853" />
+              <text x="10" y="14" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">Y</text>
+            </svg>
+            <span className="font-bold text-yes-strong">YES</span>
+            <span className="font-mono text-base font-bold text-yes-strong">{currentPrices.yes_price.toFixed(2)}¢</span>
+          </span>
+          <span className="inline-flex items-center px-4 py-2 rounded-full bg-white border border-no-strong shadow-sm gap-2">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="10" r="10" fill="#ff1744" />
+              <text x="10" y="14" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">N</text>
+            </svg>
+            <span className="font-bold text-no-strong">NO</span>
+            <span className="font-mono text-base font-bold text-no-strong">{currentPrices.no_price.toFixed(2)}¢</span>
+          </span>
+          <span className="inline-flex items-center px-4 py-2 rounded-full bg-white border border-primary shadow-sm gap-2">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="10" cy="10" r="10" fill="#1976d2" />
+              <text x="10" y="14" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">₵</text>
+            </svg>
+            <span className="font-bold text-primary">Payout</span>
+            <span className="font-mono text-base font-bold text-primary">KES 100</span>
+          </span>
+        </div>
+      </div>
+
+      {/* ── Error */}
+      {errorMsg && (
+        <div className="text-error text-sm font-semibold">{errorMsg}</div>
+      )}
+
+      {/* ── Submit */}
+      <button
+        type="submit"
+        className="bg-primary text-white font-bold py-3 px-4 rounded disabled:opacity-50 transition"
+        disabled={tradeHook.isPending || shares < 1 || isOverLimit}
+      >
+        {tradeHook.isPending
+          ? 'Placing trade…'
+          : isOverLimit
+            ? `Limit exceeded (max KES ${MAX_TRADE_AMOUNT_KES})`
+            : `Buy ${shares > 0 ? shares : ''} ${outcome} shares`}
+      </button>
+    </form>
+  );
+}

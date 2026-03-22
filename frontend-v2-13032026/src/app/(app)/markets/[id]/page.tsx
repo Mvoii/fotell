@@ -2,16 +2,15 @@
 import { notFound } from 'next/navigation';
 import { useMarketDetails } from '@/hooks/useMarketDetails';
 import { MarketDetailsCard } from '@/components/markets/MarketDetailsCard';
-import PageContainer from '@/components/layout/PageContainer';
+import { TradePanel } from '@/components/trade/TradePanel';
+import { useParams } from 'next/navigation';
 
-interface MarketDetailsPageProps {
-  params: { id: string };
-}
 
-import React from 'react';
-export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
-  const resolvedParams = React.use(params);
-  const { market, prices, isLoading, isError, error, refetch } = useMarketDetails(resolvedParams.id);
+
+export default function MarketDetailsPage() {
+  const routeParams = useParams();
+  const marketId = typeof routeParams.id === 'string' ? routeParams.id : '';
+  const { market, prices, isLoading, isError, error, refetch, timeRange, setTimeRange } = useMarketDetails(marketId);
 
   if (isLoading) {
     return (
@@ -34,11 +33,26 @@ export default function MarketDetailsPage({ params }: MarketDetailsPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base">
-      <div className="max-w-xl w-full">
-        <MarketDetailsCard market={market} prices={Array.isArray(prices) ? prices : prices ? [prices] : []} />
+    <div className="min-h-screen flex items-center justify-center bg-base px-4 py-8">
+      <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <MarketDetailsCard
+          market={market}
+          prices={Array.isArray(prices) ? prices : prices ? [prices] : []}
+          timeRange={timeRange}
+          onTimeRangeChange={setTimeRange}
+        />
+        {/* Trading panel only for OPEN markets */}
+        {market.status === 'OPEN' && (
+          <div className="lg:self-start">
+            <TradePanel
+              market={market}
+              currentPrices={{ yes_price: market.yes_price ?? 0, no_price: market.no_price ?? 0 }}
+              userBalance={null} // TODO: wire up user balance
+              userPosition={null} // TODO: wire up user position
+            />
+          </div>
+        )}
       </div>
-      {/* TODO: Add TradePanel and other details */}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { registerUser } from '@/lib/api/auth.service';
 import type { RegisterRequest, AuthResponse } from '@/lib/api/types/api';
 import type { ApiRequestError } from '@/lib/api/client';
+import { setTokens } from '@/lib/auth';
 
 /**
  * useRegister hook
@@ -13,12 +14,21 @@ export function useRegister() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<AuthResponse | null>(null);
 
-  const register = async (payload: RegisterRequest) => {
+  /**
+   * @param payload RegisterRequest
+   * @param rememberMe boolean - if true, tokens are saved to localStorage, else sessionStorage
+   */
+  const register = async (payload: RegisterRequest, rememberMe: boolean = false) => {
     setLoading(true);
     setError(null);
     try {
       const response = await registerUser(payload);
       setData(response);
+      // Save tokens to storage
+      setTokens({
+        access_token: response.access_token,
+        refresh_token: response.refresh_token,
+      }, rememberMe);
       return response;
     } catch (err) {
       let errorMsg = 'Registration failed. Please try again.';

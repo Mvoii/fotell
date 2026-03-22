@@ -22,6 +22,7 @@ export function LoginForm() {
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Simple inline validation
   const validate = (values: LoginRequest) => {
@@ -48,7 +49,7 @@ export function LoginForm() {
     const errors = validate(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
-    const res = await login(form);
+    const res = await login(form, rememberMe);
     if (res) {
       router.push("/home");
     }
@@ -112,6 +113,19 @@ export function LoginForm() {
       {error && (
         <div className="text-error text-sm mt-2 text-center">{error}</div>
       )}
+
+      <div className="flex items-center gap-2 mt-2">
+        <input
+          id="rememberMe"
+          type="checkbox"
+          checked={rememberMe}
+          onChange={e => setRememberMe(e.target.checked)}
+          className="accent-accent-blue"
+        />
+        <label htmlFor="rememberMe" className="text-body-sm text-primary select-none cursor-pointer">
+          Remember me
+        </label>
+      </div>
 
       <Button
         variant="default"
