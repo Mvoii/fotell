@@ -20,13 +20,13 @@ const statusStyles = {
   },
   CLOSED: {
     bg: 'bg-[rgba(139,146,165,0.15)]',
-    text: 'text-secondary',
+    text: 'text-primary',
     border: 'border-[rgba(139,146,165,0.3)]',
     label: 'Closed',
   },
   RESOLVED: {
     bg: 'bg-accent-blue-dim',
-    text: 'text-accent-blue',
+    text: 'text-primary',
     border: 'border-[rgba(33,150,243,0.3)]',
     label: 'Resolved',
   },
