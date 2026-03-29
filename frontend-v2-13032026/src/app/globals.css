@@ -128,3 +128,59 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  /* App Shell utilities */
+  .has-bottom-nav {
+    padding-bottom: 3.5rem; /* 56px for bottom nav */
+  }
+  
+  /* Responsive grid helpers */
+  .app-grid {
+    @apply grid;
+    @apply grid-cols-1;
+    @apply lg:grid-cols-[auto_1fr];
+    @apply min-h-screen;
+  }
+  
+  .app-main {
+    @apply col-start-1;
+    @apply row-start-1;
+    @apply lg:col-start-2;
+    @apply transition-all duration-200;
+  }
+  
+  .app-sidebar {
+    @apply col-start-1;
+    @apply row-start-1;
+    @apply hidden lg:block;
+    @apply transition-all duration-200;
+  }
+  
+  /* Safe area insets for mobile devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  
+  /* Custom scrollbar for sidebar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground));
+  }
+}
