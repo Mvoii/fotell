@@ -18,7 +18,7 @@ import type { NextRequest } from "next/server";
  */
 
 const AUTH_REQUIRED = [
-  "/home",
+  "/dashboard",
   "/watchlist",
   "/portfolio",
   "/notifications",
@@ -61,9 +61,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // ── Already-authed users hitting /auth/* → send to /home ──────────
+  // ── Already-authed users hitting /auth/* → send to /dashboard ──────────
   if (pathname.startsWith("/auth/") && hasAccessToken) {
-    return NextResponse.redirect(new URL("/home", request.url));
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();

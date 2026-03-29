@@ -5,11 +5,26 @@ import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { PositionsList } from '@/components/dashboard/PositionsList';
 import { TradesList } from '@/components/dashboard/TradesList';
 import { DashboardStats } from '@/components/dashboard/DashboardStats';
+import { AppShell } from '@/components/layout/AppShell';
+import PageContainer from '@/components/layout/PageContainer';
+import { useNavigation } from '@/hooks/useNavigation';
+import { useUser } from '@/hooks/useUser';
 
 export default function DashboardPage() {
+  const { activeTab } = useNavigation();
+  const { data: user } = useUser();
+
   return (
-    <div className="min-h-screen bg-base">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <AppShell
+      isAuthenticated={!!user}
+      topNavProps={{
+        showSearch: false,
+      }}
+      bottomNavProps={{
+        // activeTab: 'home',
+      }}
+    >
+      <PageContainer maxWidth="7xl" inAppShell>
         <div className="mb-8">
           <h1 className="heading-xl text-primary mb-2">Dashboard</h1>
           <p className="text-primary">
@@ -84,7 +99,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </PageContainer>
+    </AppShell>
   );
 }

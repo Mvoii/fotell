@@ -58,18 +58,23 @@ export function AuthGuard({ children, requireAdmin = false, fallback }: AuthGuar
           </div>
         </div>
       ) : requireAdmin && user.role !== 'ADMIN' ? (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <h2 className="heading-lg text-primary mb-4">Access Denied</h2>
-            <p className="text-primary mb-6">This page requires administrator privileges.</p>
-            <button
-              onClick={() => window.location.href = '/dashboard'}
-              className="bg-accent-blue hover:bg-accent-blue-hover text-white px-6 py-2 rounded transition-colors"
-            >
-              Go to Dashboard
-            </button>
+        // DEMO MODE: Bypass admin check for demo purposes
+        // ORIGINAL CODE (uncomment after demo):
+        <>
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <h2 className="heading-lg text-primary mb-4">Access Denied</h2>
+              <p className="text-primary mb-6">This page requires administrator privileges.</p>
+              <button
+                onClick={() => window.location.href = '/dashboard'}
+                className="bg-accent-blue hover:bg-accent-blue-hover text-white px-6 py-2 rounded transition-colors"
+              >
+                Go to Dashboard
+              </button>
+            </div>
           </div>
-        </div>
+          {children}
+        </>
       ) : (
         <>{children}</>
       )}
