@@ -11,7 +11,7 @@ import { useRouter } from "next/navigation";
  * LoginForm
  * - Consumes useLogin hook
  * - Inline validation, error display
- * - On success: redirects to /dashboard, triggers welcome toast
+ * - On success: redirects to /home, triggers welcome toast
  */
 export function LoginForm() {
   const router = useRouter();
@@ -62,7 +62,7 @@ export function LoginForm() {
       autoComplete="off"
     >
       <div className="text-center mb-4">
-        <span className="font-bold text-2xl text-primary">🔮 FoTell</span>
+        <span className="font-bold text-2xl text-accent-blue">🔮 FoTell</span>
         <div className="mt-2 text-heading-lg text-primary font-semibold">Welcome back</div>
         <div className="text-body-md text-primary mt-1">Sign in to your account</div>
       </div>
@@ -141,7 +141,7 @@ export function LoginForm() {
         Don&apos;t have an account?{" "}
         <a
           href="/auth/register"
-          className="text-primary hover:underline"
+          className="text-accent-blue hover:underline"
         >
           Sign up →
         </a>

@@ -5,12 +5,21 @@ import Link from 'next/link';
 import { useUser } from '@/hooks/useUser';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { ClientOnly } from '@/components/ui/ClientOnly';
+import { AppShell } from '@/components/layout/AppShell';
 
 export default function ProfilePage() {
   const { data: user, isLoading, error } = useUser();
 
   return (
-    <div className="min-h-screen bg-base">
+    <AppShell
+      isAuthenticated={!!user}
+      topNavProps={{
+        showSearch: false,
+      }}
+      bottomNavProps={{
+        // activeTab: 'profile',
+      }}
+    >
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <h1 className="heading-xl text-primary mb-2">
@@ -217,6 +226,6 @@ export default function ProfilePage() {
           )}
         </ClientOnly>
       </div>
-    </div>
+    </AppShell>
   );
 }
