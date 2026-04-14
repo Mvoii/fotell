@@ -16,6 +16,7 @@ import (
 	"github.com/Mvoii/fotell/api/middleware"
 	"github.com/Mvoii/fotell/api/repository"
 	"github.com/Mvoii/fotell/api/startup"
+	"github.com/Mvoii/fotell/api/workers"
 	"github.com/joho/godotenv"
 
 	"github.com/go-chi/chi/v5"
@@ -69,7 +70,6 @@ func main() {
 	commentRepo := repository.NewCommentRepository(db)
 
 	// Initialize AMM registry (in-memory market state)
-	// In production, this would be populated from the database on startup
 	registry := amm.NewRegistry()
 
 	// Load active markets from DB into registry
@@ -77,12 +77,22 @@ func main() {
 		log.Fatalf("CRITICAL: Failed to load active markets: %v", err)
 	}
 
+	// settlement minions
+	settlementMinion := workers.NewSettlementMinon(db)
+
+	minionCtx, minionCancel := context.WithCancel(context.Background())
+	defer minionCancel()
+
+	settlementMinion.Start(minionCtx)
+
+	log.Println("settlement minions init")
+
 	// Initialize handlers (HTTP request handlers)
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
-	commentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
+	commentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 
 	// Build router with middleware stack
 	r := chi.NewRouter()
@@ -110,7 +120,7 @@ func main() {
 	// Security headers
 	r.Use(middleware.SecurityHeaders)
 
-	// ── Public routes (no authentication required)
+	// Public routes (no authentication required)
 	r.Route("/api/v1", func(r chi.Router) {
 
 		// Health check
@@ -138,6 +148,8 @@ func main() {
 		// public comments routes
 		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
 		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
+		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
+		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
 
 		// ── Protected routes (authentication required)
 		r.Group(func(r chi.Router) {
@@ -156,13 +168,16 @@ func main() {
 			// Trading
 			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
 
-			// comments (protected)
+			// comments
 			r.Post("/markets/{marketID}/comments", commentHandler.CreateComment)
 			r.Post("/comments/{commentID}/replies", commentHandler.CreateReply)
 
 			r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
 			r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
+			r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
+			r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
 
+			r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
 			r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
 
 			// ── Admin routes (admin role required)
@@ -174,6 +189,16 @@ func main() {
 				r.Post("/admin/markets/{marketID}/open", marketHandler.OpenMarket)
 				r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
 				r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
+
+				r.Get("/admin/settlement/status", func(w http.ResponseWriter, r *http.Request) { 
+					status, err := settlementMinion.GetSettlementStatus(r.Context())
+					            if err != nil {
+									handlers.ErrorJSON(w, 500, "Failed to get settlement status", nil)
+									return
+								}
+								handlers.JSON(w, 200, map[string]interface{}{
+									"settlements": status,
+								})})
 
 				// User management
 				// r.Get("/admin/users", userHandler.ListUsers)
