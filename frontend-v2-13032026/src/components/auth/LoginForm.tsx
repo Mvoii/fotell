@@ -60,6 +60,7 @@ export function LoginForm() {
       className="bg-surface rounded-lg shadow-lg p-6 max-w-md mx-auto space-y-6"
       onSubmit={handleSubmit}
       autoComplete="off"
+      suppressHydrationWarning
     >
       <div className="text-center mb-4">
         <span className="font-bold text-2xl text-accent-blue">🔮 FoTell</span>
@@ -70,6 +71,7 @@ export function LoginForm() {
       <div className="space-y-2">
         <label htmlFor="email" className="block text-heading-md text-primary mb-1">Email</label>
         <Input
+          id="email"
           name="email"
           type="email"
           value={form.email}
@@ -87,6 +89,7 @@ export function LoginForm() {
         <label htmlFor="password" className="block text-heading-md text-primary mb-1">Password</label>
         <div className="relative">
           <Input
+            id="password"
             name="password"
             type={showPassword ? "text" : "password"}
             value={form.password}
