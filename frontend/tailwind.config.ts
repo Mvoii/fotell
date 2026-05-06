@@ -18,7 +18,7 @@ const config: Config = {
 
         // Text
         "text-primary":   "#f0f2f5",
-        "text-primary": "#64748b",
+        "text-secondary": "#64748b",
         "text-muted":     "#4a5063",
         "text-inverse":   "#0d0f12",
 
