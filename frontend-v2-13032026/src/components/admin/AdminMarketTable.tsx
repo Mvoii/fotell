@@ -25,8 +25,8 @@ export function AdminMarketTable({
     return (
       <div className="bg-surface border border-subtle rounded-lg p-6">
         <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="animate-pulse">
+          {['skeleton-1', 'skeleton-2', 'skeleton-3', 'skeleton-4', 'skeleton-5'].map((key) => (
+            <div key={key} className="animate-pulse">
               <div className="h-10 bg-elevated rounded"></div>
             </div>
           ))}
