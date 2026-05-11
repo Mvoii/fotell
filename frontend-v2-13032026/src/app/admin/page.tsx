@@ -5,15 +5,12 @@ import Link from 'next/link';
 import { AuthGuard } from '@/components/layout/AuthGuard';
 import { AppShell } from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
-import { useUser } from '@/hooks/useUser';
 
 export default function AdminPage() {
-  const { data: user } = useUser();
-
   return (
     <AuthGuard requireAdmin={true}>
       <AppShell
-        isAuthenticated={!!user}
+        isAuthenticated={true}
         topNavProps={{
           showSearch: false,
         }}
