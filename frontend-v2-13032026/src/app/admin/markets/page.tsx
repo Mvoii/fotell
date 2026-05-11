@@ -91,7 +91,7 @@ export default function AdminMarketsPage() {
 
           {isError && (
             <div className="mb-4 p-4 bg-error/10 border border-error/20 rounded-md">
-              <p className="text-error text-sm">Failed to load markets: {error.message}</p>
+              <p className="text-error text-sm">Failed to load markets: {error?.message || 'Unknown error'}</p>
             </div>
           )}
 

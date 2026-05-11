@@ -58,7 +58,7 @@ export function AdminMarketTable({
         <tbody>
           {markets.map((market) => (
             <tr key={market.id} className="border-b border-subtle last:border-b-0">
-              <td className="py-3 px-2 text-primary max-w-90">
+              <td className="py-3 px-2 text-primary max-w-[360px]">
                 <div className="truncate" title={market.question}>
                   {market.question}
                 </div>
