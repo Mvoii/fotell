@@ -10,7 +10,6 @@ export default function AdminPage() {
   return (
     <AuthGuard requireAdmin={true}>
       <AppShell
-        isAuthenticated={true}
         topNavProps={{
           showSearch: false,
         }}
