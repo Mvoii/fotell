@@ -64,7 +64,12 @@ export function AdminMarketTable({
                 </div>
               </td>
               <td className="py-3 px-2 text-primary">{market.status}</td>
-              <td className="py-3 px-2 text-primary">{new Date(market.closes_at).toLocaleString()}</td>
+              <td className="py-3 px-2 text-primary">
+                {new Date(market.closes_at).toLocaleString('en-KE', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short',
+                })}
+              </td>
               <td className="py-3 px-2 text-primary">{market.resolved_outcome || '-'}</td>
               <td className="py-3 px-2">
                 <div className="flex justify-end gap-2">
