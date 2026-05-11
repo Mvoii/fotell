@@ -53,7 +53,7 @@ export default function AdminMarketsPage() {
     }
   };
 
-  const hasNextPage = Boolean(data && data.markets.length === limit && offset + limit < data.total);
+  const hasNextPage = Boolean(data && offset + limit < data.total);
 
   return (
     <AuthGuard requireAdmin={true}>
