@@ -23,7 +23,7 @@ interface BottomNavProps {
 }
 
 interface NavItem {
-  id: NavigationTab | 'admin' | 'settings';
+  id: NavigationTab | 'home' | 'admin' | 'settings';
   label: string;
   icon: React.ReactNode;
   href?: string;
