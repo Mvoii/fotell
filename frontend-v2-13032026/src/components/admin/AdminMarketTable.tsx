@@ -1,70 +1,106 @@
-import React, { useState } from 'react';
-import { useMarkets } from '@/hooks/useMarkets';
-import { Market } from '@/lib/api/types/api';
-import { ResolveMarketModal } from './ResolveMarketModal';
+"use client";
 
-export function AdminMarketTable() {
-  const { data, isLoading, error } = useMarkets();
-  const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+import React from 'react';
+import type { Market } from '@/lib/api/types/api';
+import { Button } from '@/components/ui/button';
 
-  if (isLoading) return <div className="text-primary py-4">Loading markets...</div>;
-  if (error) return <div className="text-danger py-4">Error loading markets.</div>;
+interface AdminMarketTableProps {
+  markets: Market[];
+  loading: boolean;
+  actionLoading?: boolean;
+  onOpen: (marketId: string) => void;
+  onClose: (marketId: string) => void;
+  onResolve: (marketId: string, outcome: 'YES' | 'NO') => void;
+}
 
-  const markets = data?.markets || [];
-  // Only show OPEN or CLOSED markets for resolution, or maybe all
-  const resolvableMarkets = markets.filter(m => m.status === 'OPEN' || m.status === 'CLOSED');
+export function AdminMarketTable({
+  markets,
+  loading,
+  actionLoading = false,
+  onOpen,
+  onClose,
+  onResolve,
+}: AdminMarketTableProps) {
+  if (loading) {
+    return (
+      <div className="bg-surface border border-subtle rounded-lg p-6">
+        <div className="space-y-3">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="h-10 bg-elevated rounded"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (markets.length === 0) {
+    return (
+      <div className="bg-surface border border-subtle rounded-lg p-6 text-center text-primary">
+        No markets found.
+      </div>
+    );
+  }
 
   return (
-    <div className="mt-8">
-      <h2 className="heading-lg text-primary mb-4">Manage Markets</h2>
-      <div className="bg-surface border border-subtle rounded-lg overflow-hidden">
-        {resolvableMarkets.length === 0 ? (
-          <div className="p-6 text-center text-muted-foreground">No markets available to manage.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-subtle bg-base">
-                  <th className="p-4 font-semibold text-primary">Question</th>
-                  <th className="p-4 font-semibold text-primary">Status</th>
-                  <th className="p-4 font-semibold text-primary text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {resolvableMarkets.map((market) => (
-                  <tr key={market.id} className="border-b border-subtle hover:bg-base/50 transition-colors">
-                    <td className="p-4 text-primary">{market.question}</td>
-                    <td className="p-4">
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${market.status === 'OPEN'
-                          ? 'bg-accent-blue/10 text-accent-blue'
-                          : 'bg-muted/10 text-muted-foreground'
-                        }`}>
-                        {market.status}
-                      </span>
-                    </td>
-                    <td className="p-4 text-right">
-                      <button
-                        onClick={() => setSelectedMarket(market)}
-                        className="px-4 py-1.5 bg-danger/10 text-danger text-sm font-semibold rounded hover:bg-danger/20 transition-colors"
-                      >
-                        Resolve
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+    <div className="bg-surface border border-subtle rounded-lg p-6 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-subtle">
+            <th className="text-left py-3 px-2 text-xs text-primary uppercase tracking-wide">Question</th>
+            <th className="text-left py-3 px-2 text-xs text-primary uppercase tracking-wide">Status</th>
+            <th className="text-left py-3 px-2 text-xs text-primary uppercase tracking-wide">Closes</th>
+            <th className="text-left py-3 px-2 text-xs text-primary uppercase tracking-wide">Resolution</th>
+            <th className="text-right py-3 px-2 text-xs text-primary uppercase tracking-wide">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {markets.map((market) => (
+            <tr key={market.id} className="border-b border-subtle last:border-b-0">
+              <td className="py-3 px-2 text-primary max-w-90">
+                <div className="truncate" title={market.question}>
+                  {market.question}
+                </div>
+              </td>
+              <td className="py-3 px-2 text-primary">{market.status}</td>
+              <td className="py-3 px-2 text-primary">{new Date(market.closes_at).toLocaleString()}</td>
+              <td className="py-3 px-2 text-primary">{market.resolved_outcome || '-'}</td>
+              <td className="py-3 px-2">
+                <div className="flex justify-end gap-2">
+                  {market.status === 'PENDING' && (
+                    <Button size="sm" onClick={() => onOpen(market.id)} disabled={actionLoading}>
+                      Open
+                    </Button>
+                  )}
 
-      {selectedMarket && (
-        <ResolveMarketModal
-          market={selectedMarket}
-          isOpen={!!selectedMarket}
-          onClose={() => setSelectedMarket(null)}
-        />
-      )}
+                  {market.status === 'OPEN' && (
+                    <Button size="sm" variant="outline" onClick={() => onClose(market.id)} disabled={actionLoading}>
+                      Close
+                    </Button>
+                  )}
+
+                  {market.status === 'CLOSED' && (
+                    <>
+                      <Button size="sm" onClick={() => onResolve(market.id, 'YES')} disabled={actionLoading}>
+                        Resolve YES
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => onResolve(market.id, 'NO')}
+                        disabled={actionLoading}
+                      >
+                        Resolve NO
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
