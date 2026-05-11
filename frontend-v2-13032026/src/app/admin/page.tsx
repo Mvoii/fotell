@@ -3,12 +3,22 @@
 import React from 'react';
 import Link from 'next/link';
 import { AuthGuard } from '@/components/layout/AuthGuard';
+import { AppShell } from '@/components/layout/AppShell';
+import PageContainer from '@/components/layout/PageContainer';
+import { useUser } from '@/hooks/useUser';
 
 export default function AdminPage() {
+  const { data: user } = useUser();
+
   return (
     <AuthGuard requireAdmin={true}>
-      <div className="min-h-screen bg-base">
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <AppShell
+        isAuthenticated={!!user}
+        topNavProps={{
+          showSearch: false,
+        }}
+      >
+        <PageContainer maxWidth="7xl" inAppShell>
           <div className="mb-8">
             <h1 className="heading-xl text-primary mb-2">Admin Dashboard</h1>
             <p className="text-primary">Manage prediction markets and system settings</p>
@@ -135,8 +145,8 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </PageContainer>
+      </AppShell>
     </AuthGuard>
   );
 }
