@@ -44,10 +44,10 @@ export function BottomNav({
 
   const navItems: NavItem[] = [
     {
-      id: 'home',
+      id: 'dashboard',
       label: 'Home',
       icon: <Home className="h-5 w-5" />,
-      href: '/home',
+      href: '/dashboard',
       badge: unreadAlertsCount,
       requireAuth: true,
     },
