@@ -14,7 +14,7 @@ export default function AdminPage() {
           showSearch: false,
         }}
       >
-        <PageContainer maxWidth="6xl" inAppShell>
+        <PageContainer maxWidth="xl" inAppShell>
           <div className="mb-8">
             <h1 className="heading-xl text-primary mb-2">Admin Dashboard</h1>
             <p className="text-primary">Manage prediction markets and system settings</p>
