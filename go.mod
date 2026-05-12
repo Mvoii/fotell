@@ -1,4 +1,4 @@
-module github.com/Mvoii/fotell
+module github.com/esiepe/fotell
 
 go 1.24.0
 
