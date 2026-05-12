@@ -265,7 +265,7 @@ func getAllowedOrigins(env string) []string {
 			"https://fotell.com",
 			"https://www.fotell.com",
 			"https://app.fotell.com",
-			"https://fotell-rho.vercel.app/"
+			"https://fotell-rho.vercel.app/",
 		}
 	}
 	// Development: allow localhost
