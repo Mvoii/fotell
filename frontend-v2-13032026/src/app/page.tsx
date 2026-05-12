@@ -207,7 +207,7 @@ export default function LandingPage() {
           <div className="flex gap-6 mt-4 md:mt-0">
             <Link href="/markets" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Markets</Link>
             <Link href="/api-docs" className="hover:text-zinc-900 dark:hover:text-white transition-colors">API Docs</Link>
-            <a href="https://github.com/Mvoii/fotell" target="_blank" rel="noreferrer" className="hover:text-zinc-900 dark:hover:text-white transition-colors">GitHub</a>
+            <a href="https://github.com/esiepe/fotell" target="_blank" rel="noreferrer" className="hover:text-zinc-900 dark:hover:text-white transition-colors">GitHub</a>
             <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Contact</Link>
           </div>
         </div>
