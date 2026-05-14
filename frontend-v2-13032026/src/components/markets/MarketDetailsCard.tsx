@@ -24,11 +24,7 @@ export function MarketDetailsCard({
     console.log('[MarketDetailsCard] prices:', prices);
   }, [prices]);
 
-  // Debug log for trades and volume
-  React.useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('[MarketDetailsCard] trades:', market.total_trades, 'volume:', market.total_volume_smallest_unit);
-  }, [market.total_trades, market.total_volume_smallest_unit]);
+
   return (
     <div className="bg-surface border border-subtle rounded-lg p-6 shadow-lg w-full">
       <div className="flex items-center gap-2 mb-2">

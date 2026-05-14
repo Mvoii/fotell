@@ -44,10 +44,10 @@ export function BottomNav({
 
   const navItems: NavItem[] = [
     {
-      id: 'home',
-      label: 'Home',
+      id: 'dashboard',
+      label: 'Dashboard',
       icon: <Home className="h-5 w-5" />,
-      href: '/home',
+      href: '/dashboard',
       badge: unreadAlertsCount,
       requireAuth: true,
     },
@@ -65,17 +65,10 @@ export function BottomNav({
       requireAuth: true,
     },
     {
-      id: 'watchlist',
-      label: 'Watchlist',
-      icon: <Eye className="h-5 w-5" />,
-      href: '/watchlist',
-      requireAuth: true,
-    },
-    {
-      id: 'profile',
-      label: 'Profile',
+      id: 'portfolio',
+      label: 'Portfolio',
       icon: <User className="h-5 w-5" />,
-      href: '/profile',
+      href: '/portfolio',
       badge: pendingOrdersCount,
       requireAuth: true,
     },

@@ -9,13 +9,12 @@ export function TradePanel({
   currentPrices,
   userBalance,
   userPosition,
-  defaultTab = 'market',
   defaultOutcome = 'YES',
 }: TradePanelProps) {
   void defaultOutcome; // TODO: pass to MarketOrderForm once it supports defaultOutcome prop
 
   const tradeHook = useTrade(market.id);
-  const [orderType, setOrderType] = React.useState<'market' | 'limit'>(defaultTab);
+  const [orderType, setOrderType] = React.useState<'market' | 'limit'>('market');
 
   const handleMarketOrderSubmit = (params: PlaceTradeRequest) => {
     tradeHook.placeTrade(params);
@@ -32,8 +31,7 @@ export function TradePanel({
     tradeHook.placeTrade({
       outcome: params.outcome,
       shares: params.shares,
-      max_cost: params.triggerPrice,
-    });
+    } as PlaceTradeRequest);
   };
 
   return (

@@ -77,7 +77,6 @@ export function MarketOrderForm({
     const payload: PlaceTradeRequest = {
       outcome,
       shares,
-      max_cost: instant ? 0 : maxCostCap, // 0 = no cap (instant fill)
     };
 
     onSubmit(payload);

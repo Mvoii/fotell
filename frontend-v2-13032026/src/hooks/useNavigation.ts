@@ -3,7 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
-export type NavigationTab = 'dashboard' | 'markets' | 'trade' | 'watchlist' | 'profile';
+export type NavigationTab = 'dashboard' | 'markets' | 'trade' | 'watchlist' | 'portfolio';
 
 export interface NavigationState {
   activeTab: NavigationTab | null;
@@ -26,7 +26,7 @@ const tabRoutes: Record<NavigationTab, string> = {
   markets: '/markets',
   trade: '#trade', // Special case for Global Trade Sheet
   watchlist: '#watchlist',
-  profile: '/profile',
+  portfolio: '/portfolio',
 };
 
 const SIDEBAR_COLLAPSED_KEY = 'fotell:sidebar-collapsed';
@@ -35,7 +35,7 @@ function getCurrentTabFromPath(path: string): NavigationTab | null {
   if (path === '/dashboard') return 'dashboard';
   if (path.startsWith('/markets')) return 'markets';
   if (path === '#watchlist') return 'watchlist';
-  if (path === '/profile') return 'profile';
+  if (path === '/portfolio') return 'portfolio';
   return null;
 }
 

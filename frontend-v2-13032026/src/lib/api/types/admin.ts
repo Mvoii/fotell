@@ -20,8 +20,6 @@ export interface CreateMarketResponse {
   no_price: null;
   resolved_outcome: null;
   resolved_at: null;
-  total_volume_smallest_unit: null;
-  total_trades: null;
 }
 
 export interface AdminMarketAction {

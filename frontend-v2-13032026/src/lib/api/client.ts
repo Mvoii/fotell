@@ -93,7 +93,7 @@ export async function apiRequest<T>(
     body,
     headers,
     signal,
-    credentials = 'include',
+    credentials = 'same-origin',
   } = options;
 
   const controller = new AbortController();

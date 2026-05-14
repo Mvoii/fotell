@@ -147,8 +147,7 @@ export function AppShell({
   const mobileNavItems: { id: NavigationTab; label: string; icon: React.ReactNode; href: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <Home className="h-5 w-5" />, href: '/dashboard' },
     { id: 'markets', label: 'Markets', icon: <TrendingUp className="h-5 w-5" />, href: '/markets' },
-    { id: 'watchlist', label: 'Watchlist', icon: <Eye className="h-5 w-5" />, href: '#watchlist' },
-    { id: 'profile', label: 'Profile', icon: <User className="h-5 w-5" />, href: '/profile' },
+    { id: 'portfolio', label: 'Portfolio', icon: <User className="h-5 w-5" />, href: '/portfolio' },
   ];
 
   return (
