@@ -16,8 +16,6 @@ export default function DemoPage() {
         showSearch: true,
       }}
       bottomNavProps={{
-        pendingOrdersCount: 3,
-        unreadAlertsCount: 2,
         onTradePress: () => console.log('Trade pressed from demo'),
       }}
     >

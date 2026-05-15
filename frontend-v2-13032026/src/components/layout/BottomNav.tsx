@@ -17,8 +17,6 @@ import { useUser } from '@/hooks/useUser';
 import { useNavigation, type NavigationTab } from '@/hooks/useNavigation';
 
 interface BottomNavProps {
-  pendingOrdersCount?: number;
-  unreadAlertsCount?: number;
   onTradePress?: () => void;
 }
 
@@ -34,8 +32,6 @@ interface NavItem {
 }
 
 export function BottomNav({
-  pendingOrdersCount = 0,
-  unreadAlertsCount = 0,
   onTradePress
 }: BottomNavProps) {
   const pathname = usePathname();
@@ -48,7 +44,6 @@ export function BottomNav({
       label: 'Dashboard',
       icon: <Home className="h-5 w-5" />,
       href: '/dashboard',
-      badge: unreadAlertsCount,
       requireAuth: true,
     },
     {
@@ -69,7 +64,6 @@ export function BottomNav({
       label: 'Portfolio',
       icon: <User className="h-5 w-5" />,
       href: '/portfolio',
-      badge: pendingOrdersCount,
       requireAuth: true,
     },
   ];

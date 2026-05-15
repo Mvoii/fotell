@@ -80,8 +80,6 @@ interface AppShellProps {
     showSearch?: boolean;
   };
   bottomNavProps?: {
-    pendingOrdersCount?: number;
-    unreadAlertsCount?: number;
     onTradePress?: () => void;
   };
 }
