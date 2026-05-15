@@ -1,5 +1,8 @@
 import React from 'react';
 import { useTrades } from '@/hooks/useUser';
+import { formatPrice } from '@/lib/formatters';
+import type { Trade } from '@/lib/api/types/api';
+import Link from 'next/link';
 
 interface TradesListProps {
   className?: string;
@@ -9,16 +12,13 @@ export function TradesList({ className = '' }: TradesListProps) {
   const { data: tradesData, isLoading, error } = useTrades();
 
   return (
-    <div className={`bg-surface border border-subtle rounded-lg p-6 ${className}`}>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="heading-lg text-primary">Recent Trades</h3>
-        <span className="text-xs text-primary bg-elevated px-2 py-1 rounded">
-          Coming Soon
-        </span>
+    <div className={`bg-surface border border-subtle rounded-lg shadow-sm w-full overflow-hidden ${className}`}>
+      <div className="px-4 py-3 border-b border-subtle bg-base flex items-center justify-between">
+        <h3 className="heading-sm font-semibold text-primary">Recent Trades</h3>
       </div>
 
       {isLoading && (
-        <div className="space-y-3">
+        <div className="p-4 space-y-3">
           {[...Array(5)].map((_, i) => (
             <div key={i} className="animate-pulse">
               <div className="h-12 bg-elevated rounded"></div>
@@ -28,12 +28,12 @@ export function TradesList({ className = '' }: TradesListProps) {
       )}
 
       {error && (
-        <div className="text-primary text-sm">
+        <div className="p-4 text-error text-sm">
           Unable to load trades
         </div>
       )}
 
-      {!isLoading && !error && (
+      {!isLoading && !error && tradesData?.trades && tradesData.trades.length === 0 && (
         <div className="text-center py-8">
           <div className="text-primary mb-2">
             <svg 
@@ -51,16 +51,66 @@ export function TradesList({ className = '' }: TradesListProps) {
             </svg>
           </div>
           <p className="text-primary text-sm mb-1">
-            Trade history is coming soon
+            No trades yet
           </p>
           <p className="text-primary text-xs">
-            Once implemented, you&apos;ll see your complete trading activity here
+            Your trading activity will appear here once you place a trade.
           </p>
-          {tradesData && tradesData.trades.length > 0 && (
-            <p className="text-xs text-primary mt-2">
-              Found {tradesData.trades.length} trade(s) in backend
-            </p>
-          )}
+        </div>
+      )}
+
+      {!isLoading && !error && tradesData?.trades && tradesData.trades.length > 0 && (
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-base text-xs font-medium text-muted uppercase tracking-wider">
+                <th className="px-4 py-2 border-b border-subtle">Market</th>
+                <th className="px-4 py-2 border-b border-subtle">Time</th>
+                <th className="px-4 py-2 border-b border-subtle">Outcome</th>
+                <th className="px-4 py-2 border-b border-subtle">Shares</th>
+                <th className="px-4 py-2 border-b border-subtle text-right">Cost</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-subtle">
+              {tradesData.trades.map((trade: Trade) => {
+                const totalCostDollars = trade.cost_paid / 100;
+                const pricePerShare = trade.cost_paid / trade.shares; // in cents = percentage
+                const date = new Date(trade.created_at);
+                const timeString = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                const isYes = trade.outcome === 'YES';
+
+                return (
+                  <tr key={trade.id} className="hover:bg-base transition-colors">
+                    <td className="px-4 py-3 text-sm text-primary">
+                      <Link href={`/markets/${trade.market_id}`} className="hover:underline text-accent-blue">
+                        View Market
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-primary whitespace-nowrap">
+                      {timeString}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <span
+                        className={`inline-flex px-2 py-1 rounded text-xs font-bold ${
+                          isYes
+                            ? 'bg-yes-dim text-yes-strong border border-[rgba(0,200,83,0.35)]'
+                            : 'bg-no-dim text-no-strong border border-[rgba(255,23,68,0.35)]'
+                        }`}
+                      >
+                        {trade.outcome}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-primary font-mono">
+                      {trade.shares.toFixed(2)} @ {formatPrice(pricePerShare, 'percent')}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-primary font-mono text-right">
+                      ${totalCostDollars.toFixed(2)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

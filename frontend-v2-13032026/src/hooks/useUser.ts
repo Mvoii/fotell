@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query';
 import { userService } from '@/lib/api/user.service';
 import type { UserProfile, BalanceResponse, Position, UserTradesResponse } from '@/lib/api/types/api';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useUser(options?: { enabled?: boolean }) {
   // Default to enabled, let the query handle token validation
   const enabled = options?.enabled ?? true;
 
   return useQuery<UserProfile, Error, UserProfile>({
-    queryKey: ['users', 'me'],
+    queryKey: queryKeys.user.profile(),
     queryFn: async () => {
       const { data } = await userService.getMe();
       return data;
@@ -27,7 +28,7 @@ export function useBalance(options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
 
   return useQuery<BalanceResponse, Error, BalanceResponse>({
-    queryKey: ['user', 'balance'],
+    queryKey: queryKeys.user.balance(),
     queryFn: async () => {
       const { data } = await userService.getBalance();
       return data;
@@ -46,7 +47,7 @@ export function usePositions(options?: { enabled?: boolean }) {
   const enabled = options?.enabled ?? true;
 
   return useQuery<Position[], Error, Position[]>({
-    queryKey: ['user', 'positions'],
+    queryKey: queryKeys.user.positions(),
     queryFn: async () => {
       const { data } = await userService.getPositions();
       return data;
@@ -65,7 +66,7 @@ export function useTrades(limit = 50, offset = 0, options?: { enabled?: boolean 
   const enabled = options?.enabled ?? true;
 
   return useQuery<UserTradesResponse, Error, UserTradesResponse>({
-    queryKey: ['user', 'trades', { limit, offset }],
+    queryKey: queryKeys.user.trades({ limit, offset }),
     queryFn: async () => {
       const { data } = await userService.getTrades(limit, offset);
       return data;

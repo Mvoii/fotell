@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useState, useCallback } from 'react';
 import { marketsService } from '@/lib/api/markets.service';
 import type { Market, MarketPrices, TimeRange } from '@/lib/api/types/api';
+import { queryKeys } from '@/lib/queryKeys';
 
 // Calculate date range based on selected time range
 function getTimeRangeDates(range: TimeRange): { from: string; to: string } {
@@ -34,7 +35,7 @@ export function useMarketDetails(id: string) {
   const [timeRange, setTimeRange] = useState<TimeRange>('1D');
 
   const marketQuery = useQuery<Market, Error>({
-    queryKey: ['markets', 'details', id],
+    queryKey: queryKeys.markets.details(id),
     queryFn: async () => {
       const { data } = await marketsService.getById(id);
       return data;
@@ -43,7 +44,7 @@ export function useMarketDetails(id: string) {
   });
 
   const pricesQuery = useQuery<MarketPrices, Error>({
-    queryKey: ['markets', 'prices', id, timeRange],
+    queryKey: queryKeys.markets.prices(id, timeRange),
     queryFn: async () => {
       const dates = getTimeRangeDates(timeRange);
       const { data } = await marketsService.getPrices(id, dates);
