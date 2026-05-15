@@ -1,28 +1,19 @@
 import React from 'react';
-import type { Market, MarketPrices, TimeRange } from '@/lib/api/types/api';
+import type { Market, MarketPrices } from '@/lib/api/types/api';
 import { formatPrice } from '@/lib/formatters';
 import MarketStatusBadge from '@/components/markets/MarketStatusBadge';
-import { PriceChart } from '@/components/charts/PriceChart';
 import ProbabilityBar from '@/components/markets/ProbabilityBar';
 
 interface MarketDetailsCardProps {
   market: Market;
   prices?: MarketPrices;
-  timeRange?: TimeRange;
-  onTimeRangeChange?: (range: TimeRange) => void;
 }
 
 export function MarketDetailsCard({
   market,
   prices,
-  timeRange = '1D',
-  onTimeRangeChange,
 }: MarketDetailsCardProps) {
-  // Debug log for prices array
-  React.useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log('[MarketDetailsCard] prices:', prices);
-  }, [prices]);
+
 
 
   return (
@@ -63,19 +54,33 @@ export function MarketDetailsCard({
         <span className="text-body-sm text-primary font-mono">VOLUME</span>
         <span className="ml-3 text-body-sm text-primary font-mono">{market.liquidity_param ? market.liquidity_param : '--'}</span>
       </div>
-      {/* Price Chart integration */}
-      <div className="mt-6">
-        {prices ? (
-          <PriceChart
-            prices={[prices]}
-            height={250}
-            timeRange={timeRange}
-            onTimeRangeChange={onTimeRangeChange}
-          />
-        ) : (
-          <div className="text-muted text-sm">Price chart coming soon...</div>
-        )}
-      </div>
+      {/* Current price snapshot — API returns a single snapshot, no history */}
+      {prices && (
+        <div className="mt-6 bg-subtle rounded-lg p-4">
+          <div className="text-xs text-muted font-mono mb-3 uppercase tracking-wider">Current Prices</div>
+          <div className="flex gap-4">
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs text-muted">YES</span>
+              <span className="font-mono font-bold text-yes-strong text-lg">
+                {formatPrice(prices.yes_price, 'cents')}
+              </span>
+            </div>
+            <div className="flex flex-col items-center gap-1">
+              <span className="text-xs text-muted">NO</span>
+              <span className="font-mono font-bold text-no-strong text-lg">
+                {formatPrice(prices.no_price, 'cents')}
+              </span>
+            </div>
+            {prices.timestamp && (
+              <div className="ml-auto flex flex-col items-end justify-end">
+                <span className="text-xs text-muted">
+                  {new Date(prices.timestamp).toLocaleTimeString()}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

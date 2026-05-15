@@ -9,7 +9,7 @@ import { useParams } from 'next/navigation';
 export default function MarketDetailsPage() {
   const routeParams = useParams();
   const marketId = typeof routeParams.id === 'string' ? routeParams.id : '';
-  const { market, prices, isLoading, isError, error, refetch, timeRange, setTimeRange } = useMarketDetails(marketId);
+  const { market, prices, isLoading, isError, error, refetch } = useMarketDetails(marketId);
 
   if (isLoading) {
     return (
@@ -37,9 +37,7 @@ export default function MarketDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MarketDetailsCard
             market={market}
-            prices={prices as any}
-            timeRange={timeRange}
-            onTimeRangeChange={setTimeRange}
+            prices={prices}
           />
           {/* Trading panel only for OPEN markets */}
           {market.status === 'OPEN' && (

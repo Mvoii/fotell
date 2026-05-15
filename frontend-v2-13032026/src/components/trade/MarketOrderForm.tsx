@@ -30,9 +30,6 @@ export function MarketOrderForm({
   // ── State
   const [outcome, setOutcome] = React.useState<'YES' | 'NO'>('YES');
   const [shares, setShares] = React.useState<number>(0);
-  const [instant, setInstant] = React.useState<boolean>(true);
-  // maxCostCap is used only when instant === false (user sets a slippage cap)
-  const [maxCostCap, setMaxCostCap] = React.useState<number>(0);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   // ── Derived values
@@ -172,57 +169,7 @@ export function MarketOrderForm({
         </div>
       </div>
 
-      {/* ── Instant / Set Price toggle */}
-      <div>
-        <div className="text-body-md font-semibold mb-2">Order type</div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className={`px-4 py-2 rounded font-bold transition ${
-              instant
-                ? 'bg-primary text-white'
-                : 'bg-subtle text-primary border border-subtle'
-            }`}
-            onClick={() => setInstant(true)}
-          >
-            Instant
-          </button>
-          <button
-            type="button"
-            className={`px-4 py-2 rounded font-bold transition ${
-              !instant
-                ? 'bg-primary text-white'
-                : 'bg-subtle text-primary border border-subtle'
-            }`}
-            onClick={() => setInstant(false)}
-          >
-            Set Max Cost
-          </button>
-        </div>
-      </div>
-
-      {/* ── Max cost cap input (only when !instant) */}
-      {!instant && (
-        <div>
-          <label htmlFor="maxCostCap" className="block text-sm font-medium mb-1">
-            Max cost cap{' '}
-            <span className="text-muted text-xs">(trade fails if cost exceeds this)</span>
-          </label>
-          <div className="flex items-center gap-2">
-            <span className="text-body-md font-semibold">KES</span>
-            <input
-              id="maxCostCap"
-              type="number"
-              min={0}
-              value={maxCostCap}
-              onChange={(e) => setMaxCostCap(Number(e.target.value))}
-              className="font-bold border border-subtle rounded px-4 py-2 w-36 text-center bg-white"
-              style={{ fontSize: '1.5rem' }}
-              aria-label="Max cost cap"
-            />
-          </div>
-        </div>
-      )}
+      {/* Instant market order — backend supports outcome + shares only */}
 
       {/* ── Shares input */}
       <div>
@@ -318,11 +265,7 @@ export function MarketOrderForm({
             {estimatedProfit >= 0 ? '+' : ''}KES {estimatedProfit.toFixed(2)}
           </span>
         </div>
-        {!instant && maxCostCap > 0 && (
-          <div className="text-primary text-xs mt-2">
-            Trade will be rejected if actual cost exceeds KES {maxCostCap}
-          </div>
-        )}
+
         <div className="flex gap-3 mt-3 flex-nowrap">
           <span className="inline-flex items-center px-4 py-2 rounded-full bg-white border border-yes-strong shadow-sm gap-2">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
