@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { AuthGuard } from '@/components/layout/AuthGuard';
+import { AdminMarketTable } from '@/components/admin/AdminMarketTable';
 
 export default function AdminPage() {
   return (
@@ -135,6 +136,9 @@ export default function AdminPage() {
               </div>
             </div>
           </div>
+
+          {/* Admin Market Table */}
+          <AdminMarketTable />
         </div>
       </div>
     </AuthGuard>
