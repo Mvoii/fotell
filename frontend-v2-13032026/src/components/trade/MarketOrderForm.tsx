@@ -36,8 +36,8 @@ export function MarketOrderForm({
   const currentPrice =
     outcome === 'YES' ? currentPrices.yes_price : currentPrices.no_price;
 
-  // Estimated cost in smallest unit (prices come as 0-100 scale from API)
-  const estimatedCost = shares * currentPrice;
+  // Estimated cost in KES (prices come as 0-100 scale from API, which are cents)
+  const estimatedCost = (shares * currentPrice) / 100;
   // Each share pays out 100 KES at resolution
   const estimatedPayout = shares * 100;
   const estimatedProfit = estimatedPayout - estimatedCost;
@@ -299,17 +299,14 @@ export function MarketOrderForm({
         <div className="text-error text-sm font-semibold">{errorMsg}</div>
       )}
 
-      {/* ── Submit */}
       <button
         type="submit"
         className="bg-primary text-white font-bold py-3 px-4 rounded disabled:opacity-50 transition"
-        disabled={tradeHook.isPending || shares < 1 || isOverLimit}
+        disabled={shares < 1 || isOverLimit}
       >
-        {tradeHook.isPending
-          ? 'Placing trade…'
-          : isOverLimit
-            ? `Limit exceeded (max KES ${MAX_TRADE_AMOUNT_KES})`
-            : `Buy ${shares > 0 ? shares : ''} ${outcome} shares`}
+        {isOverLimit
+          ? `Limit exceeded (max KES ${MAX_TRADE_AMOUNT_KES})`
+          : `Review ${shares > 0 ? shares : ''} ${outcome} Trade`}
       </button>
     </form>
   );
