@@ -37,7 +37,7 @@ export default function MarketDetailsPage() {
       <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-6">
         <MarketDetailsCard
           market={market}
-          prices={Array.isArray(prices) ? prices : prices ? [prices] : []}
+          prices={prices as any}
           timeRange={timeRange}
           onTimeRangeChange={setTimeRange}
         />

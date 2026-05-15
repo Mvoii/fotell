@@ -42,7 +42,7 @@ export function useMarketDetails(id: string) {
     enabled: !!id,
   });
 
-  const pricesQuery = useQuery<MarketPrices[], Error>({
+  const pricesQuery = useQuery<MarketPrices, Error>({
     queryKey: ['markets', 'prices', id, timeRange],
     queryFn: async () => {
       const dates = getTimeRangeDates(timeRange);

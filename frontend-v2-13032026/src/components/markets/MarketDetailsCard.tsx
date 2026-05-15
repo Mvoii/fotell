@@ -7,7 +7,7 @@ import ProbabilityBar from '@/components/markets/ProbabilityBar';
 
 interface MarketDetailsCardProps {
   market: Market;
-  prices: MarketPrices[];
+  prices?: MarketPrices;
   timeRange?: TimeRange;
   onTimeRangeChange?: (range: TimeRange) => void;
 }
@@ -65,9 +65,9 @@ export function MarketDetailsCard({
       </div>
       {/* Price Chart integration */}
       <div className="mt-6">
-        {prices && prices.length > 0 ? (
+        {prices ? (
           <PriceChart
-            prices={prices}
+            prices={[prices]}
             height={250}
             timeRange={timeRange}
             onTimeRangeChange={onTimeRangeChange}
