@@ -49,7 +49,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
                 const dominantOutcome = position.yes_shares > position.no_shares ? 'YES' : 'NO';
                 
                 return (
-                  <div key={position.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-subtle rounded-lg bg-base hover:bg-surface transition-colors">
+                  <div key={position.market_id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-subtle rounded-lg bg-base hover:bg-surface transition-colors">
                     <div className="mb-3 sm:mb-0">
                       <Link href={`/markets/${position.market_id}`} className="font-semibold text-primary hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1 mb-1">
                         <MarketName marketId={position.market_id} />
