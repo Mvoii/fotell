@@ -3,13 +3,17 @@ import { notFound } from 'next/navigation';
 import { useMarketDetails } from '@/hooks/useMarketDetails';
 import { MarketDetailsCard } from '@/components/markets/MarketDetailsCard';
 import { MarketTradesList } from '@/components/markets/MarketTradesList';
+import { CommentsSection } from '@/components/markets/CommentsSection';
 import { TradePanel } from '@/components/trade/TradePanel';
 import { useParams } from 'next/navigation';
+import { useBalance, usePositions } from '@/hooks/useUser';
 
 export default function MarketDetailsPage() {
   const routeParams = useParams();
   const marketId = typeof routeParams.id === 'string' ? routeParams.id : '';
   const { market, prices, isLoading, isError, error, refetch } = useMarketDetails(marketId);
+  const { data: balanceData } = useBalance();
+  const { data: positions } = usePositions();
 
   if (isLoading) {
     return (
@@ -31,6 +35,8 @@ export default function MarketDetailsPage() {
     notFound();
   }
 
+  const userPosition = positions?.find((p) => p.market_id === marketId) ?? null;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-base px-4 py-8">
       <div className="w-full max-w-6xl flex flex-col gap-6">
@@ -45,16 +51,21 @@ export default function MarketDetailsPage() {
               <TradePanel
                 market={market}
                 currentPrices={{ yes_price: market.yes_price ?? 0, no_price: market.no_price ?? 0 }}
-                userBalance={null} // TODO: wire up user balance
-                userPosition={null} // TODO: wire up user position
+                userBalance={balanceData?.balance_smallest_unit ?? null}
+                userPosition={userPosition}
               />
             </div>
           )}
         </div>
         
-        {/* Trades List */}
-        <div className="w-full">
-          <MarketTradesList marketId={market.id} />
+        {/* Trades List and Comments */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+          <div className="flex flex-col gap-6">
+            <MarketTradesList marketId={market.id} />
+          </div>
+          <div className="flex flex-col gap-6">
+            <CommentsSection marketId={market.id} />
+          </div>
         </div>
       </div>
     </div>
