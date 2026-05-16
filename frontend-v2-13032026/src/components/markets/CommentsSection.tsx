@@ -173,7 +173,7 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
         </button>
 
         {/* View Replies Toggle */}
-        {repliesData && repliesData.comments.length > 0 && (
+        {repliesData?.comments && repliesData.comments.length > 0 && (
           <button
             onClick={() => setShowReplies(!showReplies)}
             className="text-muted hover:text-primary text-xs ml-auto"
@@ -202,7 +202,7 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
       )}
 
       {/* Replies Thread */}
-      {showReplies && repliesData && repliesData.comments.length > 0 && (
+      {showReplies && repliesData?.comments && repliesData.comments.length > 0 && (
         <div className="mt-4 pl-4 border-l-2 border-subtle space-y-4">
           {repliesData.comments.map((reply) => (
             <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId} />
