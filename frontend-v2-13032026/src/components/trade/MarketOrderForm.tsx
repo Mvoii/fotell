@@ -89,12 +89,10 @@ export function MarketOrderForm({
   // ── Pill styles
   const pillBase =
     'inline-flex items-center px-4 py-2 rounded-md border font-mono font-bold text-lg gap-2 cursor-pointer transition select-none text-primary';
-  const yesPill = `${pillBase} bg-yes-dim border-[rgba(0,200,83,0.35)] ${
-    outcome === 'YES' ? 'ring-2 ring-yes-strong' : 'opacity-60'
-  }`;
-  const noPill = `${pillBase} bg-no-dim border-[rgba(255,23,68,0.35)] ${
-    outcome === 'NO' ? 'ring-2 ring-no-strong' : 'opacity-60'
-  }`;
+  const yesPill = `${pillBase} bg-yes-dim border-[rgba(0,200,83,0.35)] ${outcome === 'YES' ? 'ring-2 ring-yes-strong' : 'opacity-60'
+    }`;
+  const noPill = `${pillBase} bg-no-dim border-[rgba(255,23,68,0.35)] ${outcome === 'NO' ? 'ring-2 ring-no-strong' : 'opacity-60'
+    }`;
 
   return (
     <form
@@ -198,11 +196,10 @@ export function MarketOrderForm({
                 key={val}
                 type="button"
                 disabled={wouldExceedLimit}
-                className={`px-3 py-1 rounded border border-subtle font-mono text-sm ${
-                  wouldExceedLimit
-                    ? 'bg-muted text-muted cursor-not-allowed opacity-50'
+                className={`px-3 py-1 rounded border border-subtle font-mono text-sm ${wouldExceedLimit
+                    ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-50'
                     : 'bg-subtle text-primary'
-                }`}
+                  }`}
                 onClick={() => {
                   // convert KES amount → shares at current price, SUM shares
                   const approxShares = currentPrice > 0 ? Math.floor(val / currentPrice) : 0;
@@ -231,7 +228,7 @@ export function MarketOrderForm({
             Max
           </button>
         </div>
-        <p className="text-xs text-muted mt-1">
+        <p className="text-xs text-muted-foreground mt-1">
           Maximum trade amount: KES {MAX_TRADE_AMOUNT_KES.toLocaleString()}
         </p>
       </div>
@@ -258,16 +255,15 @@ export function MarketOrderForm({
         <div className="flex justify-between items-center">
           <span className="text-body-md font-semibold text-primary">Potential profit</span>
           <span
-            className={`font-bold text-lg ${
-              estimatedProfit >= 0 ? 'text-success' : 'text-error'
-            } text-primary`}
+            className={`font-bold text-lg ${estimatedProfit >= 0 ? 'text-success' : 'text-error'
+              } text-primary`}
           >
             {estimatedProfit >= 0 ? '+' : ''}KES {estimatedProfit.toFixed(2)}
           </span>
         </div>
 
         <div className="flex gap-3 mt-3 flex-nowrap">
-          <span className="inline-flex items-center px-4 py-2 rounded-full bg-white border border-yes-strong shadow-sm gap-2">
+          <span className="inline-flex items-center px-4 py-2 rounded-full bg-surface border border-yes-strong shadow-sm gap-2">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="10" cy="10" r="10" fill="#00c853" />
               <text x="10" y="14" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">Y</text>
@@ -275,7 +271,7 @@ export function MarketOrderForm({
             <span className="font-bold text-yes-strong">YES</span>
             <span className="font-mono text-base font-bold text-yes-strong">{currentPrices.yes_price.toFixed(2)}¢</span>
           </span>
-          <span className="inline-flex items-center px-4 py-2 rounded-full bg-white border border-no-strong shadow-sm gap-2">
+          <span className="inline-flex items-center px-4 py-2 rounded-full bg-surface border border-no-strong shadow-sm gap-2">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="10" cy="10" r="10" fill="#ff1744" />
               <text x="10" y="14" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">N</text>
@@ -283,7 +279,7 @@ export function MarketOrderForm({
             <span className="font-bold text-no-strong">NO</span>
             <span className="font-mono text-base font-bold text-no-strong">{currentPrices.no_price.toFixed(2)}¢</span>
           </span>
-          <span className="inline-flex items-center px-4 py-2 rounded-full bg-white border border-primary shadow-sm gap-2">
+          <span className="inline-flex items-center px-4 py-2 rounded-full bg-surface border border-primary shadow-sm gap-2">
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
               <circle cx="10" cy="10" r="10" fill="#1976d2" />
               <text x="10" y="14" textAnchor="middle" fontSize="12" fill="white" fontWeight="bold">₵</text>
@@ -301,7 +297,7 @@ export function MarketOrderForm({
 
       <button
         type="submit"
-        className="bg-primary text-white font-bold py-3 px-4 rounded disabled:opacity-50 transition"
+        className="bg-primary text-primary-foreground font-bold py-3 px-4 rounded disabled:opacity-50 transition"
         disabled={shares < 1 || isOverLimit}
       >
         {isOverLimit

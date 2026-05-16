@@ -28,7 +28,7 @@ export function TradesList({ className = '' }: TradesListProps) {
       )}
 
       {error && (
-        <div className="text-primary text-sm p-4 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-lg">
+        <div className="text-no-strong text-sm p-4 bg-no-dim rounded-lg">
           Unable to load trades
         </div>
       )}
@@ -45,10 +45,10 @@ export function TradesList({ className = '' }: TradesListProps) {
                 <div key={trade.id} className="flex items-center justify-between p-3 border border-subtle rounded-lg bg-base hover:bg-surface transition-colors">
                   <div className="flex-1 min-w-0 pr-4">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${trade.outcome === 'YES' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${trade.outcome === 'YES' ? 'bg-yes-dim text-yes-strong' : 'bg-no-dim text-no-strong'}`}>
                         {trade.outcome}
                       </span>
-                      <Link href={`/markets/${trade.market_id}`} className="text-sm font-medium text-primary hover:text-blue-600 dark:hover:text-blue-400 truncate">
+                      <Link href={`/markets/${trade.market_id}`} className="text-sm font-medium text-primary hover:text-accent-blue truncate">
                         <MarketName marketId={trade.market_id} />
                       </Link>
                     </div>

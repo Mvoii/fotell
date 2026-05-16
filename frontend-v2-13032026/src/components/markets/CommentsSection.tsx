@@ -26,7 +26,7 @@ export function CommentsSection({ marketId }: CommentsSectionProps) {
     );
   };
 
-  if (isLoading) return <div className="p-4 text-center text-muted">Loading comments...</div>;
+  if (isLoading) return <div className="p-4 text-center text-muted-foreground">Loading comments...</div>;
   if (isError) return <div className="p-4 text-center text-error">Failed to load comments</div>;
 
   return (
@@ -37,7 +37,7 @@ export function CommentsSection({ marketId }: CommentsSectionProps) {
       <div className="bg-surface border border-subtle p-4 rounded-lg">
         {!isAuthenticated ? (
           <div className="text-center py-4">
-            <p className="text-muted mb-4">Log in to participate in the discussion</p>
+            <p className="text-muted-foreground mb-4">Log in to participate in the discussion</p>
             <Button variant="outline" onClick={() => window.location.href = '/auth/login'}>Log In</Button>
           </div>
         ) : (
@@ -46,7 +46,7 @@ export function CommentsSection({ marketId }: CommentsSectionProps) {
               placeholder="What are your thoughts on this market?"
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              className="w-full bg-base border border-subtle rounded-md p-3 text-primary placeholder:text-muted focus:ring-1 focus:ring-accent-blue outline-none resize-y"
+              className="w-full bg-base border border-subtle rounded-md p-3 text-primary placeholder:text-muted-foreground-foreground focus:ring-1 focus:ring-accent-blue outline-none resize-y"
               rows={3}
             />
             <div className="flex justify-end">
@@ -69,7 +69,7 @@ export function CommentsSection({ marketId }: CommentsSectionProps) {
             <CommentItem key={comment.id} comment={comment} currentUserId={user?.id} />
           ))
         ) : (
-          <p className="text-center text-muted py-6">No comments yet. Be the first to share your thoughts!</p>
+          <p className="text-center text-muted-foreground py-6">No comments yet. Be the first to share your thoughts!</p>
         )}
       </div>
     </div>
@@ -114,7 +114,7 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
   if (comment.is_deleted) {
     return (
       <div className="p-4 border border-subtle rounded-lg bg-base opacity-60">
-        <p className="text-muted italic text-sm">[Comment deleted by user]</p>
+        <p className="text-muted-foreground italic text-sm">[Comment deleted by user]</p>
       </div>
     );
   }
@@ -124,7 +124,7 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-2">
           <span className="font-semibold text-primary">{comment.username}</span>
-          <span className="text-xs text-muted">
+          <span className="text-xs text-muted-foreground">
             {new Date(comment.created_at).toLocaleDateString()}
           </span>
         </div>
@@ -149,7 +149,7 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
         <div className="flex items-center gap-1 bg-base border border-subtle rounded-full px-2 py-1">
           <button
             onClick={() => handleVote('UPVOTE')}
-            className={`p-1 hover:bg-surface rounded ${comment.current_user_vote === 'UPVOTE' ? 'text-success' : 'text-muted'}`}
+            className={`p-1 hover:bg-surface rounded ${comment.current_user_vote === 'UPVOTE' ? 'text-success' : 'text-muted-foreground-foreground'}`}
             disabled={voteComment.isPending}
           >
             ▲
@@ -157,7 +157,7 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
           <span className="text-primary text-xs font-mono w-6 text-center">{comment.vote_count}</span>
           <button
             onClick={() => handleVote('DOWNVOTE')}
-            className={`p-1 hover:bg-surface rounded ${comment.current_user_vote === 'DOWNVOTE' ? 'text-error' : 'text-muted'}`}
+            className={`p-1 hover:bg-surface rounded ${comment.current_user_vote === 'DOWNVOTE' ? 'text-error' : 'text-muted-foreground-foreground'}`}
             disabled={voteComment.isPending}
           >
             ▼
@@ -176,7 +176,7 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
         {repliesData?.comments && repliesData.comments.length > 0 && (
           <button
             onClick={() => setShowReplies(!showReplies)}
-            className="text-muted hover:text-primary text-xs ml-auto"
+            className="text-muted-foreground hover:text-primary text-xs ml-auto"
           >
             {showReplies ? 'Hide' : 'Show'} Replies ({repliesData.total})
           </button>

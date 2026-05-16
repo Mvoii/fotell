@@ -130,7 +130,7 @@ export default function PortfolioPage() {
                 <h3 className="heading-lg text-primary mb-4">Security & Actions</h3>
                 <button 
                   onClick={() => router.push('/')}
-                  className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-4 py-2 bg-no-dim text-no-strong rounded hover:opacity-80 transition-colors text-sm font-medium"
                 >
                   <LogOut className="h-4 w-4" /> Sign Out
                 </button>

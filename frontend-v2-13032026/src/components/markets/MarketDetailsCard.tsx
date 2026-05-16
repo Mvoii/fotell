@@ -26,7 +26,7 @@ export function MarketDetailsCard({
           </span>
         ) : (
           <span className="flex items-center text-xs font-bold px-2 py-1 rounded-full border bg-[rgba(255,152,0,0.15)] text-warning border-[rgba(255,152,0,0.3)] ml-auto">
-            <svg width="14" height="14" fill="none" viewBox="0 0 14 14" className="mr-1"><circle cx="7" cy="7" r="6" stroke="#FF9800" strokeWidth="2"/><path d="M7 4v3l2 2" stroke="#FF9800" strokeWidth="2" strokeLinecap="round"/></svg>
+            <svg width="14" height="14" fill="none" viewBox="0 0 14 14" className="mr-1"><circle cx="7" cy="7" r="6" stroke="#FF9800" strokeWidth="2" /><path d="M7 4v3l2 2" stroke="#FF9800" strokeWidth="2" strokeLinecap="round" /></svg>
             {new Date(market.closes_at).toLocaleDateString()}
           </span>
         )}
@@ -41,11 +41,11 @@ export function MarketDetailsCard({
         {/* Outcome Pills */}
         <div className="flex items-center gap-2 mt-2">
           <span className="inline-flex items-center px-4 py-2 rounded-md bg-yes-dim border border-[rgba(0,200,83,0.35)] text-yes-strong font-mono font-bold text-lg gap-2">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3v12M9 3l-4 4M9 3l4 4" stroke="#00c853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3v12M9 3l-4 4M9 3l4 4" stroke="#00c853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             Yes {typeof market.yes_price === 'number' ? formatPrice(market.yes_price, 'percent') : '--'}
           </span>
           <span className="inline-flex items-center px-4 py-2 rounded-md bg-no-dim border border-[rgba(255,23,68,0.35)] text-no-strong font-mono font-bold text-lg gap-2">
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 15V3M9 15l-4-4M9 15l4-4" stroke="#ff1744" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 15V3M9 15l-4-4M9 15l4-4" stroke="#ff1744" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
             No {typeof market.no_price === 'number' ? formatPrice(market.no_price, 'percent') : '--'}
           </span>
         </div>
@@ -57,23 +57,23 @@ export function MarketDetailsCard({
       {/* Current price snapshot — API returns a single snapshot, no history */}
       {prices && (
         <div className="mt-6 bg-subtle rounded-lg p-4">
-          <div className="text-xs text-muted font-mono mb-3 uppercase tracking-wider">Current Prices</div>
+          <div className="text-xs text-muted-foreground-foreground font-mono mb-3 uppercase tracking-wider">Current Prices</div>
           <div className="flex gap-4">
             <div className="flex flex-col items-center gap-1">
-              <span className="text-xs text-muted">YES</span>
+              <span className="text-xs text-muted-foreground-foreground">YES</span>
               <span className="font-mono font-bold text-yes-strong text-lg">
                 {formatPrice(prices.yes_price, 'cents')}
               </span>
             </div>
             <div className="flex flex-col items-center gap-1">
-              <span className="text-xs text-muted">NO</span>
+              <span className="text-xs text-muted-foreground-foreground">NO</span>
               <span className="font-mono font-bold text-no-strong text-lg">
                 {formatPrice(prices.no_price, 'cents')}
               </span>
             </div>
             {prices.timestamp && (
               <div className="ml-auto flex flex-col items-end justify-end">
-                <span className="text-xs text-muted">
+                <span className="text-xs text-muted-foreground-foreground">
                   {new Date(prices.timestamp).toLocaleTimeString()}
                 </span>
               </div>

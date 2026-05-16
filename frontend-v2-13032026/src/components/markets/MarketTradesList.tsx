@@ -7,7 +7,7 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
   const { data, isLoading, isError, error } = useMarketTrades(marketId, 20);
 
   if (isLoading) {
-    return <div className="text-muted text-sm py-4">Loading trades...</div>;
+    return <div className="text-muted-foreground text-sm py-4">Loading trades...</div>;
   }
 
   if (isError) {
@@ -21,7 +21,7 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
   const trades = data?.trades || [];
 
   if (trades.length === 0) {
-    return <div className="text-muted text-sm py-4">No trades yet.</div>;
+    return <div className="text-muted-foreground text-sm py-4">No trades yet.</div>;
   }
 
   return (
@@ -32,7 +32,7 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-base text-xs font-medium text-muted uppercase tracking-wider">
+            <tr className="bg-base text-xs font-medium text-muted-foreground uppercase tracking-wider">
               <th className="px-4 py-2 border-b border-subtle">Time</th>
               <th className="px-4 py-2 border-b border-subtle">Outcome</th>
               <th className="px-4 py-2 border-b border-subtle">Shares</th>
@@ -55,11 +55,10 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
                   </td>
                   <td className="px-4 py-3 text-sm">
                     <span
-                      className={`inline-flex px-2 py-1 rounded text-xs font-bold ${
-                        isYes
+                      className={`inline-flex px-2 py-1 rounded text-xs font-bold ${isYes
                           ? 'bg-yes-dim text-yes-strong border border-[rgba(0,200,83,0.35)]'
                           : 'bg-no-dim text-no-strong border border-[rgba(255,23,68,0.35)]'
-                      }`}
+                        }`}
                     >
                       {trade.outcome}
                     </span>

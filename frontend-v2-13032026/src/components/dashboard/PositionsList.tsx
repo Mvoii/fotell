@@ -28,7 +28,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
       )}
 
       {error && (
-        <div className="text-primary text-sm p-4 bg-red-50 dark:bg-red-900/10 text-red-600 rounded-lg">
+        <div className="text-no-strong text-sm p-4 bg-no-dim rounded-lg">
           Unable to load positions
         </div>
       )}
@@ -51,7 +51,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
                 return (
                   <div key={position.market_id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-subtle rounded-lg bg-base hover:bg-surface transition-colors">
                     <div className="mb-3 sm:mb-0">
-                      <Link href={`/markets/${position.market_id}`} className="font-semibold text-primary hover:text-blue-600 dark:hover:text-blue-400 transition-colors line-clamp-1 mb-1">
+                      <Link href={`/markets/${position.market_id}`} className="font-semibold text-primary hover:text-accent-blue transition-colors line-clamp-1 mb-1">
                         <MarketName marketId={position.market_id} />
                       </Link>
                       <div className="text-xs text-secondary flex items-center gap-2">
@@ -62,13 +62,13 @@ export function PositionsList({ className = '' }: PositionsListProps) {
                     </div>
                     <div className="flex flex-col items-start sm:items-end">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${dominantOutcome === 'YES' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded ${dominantOutcome === 'YES' ? 'bg-yes-dim text-yes-strong' : 'bg-no-dim text-no-strong'}`}>
                           {dominantOutcome}
                         </span>
                         <span className="font-mono text-primary font-medium">{formatKES(position.cost_basis / 100)}</span>
                       </div>
                       {position.realized_pnl !== null && position.realized_pnl !== 0 && (
-                        <div className={`text-xs font-medium ${position.realized_pnl > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        <div className={`text-xs font-medium ${position.realized_pnl > 0 ? 'text-yes-strong' : 'text-no-strong'}`}>
                           PnL: {position.realized_pnl > 0 ? '+' : ''}{formatKES(position.realized_pnl / 100)}
                         </div>
                       )}

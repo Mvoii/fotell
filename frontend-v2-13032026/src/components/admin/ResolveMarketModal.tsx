@@ -35,15 +35,15 @@ export function ResolveMarketModal({ market, isOpen, onClose }: ResolveMarketMod
             Resolve Market
           </h2>
         </div>
-        
+
         <div className="p-6 space-y-6">
           <div>
-            <p className="text-sm text-muted mb-1">Question</p>
+            <p className="text-sm text-muted-foreground mb-1">Question</p>
             <p className="text-primary font-medium">{market.question}</p>
           </div>
 
           <div className="bg-danger/10 border border-danger/20 rounded-md p-4 text-danger text-sm">
-            <strong>Irreversible Action Warning:</strong> Resolving a market is permanent. 
+            <strong>Irreversible Action Warning:</strong> Resolving a market is permanent.
             This will immediately distribute payouts to the winning outcome and close all positions.
             This action cannot be undone.
           </div>
@@ -54,22 +54,20 @@ export function ResolveMarketModal({ market, isOpen, onClose }: ResolveMarketMod
               <button
                 type="button"
                 onClick={() => setOutcome('YES')}
-                className={`py-3 px-4 rounded-md font-bold transition-all border ${
-                  outcome === 'YES' 
-                    ? 'bg-accent-green text-surface border-accent-green' 
+                className={`py-3 px-4 rounded-md font-bold transition-all border ${outcome === 'YES'
+                    ? 'bg-accent-green text-surface border-accent-green'
                     : 'bg-surface text-accent-green border-accent-green/50 hover:bg-accent-green/10'
-                }`}
+                  }`}
               >
                 YES
               </button>
               <button
                 type="button"
                 onClick={() => setOutcome('NO')}
-                className={`py-3 px-4 rounded-md font-bold transition-all border ${
-                  outcome === 'NO' 
-                    ? 'bg-accent-red text-surface border-accent-red' 
+                className={`py-3 px-4 rounded-md font-bold transition-all border ${outcome === 'NO'
+                    ? 'bg-accent-red text-surface border-accent-red'
                     : 'bg-surface text-accent-red border-accent-red/50 hover:bg-accent-red/10'
-                }`}
+                  }`}
               >
                 NO
               </button>
@@ -87,7 +85,7 @@ export function ResolveMarketModal({ market, isOpen, onClose }: ResolveMarketMod
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-primary hover:text-muted transition-colors"
+            className="px-4 py-2 text-primary hover:text-muted-foreground transition-colors"
             disabled={resolveMutation.isPending}
           >
             Cancel

@@ -30,7 +30,7 @@ export default function MarketsPage() {
       <PageContainer maxWidth="xl" inAppShell>
         <h1 className="text-display-lg font-bold mb-6">Markets</h1>
         {isLoading ? (
-          <div className="text-center py-12 text-muted">Loading markets...</div>
+          <div className="text-center py-12 text-muted-foreground">Loading markets...</div>
         ) : isError ? (
           <div className="text-center py-12 text-error">Failed to load markets. <button onClick={() => refetch()} className="underline">Retry</button></div>
         ) : data ? (

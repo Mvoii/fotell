@@ -22,12 +22,11 @@ export function PositionCard({ position, className = '' }: PositionCardProps) {
           </h4>
           <p className="text-xs text-primary mt-1">
             {position.market?.status && (
-              <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                position.market.status === 'OPEN' ? 'bg-success/20 text-success' :
-                position.market.status === 'CLOSED' ? 'bg-warning/20 text-warning' :
-                position.market.status === 'RESOLVED' ? 'bg-info/20 text-info' :
-                'bg-muted/20 text-muted'
-              }`}>
+              <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${position.market.status === 'OPEN' ? 'bg-success/20 text-success' :
+                  position.market.status === 'CLOSED' ? 'bg-warning/20 text-warning' :
+                    position.market.status === 'RESOLVED' ? 'bg-info/20 text-info' :
+                      'bg-muted/20 text-muted-foreground'
+                }`}>
                 {position.market.status}
               </span>
             )}
@@ -84,9 +83,8 @@ export function PositionCard({ position, className = '' }: PositionCardProps) {
         <div className="mt-3 pt-3 border-t border-subtle">
           <div className="flex items-center justify-between">
             <span className="text-xs text-primary uppercase tracking-wide">Realized P&amp;L</span>
-            <span className={`font-mono tabular-nums text-sm ${
-              position.realized_pnl >= 0 ? 'text-success' : 'text-error'
-            }`}>
+            <span className={`font-mono tabular-nums text-sm ${position.realized_pnl >= 0 ? 'text-success' : 'text-error'
+              }`}>
               {position.realized_pnl >= 0 ? '+' : ''}{formatKES(position.realized_pnl / 100)}
             </span>
           </div>

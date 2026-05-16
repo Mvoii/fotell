@@ -127,7 +127,7 @@ export function LeftSidebar() {
       "flex items-center gap-3 px-3 py-2 rounded-md transition-colors group",
       active
         ? "bg-accent-blue text-white"
-        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+        : "text-muted-foreground-foreground hover:text-foreground hover:bg-muted"
     );
 
     if (isAction) {
@@ -234,7 +234,7 @@ export function LeftSidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user.username}</p>
-              <p className="text-xs text-muted-foreground truncate">
+              <p className="text-xs text-muted-foreground-foreground truncate">
                 {user.role === 'ADMIN' ? 'Administrator' : 'User'}
               </p>
             </div>

@@ -18,7 +18,7 @@ export default function MarketDetailsPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-base">
-        <div className="text-center py-12 text-muted">Loading market details...</div>
+        <div className="text-center py-12 text-muted-foreground">Loading market details...</div>
       </div>
     );
   }
@@ -57,7 +57,7 @@ export default function MarketDetailsPage() {
             </div>
           )}
         </div>
-        
+
         {/* Trades List and Comments */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
           <div className="flex flex-col gap-6">
