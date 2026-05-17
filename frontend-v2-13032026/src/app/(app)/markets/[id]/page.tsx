@@ -6,7 +6,9 @@ import { MarketTradesList } from '@/components/markets/MarketTradesList';
 import { CommentsSection } from '@/components/markets/CommentsSection';
 import { TradePanel } from '@/components/trade/TradePanel';
 import { useParams } from 'next/navigation';
-import { useBalance, usePositions } from '@/hooks/useUser';
+import { useBalance, usePositions, useUser } from '@/hooks/useUser';
+import { AppShell } from '@/components/layout/AppShell';
+import PageContainer from '@/components/layout/PageContainer';
 
 export default function MarketDetailsPage() {
   const routeParams = useParams();
@@ -14,20 +16,29 @@ export default function MarketDetailsPage() {
   const { market, prices, isLoading, isError, error, refetch } = useMarketDetails(marketId);
   const { data: balanceData } = useBalance();
   const { data: positions } = usePositions();
+  const { data: user } = useUser();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base">
-        <div className="text-center py-12 text-muted-foreground">Loading market details...</div>
-      </div>
+      <AppShell isAuthenticated={!!user}>
+        <PageContainer maxWidth="xl" inAppShell>
+          <div className="min-h-[50vh] flex items-center justify-center">
+            <div className="text-center py-12 text-muted-foreground">Loading market details...</div>
+          </div>
+        </PageContainer>
+      </AppShell>
     );
   }
 
   if (isError) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base">
-        <div className="text-center py-12 text-error">Failed to load market details.<br />{error?.message}<br /><button onClick={refetch} className="underline">Retry</button></div>
-      </div>
+      <AppShell isAuthenticated={!!user}>
+        <PageContainer maxWidth="xl" inAppShell>
+          <div className="min-h-[50vh] flex items-center justify-center">
+            <div className="text-center py-12 text-error">Failed to load market details.<br />{error?.message}<br /><button onClick={refetch} className="underline">Retry</button></div>
+          </div>
+        </PageContainer>
+      </AppShell>
     );
   }
 
@@ -38,9 +49,10 @@ export default function MarketDetailsPage() {
   const userPosition = positions?.find((p) => p.market_id === marketId) ?? null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-base px-4 py-8">
-      <div className="w-full max-w-6xl flex flex-col gap-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <AppShell isAuthenticated={!!user}>
+      <PageContainer maxWidth="xl" inAppShell>
+        <div className="w-full flex flex-col gap-6 pt-2 pb-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <MarketDetailsCard
             market={market}
             prices={prices}
@@ -67,7 +79,8 @@ export default function MarketDetailsPage() {
             <CommentsSection marketId={market.id} />
           </div>
         </div>
-      </div>
-    </div>
+        </div>
+      </PageContainer>
+    </AppShell>
   );
 }
