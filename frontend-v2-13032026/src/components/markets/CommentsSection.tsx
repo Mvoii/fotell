@@ -3,6 +3,9 @@ import { useUser } from '@/hooks/useUser';
 import { useComments, useCommentReplies, useCreateComment, useReplyComment, useVoteComment, useDeleteComment } from '@/hooks/useComments';
 import type { Comment } from '@/lib/api/types/api';
 import { Button } from '@/components/ui/button';
+import { formatDistanceToNowStrict } from 'date-fns';
+import { Smile, MoreHorizontal, MessageCircle, ArrowUp, ArrowDown } from 'lucide-react';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 
 
 interface CommentsSectionProps {
@@ -34,30 +37,38 @@ export function CommentsSection({ marketId }: CommentsSectionProps) {
       <h3 className="text-heading-md text-primary font-semibold border-b border-subtle pb-2">Comments</h3>
 
       {/* Post Comment Box */}
-      <div className="bg-surface border border-subtle p-4 rounded-lg">
+      <div className="mb-6">
         {!isAuthenticated ? (
-          <div className="text-center py-4">
+          <div className="text-center py-4 border border-subtle rounded-lg">
             <p className="text-muted-foreground mb-4">Log in to participate in the discussion</p>
             <Button variant="outline" onClick={() => window.location.href = '/auth/login'}>Log In</Button>
           </div>
         ) : (
-          <div className="space-y-3">
-            <textarea
-              placeholder="What are your thoughts on this market?"
+          <div className="flex items-center gap-2 bg-base border border-subtle rounded-full p-1 pl-4 transition-colors focus-within:border-accent-blue/50 focus-within:ring-1 focus-within:ring-accent-blue/50">
+            <input
+              type="text"
+              placeholder="Add a comment..."
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              className="w-full bg-base border border-subtle rounded-md p-3 text-primary placeholder:text-muted-foreground-foreground focus:ring-1 focus:ring-accent-blue outline-none resize-y"
-              rows={3}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handlePostComment();
+                }
+              }}
+              className="flex-1 bg-transparent text-primary placeholder:text-muted-foreground outline-none border-none py-2 text-sm"
             />
-            <div className="flex justify-end">
-              <Button
-                variant="default"
-                onClick={handlePostComment}
-                disabled={!newComment.trim() || createComment.isPending}
-              >
-                {createComment.isPending ? 'Posting...' : 'Post Comment'}
-              </Button>
-            </div>
+            <button className="p-2 text-muted-foreground hover:text-primary transition-colors" title="Emoji">
+              <Smile size={20} />
+            </button>
+            <Button
+              variant="default"
+              className="rounded-full px-5 py-2 h-auto text-sm font-medium"
+              onClick={handlePostComment}
+              disabled={!newComment.trim() || createComment.isPending}
+            >
+              Post
+            </Button>
           </div>
         )}
       </div>
@@ -85,7 +96,13 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
   const voteComment = useVoteComment();
   const deleteComment = useDeleteComment();
   const replyMutation = useReplyComment();
-  const { data: repliesData } = useCommentReplies(comment.id, undefined, undefined);
+  // Only fetch replies when the user expands them
+  const { data: repliesData, isLoading: repliesLoading } = useCommentReplies(
+    comment.id,
+    undefined,
+    undefined,
+    showReplies
+  );
 
   const isOwnComment = currentUserId === comment.user_id;
 
@@ -94,7 +111,7 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
     const newVote = comment.current_user_vote === voteType ? 'NONE' : voteType;
     // We send UPVOTE or DOWNVOTE based on the API spec. If it only accepts UPVOTE/DOWNVOTE, we might not be able to untoggle.
     // Assuming we can send the voteType directly for now.
-    voteComment.mutate({ commentId: comment.id, data: { vote: voteType } });
+    voteComment.mutate({ commentId: comment.id, data: { vote_type: voteType } });
   };
 
   const handleReplySubmit = () => {
@@ -120,67 +137,84 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
   }
 
   return (
-    <div className="p-4 border border-subtle rounded-lg bg-surface">
-      <div className="flex justify-between items-start mb-2">
+    <div className="py-3 px-1 border-b border-subtle/40 last:border-0 bg-transparent">
+      <div className="flex justify-between items-start mb-1">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-primary">{comment.username}</span>
+          <span className="font-semibold text-primary text-sm">{comment.username}</span>
           <span className="text-xs text-muted-foreground">
-            {new Date(comment.created_at).toLocaleDateString()}
+            {formatDistanceToNowStrict(new Date(comment.created_at))} ago
           </span>
         </div>
         {isOwnComment && (
-          <button
-            onClick={() => {
-              if (window.confirm('Are you sure you want to delete this comment?')) {
-                deleteComment.mutate(comment.id);
-              }
-            }}
-            className="text-xs text-error hover:underline"
-          >
-            Delete
-          </button>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger asChild>
+              <button className="text-muted-foreground hover:text-primary p-1 rounded-full hover:bg-surface transition-colors outline-none">
+                <MoreHorizontal size={16} />
+              </button>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content className="min-w-[120px] bg-surface rounded-md shadow-lg border border-subtle p-1 z-50 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
+                <DropdownMenu.Item
+                  className="text-sm text-error px-2 py-1.5 outline-none cursor-pointer hover:bg-base rounded font-medium flex items-center"
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to delete this comment?')) {
+                      deleteComment.mutate(comment.id);
+                    }
+                  }}
+                >
+                  Delete
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
         )}
       </div>
 
-      <p className="text-primary text-sm whitespace-pre-wrap mb-3">{comment.content}</p>
+      <p className="text-primary text-sm whitespace-pre-wrap mb-2">{comment.content}</p>
 
-      <div className="flex items-center gap-4 text-sm">
+      <div className="flex items-center gap-4 text-sm mt-2">
         {/* Voting */}
-        <div className="flex items-center gap-1 bg-base border border-subtle rounded-full px-2 py-1">
+        <div className="flex flex-col items-center bg-surface/30 rounded-md p-1 min-w-[2rem]">
           <button
             onClick={() => handleVote('UPVOTE')}
-            className={`p-1 hover:bg-surface rounded ${comment.current_user_vote === 'UPVOTE' ? 'text-success' : 'text-muted-foreground-foreground'}`}
+            className={`p-1 rounded hover:bg-surface transition-colors ${comment.current_user_vote === 'UPVOTE' ? 'text-accent-blue' : 'text-muted-foreground'}`}
             disabled={voteComment.isPending}
+            title="Upvote"
           >
-            ▲
+            <ArrowUp size={16} />
           </button>
-          <span className="text-primary text-xs font-mono w-6 text-center">{comment.vote_count}</span>
+          <span className="text-primary text-xs font-mono py-0.5 w-full text-center">{comment.vote_count}</span>
           <button
             onClick={() => handleVote('DOWNVOTE')}
-            className={`p-1 hover:bg-surface rounded ${comment.current_user_vote === 'DOWNVOTE' ? 'text-error' : 'text-muted-foreground-foreground'}`}
+            className={`p-1 rounded hover:bg-surface transition-colors ${comment.current_user_vote === 'DOWNVOTE' ? 'text-error' : 'text-muted-foreground'}`}
             disabled={voteComment.isPending}
+            title="Downvote"
           >
-            ▼
+            <ArrowDown size={16} />
           </button>
         </div>
 
         {/* Reply Toggle */}
         <button
           onClick={() => setIsReplying(!isReplying)}
-          className="text-accent-blue hover:underline text-xs font-medium"
+          className="flex items-center gap-1 text-muted-foreground hover:text-primary transition-colors text-xs font-medium"
         >
+          <MessageCircle size={14} />
           Reply
         </button>
 
         {/* View Replies Toggle */}
-        {repliesData?.comments && repliesData.comments.length > 0 && (
-          <button
-            onClick={() => setShowReplies(!showReplies)}
-            className="text-muted-foreground hover:text-primary text-xs ml-auto"
-          >
-            {showReplies ? 'Hide' : 'Show'} Replies ({repliesData.total})
-          </button>
-        )}
+        <button
+          onClick={() => setShowReplies(!showReplies)}
+          className="flex items-center gap-1 text-muted-foreground hover:text-primary text-xs ml-auto font-medium"
+        >
+          <MessageCircle size={12} />
+          {showReplies
+            ? repliesLoading
+              ? 'Loading...'
+              : `Hide Replies (${repliesData?.total ?? 0})`
+            : 'Show Replies'}
+        </button>
       </div>
 
       {/* Reply Input Box */}
@@ -202,11 +236,14 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
       )}
 
       {/* Replies Thread */}
-      {showReplies && repliesData?.comments && repliesData.comments.length > 0 && (
-        <div className="mt-4 pl-4 border-l-2 border-subtle space-y-4">
+      {showReplies && repliesData?.comments && (
+        <div className="mt-2 pl-6 ml-2 border-l border-subtle space-y-0">
           {repliesData.comments.map((reply) => (
             <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId} />
           ))}
+          {repliesData.comments.length === 0 && (
+            <p className="text-xs text-muted-foreground py-2">No replies yet.</p>
+          )}
         </div>
       )}
     </div>

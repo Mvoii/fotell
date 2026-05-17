@@ -22,11 +22,20 @@ export const commentsService = {
     }),
 
   /** List replies to a specific comment */
-  listReplies: (commentId: string, params?: { limit?: number; offset?: number }) =>
-    apiRequest<CommentsListResponse>(`/comments/${commentId}/replies`, {
+  listReplies: async (commentId: string, params?: { limit?: number; offset?: number }) => {
+    const response = await apiRequest<{ replies: import('./types/api').Comment[]; total: number; limit: number; offset: number }>(`/comments/${commentId}/replies`, {
       method: 'GET',
       params,
-    }),
+    });
+    // Backend returns 'replies' key; remap to 'comments' to match CommentsListResponse
+    return {
+      ...response,
+      data: {
+        comments: response.data.replies,
+        total: response.data.total,
+      },
+    };
+  },
 
   /** Reply to a comment */
   createReply: (commentId: string, data: CreateCommentRequest) =>

@@ -193,7 +193,7 @@ export interface CreateCommentRequest {
 }
 
 export interface VoteRequest {
-  vote: 'UPVOTE' | 'DOWNVOTE';
+  vote_type: 'UPVOTE' | 'DOWNVOTE';
 }
 
 // ── API Error ───────────────────────────────────────────────────────────

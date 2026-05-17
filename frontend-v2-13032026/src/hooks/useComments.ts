@@ -14,14 +14,14 @@ export function useComments(marketId: string, limit?: number, offset?: number) {
   });
 }
 
-export function useCommentReplies(commentId: string, limit?: number, offset?: number) {
+export function useCommentReplies(commentId: string, limit?: number, offset?: number, enabled = true) {
   return useQuery({
     queryKey: queryKeys.comments.repliesList(commentId, { limit, offset }),
     queryFn: async () => {
       const { data } = await commentsService.listReplies(commentId, { limit, offset });
       return data;
     },
-    enabled: !!commentId,
+    enabled: !!commentId && enabled,
   });
 }
 
@@ -80,6 +80,7 @@ export function useVoteComment() {
     mutationFn: ({ commentId, data }: { commentId: string; data: VoteRequest }) =>
       commentsService.vote(commentId, data),
     onSuccess: () => {
+      // Invalidate all comments so vote_count refreshes everywhere
       queryClient.invalidateQueries({ queryKey: queryKeys.comments.all });
     },
   });
