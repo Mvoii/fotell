@@ -1,15 +1,54 @@
 "use client";
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { AuthGuard } from '@/components/layout/AuthGuard';
 import { AdminMarketTable } from '@/components/admin/AdminMarketTable';
 import { AppShell } from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import { useUser } from '@/hooks/useUser';
+import { useMarkets } from '@/hooks/useMarkets';
+import { useCloseMarket, useOpenMarket, useResolveMarket } from '@/hooks/useAdmin';
 
 export default function AdminPage() {
   const { data: user } = useUser();
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  // Fetch pending markets to show on dashboard as action items
+  const { data, isLoading } = useMarkets({ status: 'PENDING', limit: 10 });
+  const openMarketMutation = useOpenMarket();
+  const closeMarketMutation = useCloseMarket();
+  const resolveMarketMutation = useResolveMarket();
+
+  const actionLoading =
+    openMarketMutation.isPending || closeMarketMutation.isPending || resolveMarketMutation.isPending;
+
+  const handleOpen = async (marketId: string) => {
+    try {
+      setActionError(null);
+      await openMarketMutation.mutateAsync(marketId);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to open market');
+    }
+  };
+
+  const handleClose = async (marketId: string) => {
+    try {
+      setActionError(null);
+      await closeMarketMutation.mutateAsync(marketId);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to close market');
+    }
+  };
+
+  const handleResolve = async (marketId: string, outcome: 'YES' | 'NO') => {
+    try {
+      setActionError(null);
+      await resolveMarketMutation.mutateAsync({ marketId, outcome });
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to resolve market');
+    }
+  };
 
   return (
     <AuthGuard requireAdmin={true}>
@@ -143,7 +182,30 @@ export default function AdminPage() {
           </div>
 
           {/* Admin Market Table */}
-          <AdminMarketTable />
+          <div className="mt-12">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="heading-lg text-primary">Pending Markets</h2>
+              <Link 
+                href="/admin/markets" 
+                className="text-accent-blue hover:underline text-sm font-medium"
+              >
+                View All Markets →
+              </Link>
+            </div>
+            {actionError && (
+              <div className="mb-4 p-4 bg-error/10 border border-error/20 rounded-md">
+                <p className="text-error text-sm">{actionError}</p>
+              </div>
+            )}
+            <AdminMarketTable 
+              markets={data?.markets || []}
+              loading={isLoading}
+              actionLoading={actionLoading}
+              onOpen={handleOpen}
+              onClose={handleClose}
+              onResolve={handleResolve}
+            />
+          </div>
         </PageContainer>
       </AppShell>
     </AuthGuard>
