@@ -4,9 +4,13 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { AuthGuard } from '@/components/layout/AuthGuard';
 import { CreateMarketWizard } from '@/components/admin/CreateMarketWizard';
+import { AppShell } from '@/components/layout/AppShell';
+import PageContainer from '@/components/layout/PageContainer';
+import { useUser } from '@/hooks/useUser';
 
 export default function CreateMarketPage() {
   const router = useRouter();
+  const { data: user } = useUser();
 
   const handleSuccess = (marketId: string) => {
     // Redirect to the created market or admin dashboard
@@ -19,8 +23,8 @@ export default function CreateMarketPage() {
 
   return (
     <AuthGuard requireAdmin={true}>
-      <div className="min-h-screen bg-base">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <AppShell isAuthenticated={!!user}>
+        <PageContainer maxWidth="lg" inAppShell>
           <div className="mb-8">
             <button
               onClick={() => router.push('/admin')}
@@ -41,8 +45,8 @@ export default function CreateMarketPage() {
               onCancel={handleCancel}
             />
           </div>
-        </div>
-      </div>
+        </PageContainer>
+      </AppShell>
     </AuthGuard>
   );
 }

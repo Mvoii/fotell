@@ -7,13 +7,18 @@ export function useCreateMarket() {
   const queryClient = useQueryClient();
 
   return useMutation<CreateMarketResponse, Error, CreateMarketRequest>({
-    mutationFn: (data: CreateMarketRequest) =>
-      adminService.createMarket(data).then(res => res.data),
+    mutationFn: (data: CreateMarketRequest) => {
+      const payload = {
+        ...data,
+        closes_at: new Date(data.closes_at).toISOString(),
+      };
+      return adminService.createMarket(payload).then(res => res.data);
+    },
 
     onSuccess: (newMarket) => {
       // Invalidate markets list queries to refresh the data
       queryClient.invalidateQueries({ queryKey: queryKeys.markets.list() });
-      
+
       // Optionally, you could add the new market to the cache directly
       queryClient.setQueryData(queryKeys.markets.details(newMarket.id), newMarket);
     },
