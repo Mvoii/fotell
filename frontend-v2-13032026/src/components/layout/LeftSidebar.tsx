@@ -6,8 +6,6 @@ import Link from 'next/link';
 import {
   Home,
   TrendingUp,
-  ArrowUpDown,
-  Eye,
   User,
   Settings,
   Shield,
@@ -49,20 +47,6 @@ export function LeftSidebar() {
       label: 'Markets',
       icon: <TrendingUp className="h-5 w-5" />,
       href: '/markets',
-    },
-    {
-      id: 'trade',
-      label: 'Trade',
-      icon: <ArrowUpDown className="h-5 w-5" />,
-      href: '#trade', // Special handling for Global Trade Sheet
-      requireAuth: true,
-    },
-    {
-      id: 'watchlist',
-      label: 'Watchlist',
-      icon: <Eye className="h-5 w-5" />,
-      href: '#watchlist',
-      requireAuth: true,
     },
     {
       id: 'profile',
