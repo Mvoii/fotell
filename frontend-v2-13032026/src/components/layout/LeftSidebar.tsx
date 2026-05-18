@@ -18,6 +18,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useLogout } from '@/hooks/useLogout';
+import { Loader2 } from 'lucide-react';
 
 interface NavItem {
   id: string;
@@ -114,10 +116,7 @@ export function LeftSidebar() {
     return true;
   });
 
-  const handleLogout = () => {
-    // TODO: Implement logout logic
-    console.log('Logout clicked');
-  };
+  const { logout: handleLogout, loading: loggingOut } = useLogout();
 
   const NavLink = ({ item }: { item: NavItem }) => {
     const active = isActive(item.href);
@@ -136,8 +135,15 @@ export function LeftSidebar() {
           onClick={item.id === 'logout' ? handleLogout : undefined}
           className={linkClasses}
           aria-label={item.label}
+          disabled={item.id === 'logout' && loggingOut}
         >
-          <span className="flex-shrink-0" aria-hidden="true">{item.icon}</span>
+          <span className="flex-shrink-0" aria-hidden="true">
+            {item.id === 'logout' && loggingOut ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              item.icon
+            )}
+          </span>
           {!sidebarCollapsed && (
             <>
               <span className="flex-1 text-sm font-medium text-left">{item.label}</span>

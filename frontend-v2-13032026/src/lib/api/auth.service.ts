@@ -26,3 +26,14 @@ export async function loginUser(payload: LoginRequest): Promise<AuthResponse> {
   });
   return data;
 }
+
+/**
+ * Logout API service.
+ * Handles user logout.
+ */
+export async function logoutUser(refreshToken: string): Promise<void> {
+  await apiRequest<{ message: string }>('/auth/logout', {
+    method: 'POST',
+    body: { refresh_token: refreshToken },
+  });
+}
