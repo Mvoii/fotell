@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { logoutUser } from '@/lib/api/auth.service';
-import { getTokens, clearTokens } from '@/lib/auth';
+import { getTokens, clearTokens } from '@/lib/tokenStore';
 
 export function useLogout() {
   const [loading, setLoading] = useState(false);

@@ -2,10 +2,17 @@ import { useQuery } from '@tanstack/react-query';
 import { userService } from '@/lib/api/user.service';
 import type { UserProfile, BalanceResponse, Position, UserTradesResponse } from '@/lib/api/types/api';
 import { queryKeys } from '@/lib/queryKeys';
+import { getTokens } from '@/lib/tokenStore';
+
+/**
+ * Guards all user-data queries on the presence of an in-memory access token.
+ * This prevents unauthenticated visitors from triggering 401 → redirect loops
+ * on public pages where these hooks happen to be mounted.
+ */
 
 export function useUser(options?: { enabled?: boolean }) {
-  // Default to enabled, let the query handle token validation
-  const enabled = options?.enabled ?? true;
+  const { access_token } = getTokens();
+  const enabled = (options?.enabled ?? true) && !!access_token;
 
   return useQuery<UserProfile, Error, UserProfile>({
     queryKey: queryKeys.user.profile(),
@@ -15,7 +22,6 @@ export function useUser(options?: { enabled?: boolean }) {
     },
     enabled,
     retry: (failureCount, error) => {
-      // Don't retry if it's an authentication error
       if (error.message.includes('401') || error.message.includes('Unauthorized')) {
         return false;
       }
@@ -25,7 +31,8 @@ export function useUser(options?: { enabled?: boolean }) {
 }
 
 export function useBalance(options?: { enabled?: boolean }) {
-  const enabled = options?.enabled ?? true;
+  const { access_token } = getTokens();
+  const enabled = (options?.enabled ?? true) && !!access_token;
 
   return useQuery<BalanceResponse, Error, BalanceResponse>({
     queryKey: queryKeys.user.balance(),
@@ -44,7 +51,8 @@ export function useBalance(options?: { enabled?: boolean }) {
 }
 
 export function usePositions(options?: { enabled?: boolean }) {
-  const enabled = options?.enabled ?? true;
+  const { access_token } = getTokens();
+  const enabled = (options?.enabled ?? true) && !!access_token;
 
   return useQuery<Position[], Error, Position[]>({
     queryKey: queryKeys.user.positions(),
@@ -63,7 +71,8 @@ export function usePositions(options?: { enabled?: boolean }) {
 }
 
 export function useTrades(limit = 50, offset = 0, options?: { enabled?: boolean }) {
-  const enabled = options?.enabled ?? true;
+  const { access_token } = getTokens();
+  const enabled = (options?.enabled ?? true) && !!access_token;
 
   return useQuery<UserTradesResponse, Error, UserTradesResponse>({
     queryKey: queryKeys.user.trades({ limit, offset }),

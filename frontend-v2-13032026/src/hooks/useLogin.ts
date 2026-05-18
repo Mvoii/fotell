@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { loginUser } from '@/lib/api/auth.service';
 import type { LoginRequest, AuthResponse } from '@/lib/api/types/api';
 import type { ApiRequestError } from '@/lib/api/client';
-import { setTokens } from '@/lib/auth';
+import { setTokens } from '@/lib/tokenStore';
 
 /**
  * useLogin hook
@@ -16,19 +16,18 @@ export function useLogin() {
 
   /**
    * @param payload LoginRequest
-   * @param rememberMe boolean - if true, tokens are saved to localStorage, else sessionStorage
    */
-  const login = async (payload: LoginRequest, rememberMe: boolean = false) => {
+  const login = async (payload: LoginRequest) => {
     setLoading(true);
     setError(null);
     try {
       const response = await loginUser(payload);
       setData(response);
-      // Save tokens to storage
+      // Store tokens in memory — XSS-immune
       setTokens({
         access_token: response.access_token,
         refresh_token: response.refresh_token,
-      }, rememberMe);
+      });
       return response;
     } catch (err) {
       let errorMsg = 'Login failed. Please try again.';
