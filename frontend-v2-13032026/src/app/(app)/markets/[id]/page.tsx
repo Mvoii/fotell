@@ -9,6 +9,7 @@ import { useParams } from 'next/navigation';
 import { useBalance, usePositions, useUser } from '@/hooks/useUser';
 import { AppShell } from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function MarketDetailsPage() {
   const routeParams = useParams();
@@ -47,38 +48,48 @@ export default function MarketDetailsPage() {
   }
 
   const userPosition = positions?.find((p) => p.market_id === marketId) ?? null;
+  const showTradePanel = market.status === 'OPEN';
 
   return (
     <AppShell isAuthenticated={!!user}>
       <PageContainer maxWidth="xl" inAppShell>
         <div className="w-full flex flex-col gap-6 pt-2 pb-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MarketDetailsCard
-            market={market}
-            prices={prices}
-          />
-          {/* Trading panel only for OPEN markets */}
-          {market.status === 'OPEN' && (
-            <div className="lg:self-start">
-              <TradePanel
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className={`flex flex-col gap-6 ${showTradePanel ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
+              <MarketDetailsCard
                 market={market}
-                currentPrices={{ yes_price: market.yes_price ?? 0, no_price: market.no_price ?? 0 }}
-                userBalance={balanceData?.balance_smallest_unit ?? null}
-                userPosition={userPosition}
+                prices={prices}
               />
+              <Accordion type="single" collapsible className="rounded-xl border border-subtle bg-surface px-4 shadow-sm">
+                <AccordionItem value="trades" className="border-none">
+                  <AccordionTrigger className="py-3">Trades</AccordionTrigger>
+                  <AccordionContent className="pt-2">
+                    <MarketTradesList marketId={market.id} />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+              <Accordion type="single" collapsible className="rounded-xl border border-subtle bg-surface px-4 shadow-sm">
+                <AccordionItem value="comments" className="border-none">
+                  <AccordionTrigger className="py-3">Comments</AccordionTrigger>
+                  <AccordionContent className="pt-2">
+                    <CommentsSection marketId={market.id} />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
-          )}
-        </div>
 
-        {/* Trades List and Comments */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-          <div className="flex flex-col gap-6">
-            <MarketTradesList marketId={market.id} />
+            {/* Trading panel only for OPEN markets */}
+            {showTradePanel && (
+              <div className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
+                <TradePanel
+                  market={market}
+                  currentPrices={{ yes_price: market.yes_price ?? 0, no_price: market.no_price ?? 0 }}
+                  userBalance={balanceData?.balance_smallest_unit ?? null}
+                  userPosition={userPosition}
+                />
+              </div>
+            )}
           </div>
-          <div className="flex flex-col gap-6">
-            <CommentsSection marketId={market.id} />
-          </div>
-        </div>
         </div>
       </PageContainer>
     </AppShell>

@@ -355,47 +355,68 @@ MOBILE — stacked layout
 ├──────────────────────────────────────────────────────────────────┤
 │  STATS: Volume KES 45,230  ·  Trades 234  ·  Liquidity b 500    │
 ├──────────────────────────────────────────────────────────────────┤
-│  RECENT TRADES                                                   │
+│  TRADES (accordion, collapsed by default)                        │
+│  [ Toggle ]                                                     │
 │  10:32 AM   YES  100 shares  62.1¢                               │
 │  10:28 AM   NO    50 shares  37.9¢                               │
 │  …  (50 most recent, scrollable)                                 │
+├──────────────────────────────────────────────────────────────────┤
+│  COMMENTS (accordion, collapsed by default)                      │
+│  [ Toggle ]                                                     │
+│  Comment list with replies                                       │
 └──────────────────────────────────────────────────────────────────┘
 
-─────── TRADE PANEL (sticky bottom sheet on mobile) ───────────────
+─────── TRADE PANEL (stacked below content on mobile) ──────────────
 
-STEP 1 — Select order type via tabs:
-┌──────────────────────────────────────────────────────────────────┐
-│  ▼  (drag handle)                                                │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  [  Market Order  ]   [  Limit Order  ]  ← order tabs   │    │
-│  ├─────────────────────────────────────────────────────────┤    │
-│  │                                                         │    │
-│  │  ── MARKET ORDER ──                                     │    │
-│  │  Outcome:  [  YES  ]  [  NO  ]                          │    │
-│  │  Shares:   < 100                                     >  │    │
-│  │  Est. Cost KES 62.50                                    │    │
-│  │  Max Slip: < 5%                                      >  │    │
-│  │  Balance:  KES 4,500                                    │    │
-│  │                                                         │    │
-│  │  [      Buy YES Shares — KES 62.50      ]               │    │
-│  │                                                         │    │
-│  └─────────────────────────────────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────────┘
+The Trade Panel is a unified, premium widget that handles both Market and Limit
+orders in either BUY or SELL modes, for both YES and NO outcomes.
 
 ┌──────────────────────────────────────────────────────────────────┐
-│  ── LIMIT ORDER (when "Limit Order" tab selected) ──            │
-│  ┌─────────────────────────────────────────────────────────┐    │
-│  │  Outcome:       [  YES  ]  [  NO  ]                     │    │
-│  │  Shares:        < 200                               >   │    │
-│  │  Trigger Price: < 42.0¢ ≤ current YES price         >   │    │
-│  │  ℹ Order executes when YES price drops to ≤ 42.0¢.     │    │
-│  │                                                         │    │
-│  │  Est. Max Cost  KES 84.00                               │    │
-│  │  Expires:       [1h] [24h] [7d] [GTC]   ← pill toggle  │    │
-│  │  Balance:       KES 4,500                               │    │
-│  │                                                         │    │
-│  │  [ Place Limit Order — 200 YES @ ≤ 42¢ ]               │    │
-│  └─────────────────────────────────────────────────────────┘    │
+│  ▼  (drag handle on mobile drawer)                               │
+│                                                                  │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │    [       BUY  (Enter)       ]    [      SELL  (Exit)      ]  │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│  ↑ Primary Action Selector (Solid border, active has light fill) │
+│                                                                  │
+│  ┌───────────────────────────────┬────────────────────────────┐  │
+│  │  Order Type: [ Market ▾ ]      │  Buying Power: KES 4,500   │  │
+│  └───────────────────────────────┴────────────────────────────┘  │
+│                                                                  │
+│  OUTCOME SELECTION (Side-by-side cards, active has accent fill)  │
+│  ┌──────────────────────────────┐ ┌──────────────────────────┐  │
+│  │ YES ●                  62.5¢ │ │ NO  ○                  37.5¢ │  │
+│  │ (You hold: 100 shares)       │ │ (You hold: 0 shares)     │  │
+│  └──────────────────────────────┘ └──────────────────────────┘  │
+│  ↑ Green-themed accent fill       ↑ Red-themed accent fill       │
+│                                                                  │
+│  INPUT BOX (Dual-mode: tap unit to toggle between KES & Shares)  │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  Amount (KES)   [ KES ▾ ]      │  Est. Shares: 160          │  │
+│  │  < 100.00              >       │  (1 share = 62.5¢)         │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│  Presets Row:                                                    │
+│  [  +100 KES  ]   [  +500 KES  ]   [  +1,000 KES  ]   [  Max  ]  │
+│                                                                  │
+│  advanced parameters (conditional on Order Type):                │
+│  ┌─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┐  │
+│  │  For Market Order: Max Slippage Guard: [ 5% ▾ ]             │  │
+│  │  For Limit Order:  Trigger Price: < 42.0¢ >                 │  │
+│  │                    Expires: [1h] [24h] [7d] [GTC]           │  │
+│  └─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┘  │
+│                                                                  │
+│  PRICING & RETURNS ESTIMATION                                    │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  Average Price   · · · · · · · · · · · · · · · · · ·  62.5¢ │  │
+│  │  Total Cost  · · · · · · · · · · · · · · · · · · KES 100.00 │  │
+│  │  Max Payout (160 shares) · · · · · · · · · · · · KES 160.00 │  │
+│  │  Potential Profit  · · · · · · · · · · · · KES 60.00 (+60%) │  │
+│  │  Trading Fee   · · · · · · · · · · · · · · · · KES 0.00 (0%) │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│                                                                  │
+│  [               Buy YES Shares — KES 100.00                 ]  │
+│  ↑ Submit Button (Solid Green for YES Buy, Solid Red for NO Buy, │
+│    Solid Blue/Cyan for Sell)                                     │
 └──────────────────────────────────────────────────────────────────┘
 
 Note: Unauthenticated users see:
@@ -403,8 +424,9 @@ Note: Unauthenticated users see:
 
 DESKTOP (≥ 1024 px) — side-by-side:
 ┌─────────────────────────────────────┬────────────────────────────┐
-│  LEFT — Market Info (65%)           │  RIGHT — Trade Card (35%)  │
-│  (same content as mobile above)     │  (same panels, as a card)  │
+│  LEFT — Market Info (66%)           │  RIGHT — Trade Card (33%)  │
+│  (details card + trades accordion   │  (sticky on scroll)        │
+│   + comments accordion)             │                            │
 └─────────────────────────────────────┴────────────────────────────┘
 ```
 
