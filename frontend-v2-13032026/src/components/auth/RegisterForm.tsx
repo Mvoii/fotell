@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation";
  * - On success: redirects to /home, triggers welcome toast
  */
 export function RegisterForm() {
-//   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
+  //   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
   const router = useRouter();
   const { register, loading, error } = useRegister();
   const [form, setForm] = useState<RegisterRequest>({
@@ -25,7 +25,6 @@ export function RegisterForm() {
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   // Simple inline validation
   const validate = (values: RegisterRequest) => {
@@ -60,7 +59,7 @@ export function RegisterForm() {
     const errors = validate(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
-    const res = await register(form, rememberMe);
+    const res = await register(form);
     if (res) {
       router.push("/dashboard");
     }
@@ -138,7 +137,7 @@ export function RegisterForm() {
           />
           <button
             type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted hover:text-primary focus:outline-none"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground hover:text-primary focus:outline-none"
             onClick={() => setShowPassword((v) => !v)}
             tabIndex={-1}
             aria-label={showPassword ? "Hide password" : "Show password"}
@@ -146,7 +145,7 @@ export function RegisterForm() {
             {showPassword ? "🙈" : "👁"}
           </button>
         </div>
-        <div className="text-body-sm text-muted mt-1">✓ 8+ chars  ✓ Has number</div>
+        <div className="text-body-sm text-muted-foreground mt-1">✓ 8+ chars  ✓ Has number</div>
         {fieldErrors.password && (
           <div className="text-error text-sm mt-1">{fieldErrors.password}</div>
         )}
@@ -156,18 +155,7 @@ export function RegisterForm() {
         <div className="text-error text-sm mt-2 text-center">{error}</div>
       )}
 
-      <div className="flex items-center gap-2 mt-2">
-        <input
-          id="rememberMe"
-          type="checkbox"
-          checked={rememberMe}
-          onChange={e => setRememberMe(e.target.checked)}
-          className="accent-accent-blue"
-        />
-        <label htmlFor="rememberMe" className="text-body-sm text-primary select-none cursor-pointer">
-          Remember me
-        </label>
-      </div>
+
 
       <Button
         variant="default"

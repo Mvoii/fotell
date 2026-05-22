@@ -97,10 +97,9 @@ export function PriceChart({
               onClick={() => onTimeRangeChange(option.value)}
               className={`
                 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150
-                ${
-                  timeRange === option.value
-                    ? 'bg-primary text-white'
-                    : 'bg-surface border border-subtle text-muted hover:text-primary hover:border-primary/50'
+                ${timeRange === option.value
+                  ? 'bg-primary text-white'
+                  : 'bg-surface border border-subtle text-muted-foreground hover:text-primary hover:border-primary/50'
                 }
               `}
             >

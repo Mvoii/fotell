@@ -1,78 +1,4 @@
-// Trading types
-export interface PlaceTradeRequest {
-  outcome: 'YES' | 'NO';
-  shares: number;
-  max_cost?: number; // smallest unit; 0 = disabled
-}
-
-export interface TradeReceipt {
-  trade_id: string;
-  outcome: 'YES' | 'NO';
-  shares: number;
-  cost_paid: number;
-  avg_price: number;
-  position: Position;
-  balance_after: number;
-  timestamp: string;
-}
-export interface MarketOrderFormProps {
-  market: Market;
-  currentPrices: { yes_price: number; no_price: number };
-  userBalance: number | null;
-  userPosition: Position | null;  // use typed Position, not any
-  onSubmit: (params: PlaceTradeRequest) => void;  // ← matches API exactly
-  tradeHook: ReturnType<typeof import('@/hooks/useTrade').useTrade>;
-}
-export interface TradePanelProps {
-  market: Market;
-  currentPrices: { yes_price: number; no_price: number };
-  userBalance: number | null;
-  userPosition: Position | null;
-  defaultTab?: 'market' | 'limit';
-  defaultOutcome?: 'YES' | 'NO';
-}
-
-export interface Position {
-  id: string;
-  user_id: string;
-  market_id: string;
-  yes_shares: number;
-  no_shares: number;
-  cost_basis: number;
-  realized_pnl: number | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Trade {
-  id: string;
-  user_id: string;
-  market_id: string;
-  outcome: 'YES' | 'NO';
-  shares: number;
-  cost_paid: number;
-  created_at: string;
-}
-
-export interface PositionWithMarket extends Position {
-  market?: Market;
-}
-
-export interface UserTradesResponse {
-  trades: Trade[];
-  total: number;
-}
-
-export interface ApiError {
-  error: string;
-  details?: {
-    error_code?: string;
-    field?: string;
-    projected_cost?: number;
-    max_cost?: number;
-  };
-}
-// Auth interfaces for authentication pages (mirrors backend contract)
+// ── Auth ────────────────────────────────────────────────────────────────
 
 export interface RegisterRequest {
   email: string;
@@ -80,54 +6,6 @@ export interface RegisterRequest {
   username: string;
   full_name: string;
 }
-
-// ── Markets
-export type MarketStatus = 'PENDING' | 'OPEN' | 'CLOSED' | 'RESOLVED';
-export type Outcome = 'YES' | 'NO';
-
-export interface Market {
-  id: string;
-  question: string;
-  description?: string;
-  status: MarketStatus;
-  created_by: string;
-  created_at: string;
-  closes_at: string;
-  updated_at?: string;
-  liquidity_param: number;
-  yes_price: number | null;
-  no_price: number | null;
-  resolved_outcome?: Outcome | null;
-  resolved_at?: string | null;
-  total_volume_smallest_unit?: number;
-  total_trades?: number;
-}
-
-export interface MarketsListResponse {
-  markets: Market[];
-  total: number;
-  limit: number;
-  offset: number;
-}
-
-// Market prices timeline
-export interface MarketPrices {
-  market_id: string;
-  yes_price: number;
-  no_price: number;
-  timestamp: string;
-}
-
-// Time range options for price history
-export type TimeRange = '1D' | '5D' | '1M' | '1Y' | '5Y';
-
-// Parameters for fetching market prices with time range
-export interface TimeRangeParams {
-  from?: string; // ISO timestamp
-  to?: string;   // ISO timestamp
-  range?: TimeRange;
-}
-
 
 export interface LoginRequest {
   email: string;
@@ -164,41 +42,186 @@ export interface UserProfile {
   last_login_at: string | null;
 }
 
-// Dashboard / User-related types
-export interface BalanceResponse {
-  balance_smallest_unit: number;
-  balance_kes: number;
+// ── Markets ─────────────────────────────────────────────────────────────
+
+export type MarketStatus = 'PENDING' | 'OPEN' | 'CLOSED' | 'RESOLVED';
+export type Outcome = 'YES' | 'NO';
+
+export interface Market {
+  id: string;
+  question: string;
+  description?: string;
+  status: MarketStatus;
+  created_by: string;
+  created_at: string;
+  closes_at: string;
+  updated_at?: string;
+  liquidity_param: number;
+  yes_price: number | null;
+  no_price: number | null;
+  resolved_outcome?: Outcome | null;
+  resolved_at?: string | null;
+  // NOTE: total_volume and total_trades do NOT exist in the API
 }
 
-export interface UserTrade {
+export interface MarketsListResponse {
+  markets: Market[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+// Market prices snapshot
+export interface MarketPrices {
+  market_id: string;
+  yes_price: number;
+  no_price: number;
+  timestamp: string;
+}
+
+// Time range options for price history
+export type TimeRange = '1D' | '5D' | '1M' | '1Y' | '5Y';
+
+// Parameters for fetching market prices with time range
+export interface TimeRangeParams {
+  from?: string; // ISO timestamp
+  to?: string;   // ISO timestamp
+  range?: TimeRange;
+}
+
+// ── Trading ─────────────────────────────────────────────────────────────
+
+export interface PlaceTradeRequest {
+  outcome: 'YES' | 'NO';
+  shares: number;
+  // NOTE: max_cost does NOT exist in the API
+}
+
+export interface TradeReceipt {
+  trade_id: string;
+  outcome: 'YES' | 'NO';
+  shares: number;
+  cost_paid: number;     // cents
+  avg_price: number;
+  position: Position;
+  balance_after: number;  // cents
+  timestamp: string;
+}
+
+export interface Position {
+  // NOTE: no top-level `id` field in the API
+  user_id: string;
+  market_id: string;
+  yes_shares: number;    // double
+  no_shares: number;     // double
+  cost_basis: number;    // cents
+  realized_pnl: number | null;  // cents | null
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Trade {
   id: string;
   user_id: string;
   market_id: string;
   outcome: 'YES' | 'NO';
   shares: number;
-  cost_paid: number; // in cents
+  cost_paid: number;     // cents
   created_at: string;
-}
-
-export interface UserTradesResponse {
-  trades: UserTrade[];
-  total: number;
 }
 
 export interface PositionWithMarket extends Position {
   market?: Market;
 }
 
+// ── User / Dashboard ────────────────────────────────────────────────────
+
+export interface BalanceResponse {
+  balance_smallest_unit: number;  // cents
+  balance_kes: number;
+}
+
+export interface UserTradesResponse {
+  trades: Trade[];
+  total: number;
+}
+
+export interface MarketTradesResponse {
+  trades: Trade[];
+  total: number;
+}
+
 export interface PortfolioSummary {
   total_positions: number;
-  total_invested: number;
-  total_pnl: number;
+  total_invested: number;   // cents
+  total_pnl: number;        // cents
   active_markets: number;
 }
 
 export interface DashboardStats {
   balance: BalanceResponse;
   portfolio: PortfolioSummary;
-  recent_trades: UserTrade[];
+  recent_trades: Trade[];
   open_positions: PositionWithMarket[];
+}
+
+// ── Comments ────────────────────────────────────────────────────────────
+
+export type VoteType = 'UPVOTE' | 'DOWNVOTE' | 'NONE';
+
+export interface Comment {
+  id: string;
+  market_id: string;
+  user_id: string;
+  username: string;
+  parent_id: string | null;
+  content: string;
+  is_deleted: boolean;
+  vote_count: number;
+  current_user_vote: VoteType;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CommentsListResponse {
+  comments: Comment[];
+  total: number;
+}
+
+export interface CreateCommentRequest {
+  content: string;
+}
+
+export interface VoteRequest {
+  vote_type: 'UPVOTE' | 'DOWNVOTE';
+}
+
+// ── API Error ───────────────────────────────────────────────────────────
+
+export interface ApiError {
+  error: string;
+  details?: {
+    error_code?: string;
+    field?: string;
+    projected_cost?: number;
+  };
+}
+
+// ── Component Props ─────────────────────────────────────────────────────
+
+export interface MarketOrderFormProps {
+  market: Market;
+  currentPrices: { yes_price: number; no_price: number };
+  userBalance: number | null;
+  userPosition: Position | null;
+  onSubmit: (params: PlaceTradeRequest) => void;
+  tradeHook: ReturnType<typeof import('@/hooks/useTrade').useTrade>;
+}
+
+export interface TradePanelProps {
+  market: Market;
+  currentPrices: { yes_price: number; no_price: number };
+  userBalance: number | null;
+  userPosition: Position | null;
+  defaultOutcome?: 'YES' | 'NO';
 }
