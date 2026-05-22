@@ -58,7 +58,7 @@ function MobileNavigationItem({
     >
       <span className={cn(
         "flex-shrink-0",
-        isActive ? "text-white" : "text-muted-foreground"
+        isActive ? "text-white" : "text-muted-foreground-foreground"
       )}>{icon}</span>
       <span className="text-sm font-medium">{label}</span>
     </button>
@@ -80,8 +80,6 @@ interface AppShellProps {
     showSearch?: boolean;
   };
   bottomNavProps?: {
-    pendingOrdersCount?: number;
-    unreadAlertsCount?: number;
     onTradePress?: () => void;
   };
 }
@@ -147,8 +145,7 @@ export function AppShell({
   const mobileNavItems: { id: NavigationTab; label: string; icon: React.ReactNode; href: string }[] = [
     { id: 'dashboard', label: 'Dashboard', icon: <Home className="h-5 w-5" />, href: '/dashboard' },
     { id: 'markets', label: 'Markets', icon: <TrendingUp className="h-5 w-5" />, href: '/markets' },
-    { id: 'watchlist', label: 'Watchlist', icon: <Eye className="h-5 w-5" />, href: '#watchlist' },
-    { id: 'profile', label: 'Profile', icon: <User className="h-5 w-5" />, href: '/profile' },
+    { id: 'portfolio', label: 'Portfolio', icon: <User className="h-5 w-5" />, href: '/portfolio' },
   ];
 
   return (
@@ -236,7 +233,7 @@ export function AppShell({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{user.username}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground-foreground">
                       {isAdmin ? 'Administrator' : 'User'}
                     </p>
                   </div>
@@ -274,7 +271,7 @@ export function AppShell({
                 >
                   <span className={cn(
                     "shrink-0",
-                    activeTab === 'trade' ? "text-white" : "text-muted-foreground"
+                    activeTab === 'trade' ? "text-white" : "text-muted-foreground-foreground"
                   )}>
                     <ArrowUpDown className="h-5 w-5" />
                   </span>
@@ -291,7 +288,7 @@ export function AppShell({
                   href="/settings"
                   icon={<Settings className={cn(
                     "h-5 w-5",
-                    pathname === '/settings' ? "text-white" : "text-muted-foreground"
+                    pathname === '/settings' ? "text-white" : "text-muted-foreground-foreground"
                   )} />}
                   label="Settings"
                   isActive={pathname === '/settings'}
@@ -303,7 +300,7 @@ export function AppShell({
                     href="/admin"
                     icon={<Shield className={cn(
                       "h-5 w-5",
-                      pathname === '/admin' ? "text-white" : "text-muted-foreground"
+                      pathname === '/admin' ? "text-white" : "text-muted-foreground-foreground"
                     )} />}
                     label="Admin"
                     isActive={pathname === '/admin'}
@@ -315,7 +312,7 @@ export function AppShell({
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-md hover:bg-muted transition-colors text-left text-foreground"
                 >
-                  <span className="shrink-0 text-muted-foreground">
+                  <span className="shrink-0 text-muted-foreground-foreground">
                     <LogOut className="h-5 w-5" />
                   </span>
                   <span className="text-sm font-medium">Sign Out</span>
@@ -325,7 +322,7 @@ export function AppShell({
 
             {/* Footer */}
             <div className="p-4 border-t border-border text-center">
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground-foreground">
                 © {new Date().getFullYear()} FoTell
               </p>
             </div>

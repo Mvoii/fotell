@@ -8,11 +8,15 @@ import { Button } from '@/components/ui/button';
 import { useMarkets } from '@/hooks/useMarkets';
 import { useCloseMarket, useOpenMarket, useResolveMarket } from '@/hooks/useAdmin';
 import type { MarketStatus } from '@/lib/api/types/api';
+import { AppShell } from '@/components/layout/AppShell';
+import PageContainer from '@/components/layout/PageContainer';
+import { useUser } from '@/hooks/useUser';
 
 const STATUS_OPTIONS: MarketStatus[] = ['PENDING', 'OPEN', 'CLOSED', 'RESOLVED'];
 
 export default function AdminMarketsPage() {
   const router = useRouter();
+  const { data: user } = useUser();
   const [status, setStatus] = useState<MarketStatus>('PENDING');
   const [offset, setOffset] = useState(0);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -57,8 +61,8 @@ export default function AdminMarketsPage() {
 
   return (
     <AuthGuard requireAdmin={true}>
-      <div className="min-h-screen bg-base">
-        <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <AppShell isAuthenticated={!!user}>
+        <PageContainer maxWidth="xl" inAppShell>
           <Button variant="ghost" onClick={() => router.push('/admin')} className="mb-4">
             ← Back to Admin Dashboard
           </Button>
@@ -118,8 +122,8 @@ export default function AdminMarketsPage() {
               Next
             </Button>
           </div>
-        </div>
-      </div>
+        </PageContainer>
+      </AppShell>
     </AuthGuard>
   );
 }

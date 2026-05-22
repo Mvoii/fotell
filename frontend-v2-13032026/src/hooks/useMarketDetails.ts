@@ -1,40 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
-import { useState, useCallback } from 'react';
 import { marketsService } from '@/lib/api/markets.service';
-import type { Market, MarketPrices, TimeRange } from '@/lib/api/types/api';
+import type { Market, MarketPrices } from '@/lib/api/types/api';
+import { queryKeys } from '@/lib/queryKeys';
 
-// Calculate date range based on selected time range
-function getTimeRangeDates(range: TimeRange): { from: string; to: string } {
-  const now = new Date();
-  const to = now.toISOString();
-  const from = new Date(now);
-
-  switch (range) {
-    case '1D':
-      from.setDate(from.getDate() - 1);
-      break;
-    case '5D':
-      from.setDate(from.getDate() - 5);
-      break;
-    case '1M':
-      from.setMonth(from.getMonth() - 1);
-      break;
-    case '1Y':
-      from.setFullYear(from.getFullYear() - 1);
-      break;
-    case '5Y':
-      from.setFullYear(from.getFullYear() - 5);
-      break;
-  }
-
-  return { from: from.toISOString(), to };
-}
-
+/**
+ * Fetches a single market plus its current price snapshot.
+ * The backend `/markets/:id/prices` endpoint returns a single MarketPrices
+ * object (no historical time-series). Time-range selection is therefore
+ * not supported and has been removed.
+ */
 export function useMarketDetails(id: string) {
-  const [timeRange, setTimeRange] = useState<TimeRange>('1D');
-
   const marketQuery = useQuery<Market, Error>({
-    queryKey: ['markets', 'details', id],
+    queryKey: queryKeys.markets.details(id),
     queryFn: async () => {
       const { data } = await marketsService.getById(id);
       return data;
@@ -42,11 +19,10 @@ export function useMarketDetails(id: string) {
     enabled: !!id,
   });
 
-  const pricesQuery = useQuery<MarketPrices[], Error>({
-    queryKey: ['markets', 'prices', id, timeRange],
+  const pricesQuery = useQuery<MarketPrices, Error>({
+    queryKey: queryKeys.markets.prices(id),
     queryFn: async () => {
-      const dates = getTimeRangeDates(timeRange);
-      const { data } = await marketsService.getPrices(id, dates);
+      const { data } = await marketsService.getPrices(id);
       return data;
     },
     enabled: !!id,
@@ -62,7 +38,5 @@ export function useMarketDetails(id: string) {
       marketQuery.refetch();
       pricesQuery.refetch();
     },
-    timeRange,
-    setTimeRange,
   };
 }

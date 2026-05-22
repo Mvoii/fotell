@@ -1,20 +1,26 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '@/lib/api/admin.service';
 import type { CreateMarketRequest, CreateMarketResponse, AdminMarketActionResponse } from '@/lib/api/types/admin';
+import { queryKeys } from '@/lib/queryKeys';
 
 export function useCreateMarket() {
   const queryClient = useQueryClient();
 
   return useMutation<CreateMarketResponse, Error, CreateMarketRequest>({
-    mutationFn: (data: CreateMarketRequest) =>
-      adminService.createMarket(data).then(res => res.data),
+    mutationFn: (data: CreateMarketRequest) => {
+      const payload = {
+        ...data,
+        closes_at: new Date(data.closes_at).toISOString(),
+      };
+      return adminService.createMarket(payload).then(res => res.data);
+    },
 
     onSuccess: (newMarket) => {
       // Invalidate markets list queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ['markets', 'list'] });
-      
+      queryClient.invalidateQueries({ queryKey: queryKeys.markets.list() });
+
       // Optionally, you could add the new market to the cache directly
-      queryClient.setQueryData(['markets', 'detail', newMarket.id], newMarket);
+      queryClient.setQueryData(queryKeys.markets.details(newMarket.id), newMarket);
     },
 
     onError: (error) => {
@@ -32,8 +38,8 @@ export function useOpenMarket() {
 
     onSuccess: (_, marketId) => {
       // Invalidate market detail and list queries
-      queryClient.invalidateQueries({ queryKey: ['markets', 'detail', marketId] });
-      queryClient.invalidateQueries({ queryKey: ['markets', 'list'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.markets.details(marketId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.markets.list() });
     },
 
     onError: (error) => {
@@ -51,8 +57,8 @@ export function useCloseMarket() {
 
     onSuccess: (_, marketId) => {
       // Invalidate market detail and list queries
-      queryClient.invalidateQueries({ queryKey: ['markets', 'detail', marketId] });
-      queryClient.invalidateQueries({ queryKey: ['markets', 'list'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.markets.details(marketId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.markets.list() });
     },
 
     onError: (error) => {
@@ -70,11 +76,11 @@ export function useResolveMarket() {
 
     onSuccess: (_, { marketId }) => {
       // Invalidate market detail and list queries
-      queryClient.invalidateQueries({ queryKey: ['markets', 'detail', marketId] });
-      queryClient.invalidateQueries({ queryKey: ['markets', 'list'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.markets.details(marketId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.markets.list() });
       // Also invalidate user positions and trades since they'll be affected
-      queryClient.invalidateQueries({ queryKey: ['user', 'positions'] });
-      queryClient.invalidateQueries({ queryKey: ['user', 'trades'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.positions() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.user.trades() });
     },
 
     onError: (error) => {

@@ -84,12 +84,12 @@ export default function DashboardPage() {
                   Real-time balance tracking
                 </li>
                 <li className="flex items-start">
-                  <span className="text-warning mr-2">⚠</span>
-                  Position tracking (coming soon)
+                  <span className="text-success mr-2">✓</span>
+                  Position tracking
                 </li>
                 <li className="flex items-start">
-                  <span className="text-warning mr-2">⚠</span>
-                  Trade history (coming soon)
+                  <span className="text-success mr-2">✓</span>
+                  Trade history
                 </li>
                 <li className="flex items-start">
                   <span className="text-warning mr-2">⚠</span>

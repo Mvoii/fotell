@@ -1,4 +1,4 @@
-import { getTokens, setTokens, clearTokens } from '../auth';
+import { getTokens, setTokens, clearTokens } from '../tokenStore';
 /**
  * Connection-only API client for the Go backend.
  *
@@ -93,7 +93,7 @@ export async function apiRequest<T>(
     body,
     headers,
     signal,
-    credentials = 'include',
+    credentials = 'same-origin',
   } = options;
 
   const controller = new AbortController();
@@ -147,7 +147,7 @@ export async function apiRequest<T>(
               setTokens({
                 access_token: refreshData.access_token,
                 refresh_token: refreshData.refresh_token,
-              }, window.localStorage.getItem('auth_storage_type') === 'local');
+              });
               // Retry original request with new token
               finalHeaders['Authorization'] = `Bearer ${refreshData.access_token}`;
               response = await fetch(buildUrl(path, params), {
