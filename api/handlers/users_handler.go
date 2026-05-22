@@ -7,9 +7,11 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
 
-	"github.com/esiepe/fotell/api/middleware"
-	"github.com/esiepe/fotell/api/repository"
+	"github.com/Mvoii/fotell/api/middleware"
+	"github.com/Mvoii/fotell/api/repository"
+	"github.com/go-chi/chi/v5"
 )
 
 /*
@@ -29,14 +31,23 @@ SECURITY:
 */
 
 type UserHandler struct {
-	userRepo    *repository.UserRepository
-	balanceRepo *repository.BalanceRepository
+	userRepo     *repository.UserRepository
+	balanceRepo  *repository.BalanceRepository
+	positionRepo *repository.PositionRepository
+	tradeRepo    *repository.TradeRepository
 }
 
-func NewUserHandler(userRepo *repository.UserRepository, balanceRepo *repository.BalanceRepository) *UserHandler {
+func NewUserHandler(
+	userRepo *repository.UserRepository,
+	balanceRepo *repository.BalanceRepository,
+	positionRepo *repository.PositionRepository,
+	tradeRepo *repository.TradeRepository,
+) *UserHandler {
 	return &UserHandler{
-		userRepo:    userRepo,
-		balanceRepo: balanceRepo,
+		userRepo:     userRepo,
+		balanceRepo:  balanceRepo,
+		positionRepo: positionRepo,
+		tradeRepo:    tradeRepo,
 	}
 }
 
@@ -152,26 +163,51 @@ func (h *UserHandler) GetBalance(w http.ResponseWriter, r *http.Request) {
 // GET /users/me/trade - get user trade history
 /*
 GetMyTrades returns trade history for the authenticated user.
-
-TODO: Implement when trade repository is ready.
 */
 func (h *UserHandler) GetMyTrades(w http.ResponseWriter, r *http.Request) {
-	ErrorJSON(w, 501, "Not implemented yet", map[string]interface{}{
-		"error_code": "NOT_IMPLEMENTED",
-		"hint":       "trade hostory coming soon",
+	userID := middleware.GetUserID(r)
+	if userID == "" {
+		ErrorJSON(w, 401, "authentication required", nil)
+		return
+	}
+
+	limit, offset := parsePagination(r, 50, 0)
+
+	trades, total, err := h.tradeRepo.ListByUser(r.Context(), userID, limit, offset)
+	if err != nil {
+		log.Printf("ERROR: failed to fetch trades: %v", err)
+		ErrorJSON(w, 500, "failed to retrieve trade history", nil)
+		return
+	}
+
+	JSON(w, 200, map[string]interface{}{
+		"trades": trades,
+		"total":  total,
+		"limit":  limit,
+		"offset": offset,
 	})
 }
 
 // GET /users/me/positions - Get user positions
 /*
 GetPositions returns all positions for teh aithenticaed user
-
-TODO: implement when position repo is ready
 */
 func (h *UserHandler) GetPositions(w http.ResponseWriter, r *http.Request) {
-	ErrorJSON(w, 501, "not implemented yet", map[string]interface{}{
-		"error_code": "NOT_IMPLEMENTED",
-		"hint":       "position tracking coming soon",
+	userID := middleware.GetUserID(r)
+	if userID == "" {
+		ErrorJSON(w, 401, "Authentication required", nil)
+		return
+	}
+
+	positions, err := h.positionRepo.ListByUser(r.Context(), userID)
+	if err != nil {
+		log.Printf("ERROR: failed to fetch positions: %v", err)
+		ErrorJSON(w, 500, "failed to retrieve positions", nil)
+		return
+	}
+
+	JSON(w, 200, map[string]interface{}{
+		"positions": positions,
 	})
 }
 
@@ -179,27 +215,96 @@ func (h *UserHandler) GetPositions(w http.ResponseWriter, r *http.Request) {
 
 /*
 ListUsers returns paginated list of all users (admin only)
-
-TODO: Implement when needed
 */
 func (h *UserHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	ErrorJSON(w, 501, "not yet implemented", nil)
+	limit, offset := parsePagination(r, 50, 0)
+
+	users, err := h.userRepo.List(r.Context(), limit, offset)
+	if err != nil {
+		log.Printf("ERROR: failed to list users: %v", err)
+		ErrorJSON(w, 500, "failed to list users", nil)
+		return
+	}
+
+	// sanitize output
+	for _, u := range users {
+		u.PasswordHash = ""
+	}
+
+	JSON(w, 200, map[string]interface{}{
+		"users":  users,
+		"limit":  limit,
+		"offset": offset,
+	})
 }
 
 /*
 GetUser returns details by ID (admin only)
-
-TODO: when needed
 */
 func (h *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
-	ErrorJSON(w, 501, "not implemented yet", nil)
+	targetUserID := chi.URLParam(r, "userID")
+	if targetUserID == "" {
+		ErrorJSON(w, 400, "User ID required", nil)
+		return
+	}
+
+	user, err := h.userRepo.GetByID(r.Context(), targetUserID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			ErrorJSON(w, 404, "user not found", nil)
+			return
+		}
+
+		log.Printf("ERROR: failed to fetch user: %v", err)
+		ErrorJSON(w, 500, "failed to fetch user", nil)
+		return
+	}
+
+	user.PasswordHash = "" // hide hash
+
+	JSON(w, 200, user)
 }
 
 /*
 DeactivateUser deactivates a user account (admin only)
-
-TODO: implement later
 */
 func (h *UserHandler) DeactivateUser(w http.ResponseWriter, r *http.Request) {
-	ErrorJSON(w, 501, "not implemented yet", nil)
+	targetUserID := chi.URLParam(r, "userID")
+	if targetUserID == "" {
+		ErrorJSON(w, 400, "user id required", nil)
+		return
+	}
+
+	err := h.userRepo.Deactivate(r.Context(), targetUserID)
+	if err != nil {
+		log.Printf("ERROR: failed to deactivate user: %v", err)
+		ErrorJSON(w, 500, "failed to deactivate user", nil)
+		return
+	}
+
+	JSON(w, 200, map[string]string{
+		"message": "user deactivated successfully",
+	})
+}
+
+// HELPER
+func parsePagination(r *http.Request, defaultLimit, defaultOffset int) (int, int) {
+	limit, offset := defaultLimit, defaultOffset
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 {
+			limit = l
+			if limit > 100 {
+				limit = 100
+			}
+		}
+	}
+
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		if o, err := strconv.Atoi(offsetStr); err != nil && o >= 0 {
+			offset = o
+		}
+	}
+
+	return limit, offset
 }

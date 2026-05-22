@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -133,7 +134,7 @@ ERROR CODES:
   - 500: Database or AMM error
 */
 func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
-	// ── Extract user ID from JWT
+	// Extract user ID from JWT
 	userID := middleware.GetUserID(r)
 	if userID == "" {
 		ErrorJSON(w, 401, "Authentication required", map[string]interface{}{
@@ -369,8 +370,7 @@ func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		// Check for insufficient balance error
-		if strings.Contains(err.Error(), "exceeds max acceptable cost") ||
-			strings.Contains(err.Error(), "insufficient balance") {
+		if strings.Contains(err.Error(), "exceeds max acceptable cost") || strings.Contains(err.Error(), "insufficient balance") {
 			ErrorJSON(w, 409, "Insufficient balance", map[string]interface{}{
 				"error_code": "INSUFFICIENT_BALANCE",
 				"hint":       "Reduce shares or add funds.",
@@ -625,7 +625,17 @@ func (h *TradeHandler) ListMarketTrades(w http.ResponseWriter, r *http.Request) 
 	limit := 50
 	offset := 0
 
-	// TODO: Parse query params for limit/offset
+	if lStr := r.URL.Query().Get("limit"); lStr != "" {
+		if l, err := strconv.Atoi(lStr); err == nil && l > 0 {
+			limit = l
+			if limit > 100 { limit = 100 }
+		}
+	}
+	if oStr := r.URL.Query().Get("offset"); oStr != "" {
+		if o, err := strconv.Atoi(oStr); err == nil && o >= 0 {
+			offset = 0
+		}
+	}
 
 	// Fetch trades
 	trades, total, err := h.tradeRepo.ListByMarket(r.Context(), marketID, limit, offset)
