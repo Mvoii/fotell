@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Mvoii/fotell/amm"
-	"github.com/Mvoii/fotell/api/middleware"
-	"github.com/Mvoii/fotell/api/repository"
+	"github.com/esiepe/fotell/amm"
+	"github.com/esiepe/fotell/api/middleware"
+	"github.com/esiepe/fotell/api/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/shopspring/decimal"
 )
