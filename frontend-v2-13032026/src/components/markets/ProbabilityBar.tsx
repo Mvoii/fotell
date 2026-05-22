@@ -23,7 +23,7 @@ export function ProbabilityBar({ yesPrice, noPrice }: ProbabilityBarProps) {
           {/* Optional: add cross or down icon */}
         </span>
       </div>
-      <div className="relative h-2 w-full rounded-full border border-subtle overflow-hidden z-10">
+      <div className="relative h-2 w-full rounded-full border border-subtle overflow-hidden">
         {/* NO background: red, full width */}
         <div className="absolute left-0 top-0 h-full w-full rounded-full bg-red-500" />
         {/* YES fill: green, proportional to yes_price */}
@@ -31,7 +31,7 @@ export function ProbabilityBar({ yesPrice, noPrice }: ProbabilityBarProps) {
           className="absolute left-0 top-0 h-full rounded-l-full bg-green-500"
           style={{ width: `${yes}%` }}
         />
-        <div className="absolute left-1/2 top-0 h-full w-0.5 bg-surface z-30" />
+        <div className="absolute left-1/2 top-0 h-full w-0.5 bg-surface" />
       </div>
     </>
   );
