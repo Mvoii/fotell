@@ -101,10 +101,10 @@ export interface TradeReceipt {
   trade_id: string;
   outcome: 'YES' | 'NO';
   shares: number;
-  cost_paid: number;     // cents
-  avg_price: number;
+  cost_paid: number;      // cents (int64 from API) — actual LSMR marginal cost
+  avg_price: number;      // cents per share (= cost_paid / shares)
   position: Position;
-  balance_after: number;  // cents
+  balance_after: number;  // cents (int64 from API)
   timestamp: string;
 }
 
