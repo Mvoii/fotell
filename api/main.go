@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Mvoii/fotell/amm"
-	"github.com/Mvoii/fotell/api/handlers"
-	"github.com/Mvoii/fotell/api/middleware"
-	"github.com/Mvoii/fotell/api/repository"
-	"github.com/Mvoii/fotell/api/startup"
-	"github.com/Mvoii/fotell/api/workers"
+	"github.com/esiepe/fotell/amm"
+	"github.com/esiepe/fotell/api/handlers"
+	"github.com/esiepe/fotell/api/middleware"
+	"github.com/esiepe/fotell/api/repository"
+	"github.com/esiepe/fotell/api/startup"
+	"github.com/esiepe/fotell/api/workers"
 	"github.com/joho/godotenv"
 
 	"github.com/go-chi/chi/v5"
@@ -91,7 +91,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
-	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
+	userHandler := handlers.NewUserHandler(userRepo, balanceRepo, positionRepo, tradeRepo)
 	commentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 
 	// Build router with middleware stack
@@ -143,7 +143,7 @@ func main() {
 		r.Get("/markets", marketHandler.ListMarkets)
 		r.Get("/markets/{marketID}", marketHandler.GetMarket)
 		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
-		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
+		r.Get("/markets/{marketID}/trades", tradeHandler.ListMarketTrades)
 
 		// public comments routes
 		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
@@ -201,9 +201,9 @@ func main() {
 								})})
 
 				// User management
-				// r.Get("/admin/users", userHandler.ListUsers)
-				// r.Get("/admin/users/{userID}", userHandler.GetUser)
-				// r.Post("/admin/users/{userID}/deactivate", userHandler.DeactivateUser)
+				r.Get("/admin/users", userHandler.ListUsers)
+				r.Get("/admin/users/{userID}", userHandler.GetUser)
+				r.Post("/admin/users/{userID}/deactivate", userHandler.DeactivateUser)
 			})
 		})
 	})
@@ -265,6 +265,7 @@ func getAllowedOrigins(env string) []string {
 			"https://fotell.com",
 			"https://www.fotell.com",
 			"https://app.fotell.com",
+			"https://fotell-rho.vercel.app",
 		}
 	}
 	// Development: allow localhost

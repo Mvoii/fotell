@@ -205,10 +205,10 @@ export default function LandingPage() {
         <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between text-sm text-muted-foreground">
           <p>FoTell &copy; 2026</p>
           <div className="flex gap-6 mt-4 md:mt-0">
-            <Link href="/markets" className="hover:text-foreground transition-colors">Markets</Link>
-            <Link href="/api-docs" className="hover:text-foreground transition-colors">API Docs</Link>
-            <a href="https://github.com/Mvoii/fotell" target="_blank" rel="noreferrer" className="hover:text-foreground transition-colors">GitHub</a>
-            <Link href="/contact" className="hover:text-foreground transition-colors">Contact</Link>
+            <Link href="/markets" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Markets</Link>
+            <Link href="/api-docs" className="hover:text-zinc-900 dark:hover:text-white transition-colors">API Docs</Link>
+            <a href="https://github.com/esiepe/fotell" target="_blank" rel="noreferrer" className="hover:text-zinc-900 dark:hover:text-white transition-colors">GitHub</a>
+            <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-white transition-colors">Contact</Link>
           </div>
         </div>
       </footer>
