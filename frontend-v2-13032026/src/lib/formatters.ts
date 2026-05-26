@@ -38,12 +38,21 @@ export function formatPrice(price: number, style: 'cents' | 'percent' = 'cents')
 }
 
 /**
- * Estimate trade cost in KES from share count and spot price.
- * Per API spec, prices are in cents (0–100 scale) and cost is LSMR-based.
- * This is a spot-price estimate: actual cost_paid (cents) from the receipt
- * should be displayed with formatCentsAsKES instead.
+ * Estimate trade cost in KES from share count and **spot price**.
  *
- * @param shares  Number of shares
+ * ⚠️  LSMR APPROXIMATION WARNING
+ * This is a **linear** (spot-price) estimate: `shares × priceCents / 100`.
+ * The real LSMR marginal cost (returned as `receipt.cost_paid`) is always
+ * **≥ this estimate** because the log-sum-exp cost function is convex —
+ * each additional share moves the price up, so later shares cost more than
+ * earlier ones. The gap grows with:
+ *   - Larger trade sizes (more shares)
+ *   - Lower `liquidity_param` (`b`) on the market (more price sensitivity)
+ *
+ * Use this only for pre-trade UI estimates. Always display `receipt.cost_paid`
+ * via `formatCentsAsKES()` for the confirmed / executed cost.
+ *
+ * @param shares      Number of shares
  * @param priceCents  Spot price in cents (yes_price / no_price, 0–100 range)
  */
 export function estimateCostKES(shares: number, priceCents: number): number {

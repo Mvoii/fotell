@@ -63,6 +63,7 @@ export function TradePanel({
         isOpen={isConfirmModalOpen}
         onClose={handleCloseModal}
         market={market}
+        currentPrices={currentPrices}
         tradeParams={pendingParams}
         estimatedCost={estimatedCostKES}
         isPending={tradeHook.isPending}

@@ -7,6 +7,8 @@ interface TradeConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
   market: Market;
+  /** Live prices from the market details query — used instead of market.yes_price / no_price which can be stale. */
+  currentPrices: { yes_price: number; no_price: number };
   tradeParams: PlaceTradeRequest | null;
   estimatedCost: number; // in KES
   isPending: boolean;
@@ -19,6 +21,7 @@ export function TradeConfirmModal({
   isOpen,
   onClose,
   market,
+  currentPrices,
   tradeParams,
   estimatedCost,
   isPending,
@@ -86,8 +89,8 @@ export function TradeConfirmModal({
               <span className="text-primary">Current Price</span>
               <span className="text-primary font-mono font-semibold">
                 {outcome === 'YES'
-                  ? formatPrice(market.yes_price ?? 0)
-                  : formatPrice(market.no_price ?? 0)}
+                  ? formatPrice(currentPrices.yes_price)
+                  : formatPrice(currentPrices.no_price)}
               </span>
             </div>
             <div className="flex justify-between items-center text-lg font-bold">
