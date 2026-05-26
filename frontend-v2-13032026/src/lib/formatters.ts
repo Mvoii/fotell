@@ -36,3 +36,26 @@ export function formatPrice(price: number, style: 'cents' | 'percent' = 'cents')
     ? `${price.toFixed(1)}¢`
     : `${price.toFixed(1)}%`;
 }
+
+/**
+ * Estimate trade cost in KES from share count and spot price.
+ * Per API spec, prices are in cents (0–100 scale) and cost is LSMR-based.
+ * This is a spot-price estimate: actual cost_paid (cents) from the receipt
+ * should be displayed with formatCentsAsKES instead.
+ *
+ * @param shares  Number of shares
+ * @param priceCents  Spot price in cents (yes_price / no_price, 0–100 range)
+ */
+export function estimateCostKES(shares: number, priceCents: number): number {
+  return (shares * priceCents) / 100;
+}
+
+/**
+ * Resolution payout in KES for a given share count.
+ * Per API spec, each share resolves at 100 cents = 1 KES.
+ *
+ * @param shares  Number of shares held
+ */
+export function resolutionPayoutKES(shares: number): number {
+  return shares; // 1 KES per share
+}
