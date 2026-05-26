@@ -18,10 +18,8 @@ export function MarketOrderForm({
   // ── State
   const [side, setSide] = React.useState<'BUY' | 'SELL'>('BUY');
   const [outcome, setOutcome] = React.useState<'YES' | 'NO'>('YES');
-  const [inputMode, setInputMode] = React.useState<'cash' | 'shares'>('cash');
   const [amountInput, setAmountInput] = React.useState<string>('');
   const [maxSlippagePct] = React.useState<number>(5);
-  const [dropdownOpen, setDropdownOpen] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   // ── Derived values
@@ -34,18 +32,12 @@ export function MarketOrderForm({
       ? userPosition?.yes_shares ?? 0
       : userPosition?.no_shares ?? 0;
 
-  // Calculate sharesCount and totalCost based on inputMode
+  // Always shares mode
   let sharesCount = 0;
   let totalCost = 0;
 
-  if (inputMode === 'cash') {
-    const cashValue = parseFloat(amountInput) || 0;
-    sharesCount = currentPrice > 0 ? Math.floor(cashValue / (currentPrice / 100)) : 0;
-    totalCost = estimateCostKES(sharesCount, currentPrice);
-  } else {
-    sharesCount = parseInt(amountInput) || 0;
-    totalCost = estimateCostKES(sharesCount, currentPrice);
-  }
+  sharesCount = parseInt(amountInput) || 0;
+  totalCost = estimateCostKES(sharesCount, currentPrice);
 
   // Each share resolves at 1 KES (= 100 cents) per API spec
   const maxPayout = resolutionPayoutKES(sharesCount); // in KES
@@ -71,57 +63,22 @@ export function MarketOrderForm({
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg(null);
     const value = e.target.value;
-    if (inputMode === 'cash') {
-      if (/^\d*\.?\d*$/.test(value)) {
-        setAmountInput(value);
-      }
-    } else {
-      if (/^\d*$/.test(value)) {
-        setAmountInput(value);
-      }
+    if (/^\d*$/.test(value)) {
+      setAmountInput(value);
     }
   };
 
-  const handlePresetClick = (preset: number | 'MAX' | '25%' | '50%' | '75%' | '100%') => {
+  const handlePresetClick = (preset: '25%' | '50%' | '75%' | '100%') => {
     setErrorMsg(null);
-    
-    if (side === 'BUY') {
-      if (preset === 'MAX') {
-        const maxCash = Math.min(
-          MAX_TRADE_AMOUNT_KES,
-          userBalance ? userBalance / 100 : 0
-        );
-        if (inputMode === 'cash') {
-          setAmountInput(maxCash.toFixed(2));
-        } else {
-          const maxShares = currentPrice > 0 ? Math.floor(maxCash / (currentPrice / 100)) : 0;
-          setAmountInput(maxShares.toString());
-        }
-      } else if (typeof preset === 'number') {
-        const currentVal = parseFloat(amountInput) || 0;
-        if (inputMode === 'cash') {
-          setAmountInput((currentVal + preset).toFixed(2));
-        } else {
-          const additionalShares = currentPrice > 0 ? Math.floor(preset / (currentPrice / 100)) : 0;
-          setAmountInput((currentVal + additionalShares).toString());
-        }
-      }
-    } else {
-      // SELL Presets: percentage of held shares
-      let pct = 0;
-      if (preset === '25%') pct = 0.25;
-      else if (preset === '50%') pct = 0.50;
-      else if (preset === '75%') pct = 0.75;
-      else if (preset === '100%') pct = 1.00;
-      
-      const sharesToSell = Math.floor(heldShares * pct);
-      if (inputMode === 'shares') {
-        setAmountInput(sharesToSell.toString());
-      } else {
-        const cashValue = sharesToSell * (currentPrice / 100);
-        setAmountInput(cashValue.toFixed(2));
-      }
-    }
+    // SELL Presets: percentage of held shares
+    let pct = 0;
+    if (preset === '25%') pct = 0.25;
+    else if (preset === '50%') pct = 0.50;
+    else if (preset === '75%') pct = 0.75;
+    else if (preset === '100%') pct = 1.00;
+
+    const sharesToSell = Math.floor(heldShares * pct);
+    setAmountInput(sharesToSell.toString());
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -235,71 +192,21 @@ export function MarketOrderForm({
         </button>
       </div>
 
-      {/* ── Input Box (Kalshi-style) */}
+      {/* ── Input Box (shares only) */}
       <div
         className="relative border border-subtle-border rounded-xl bg-subtle px-4 pt-3 pb-4 focus-within:border-active transition-colors cursor-text"
         onClick={() => document.getElementById('amount-input')?.focus()}
       >
-        {/* Top row: mode label (left) + mode switcher (right) */}
+        {/* Top row: label only */}
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold text-muted-foreground">
-            {inputMode === 'cash' ? 'KES' : 'Shares'}
-          </span>
-
-          {/* Mode Switcher */}
-          <div className="relative" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-primary transition-colors cursor-pointer select-none"
-            >
-              {inputMode === 'cash' ? 'Switch to Shares' : 'Switch to KES'}
-              <span className="text-[10px]">▼</span>
-            </button>
-            {dropdownOpen && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
-                  onClick={() => setDropdownOpen(false)}
-                />
-                <div className="absolute right-0 mt-1.5 z-20 w-32 bg-elevated border border-subtle-border rounded-lg shadow-xl py-1">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInputMode('cash');
-                      setDropdownOpen(false);
-                      setAmountInput('');
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs font-semibold hover:bg-subtle transition-colors cursor-pointer ${
-                      inputMode === 'cash' ? 'text-active' : 'text-primary'
-                    }`}
-                  >
-                    KES
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setInputMode('shares');
-                      setDropdownOpen(false);
-                      setAmountInput('');
-                    }}
-                    className={`w-full text-left px-3 py-2 text-xs font-semibold hover:bg-subtle transition-colors cursor-pointer ${
-                      inputMode === 'shares' ? 'text-active' : 'text-primary'
-                    }`}
-                  >
-                    Shares
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+          <span className="text-xs font-semibold text-muted-foreground">Shares</span>
         </div>
 
-        {/* Large amount input — right-aligned like Kalshi */}
+        {/* Large amount input — right-aligned */}
         <input
           id="amount-input"
           type="text"
-          inputMode={inputMode === 'cash' ? 'decimal' : 'numeric'}
+          inputMode="numeric"
           placeholder="0"
           value={amountInput}
           onChange={handleAmountChange}
@@ -307,44 +214,22 @@ export function MarketOrderForm({
         />
       </div>
 
-      {/* ── Presets Row */}
-      <div className="flex gap-2 flex-wrap">
-        {side === 'BUY' ? (
-          <>
-            {[100, 500, 1000].map((val) => (
-              <button
-                key={val}
-                type="button"
-                onClick={() => handlePresetClick(val)}
-                className="px-3 py-1.5 rounded-lg border border-subtle-border bg-subtle hover:border-active text-xs font-semibold text-primary transition-all cursor-pointer"
-              >
-                +KES {val}
-              </button>
-            ))}
+      {/* ── Presets Row (SELL only) */}
+      {side === 'SELL' && (
+        <div className="flex gap-2 flex-wrap">
+          {(['25%', '50%', '75%', '100%'] as const).map((pct) => (
             <button
+              key={pct}
               type="button"
-              onClick={() => handlePresetClick('MAX')}
-              className="px-3 py-1.5 rounded-lg border border-subtle-border bg-subtle hover:border-active text-xs font-semibold text-primary transition-all cursor-pointer ml-auto"
+              disabled={heldShares <= 0}
+              onClick={() => handlePresetClick(pct)}
+              className="flex-1 px-3 py-1.5 rounded-lg border border-subtle-border bg-subtle hover:border-active text-xs font-semibold text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer text-center"
             >
-              Max
+              {pct}
             </button>
-          </>
-        ) : (
-          <>
-            {(['25%', '50%', '75%', '100%'] as const).map((pct) => (
-              <button
-                key={pct}
-                type="button"
-                disabled={heldShares <= 0}
-                onClick={() => handlePresetClick(pct)}
-                className="flex-1 px-3 py-1.5 rounded-lg border border-subtle-border bg-subtle hover:border-active text-xs font-semibold text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-all cursor-pointer text-center"
-              >
-                {pct}
-              </button>
-            ))}
-          </>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {/* ── Payout Info (Kalshi-style plain rows) */}
       <div className="space-y-3 px-1">
