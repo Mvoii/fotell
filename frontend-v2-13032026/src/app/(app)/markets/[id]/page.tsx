@@ -7,6 +7,7 @@ import { CommentsSection } from '@/components/markets/CommentsSection';
 import { TradePanel } from '@/components/trade/TradePanel';
 import { useParams } from 'next/navigation';
 import { useBalance, usePositions, useUser } from '@/hooks/useUser';
+import type { Position } from '@/lib/api/types/api';
 import { AppShell } from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -47,7 +48,15 @@ export default function MarketDetailsPage() {
     notFound();
   }
 
-  const userPosition = positions?.find((p) => p.market_id === marketId) ?? null;
+  // Normalise: API may return a bare array, a wrapped object, or nothing.
+  // This guards against the `positions?.find is not a function` TypeError.
+  const positionsArray: Position[] = Array.isArray(positions)
+    ? positions
+    : Array.isArray((positions as unknown as { positions?: Position[] })?.positions)
+    ? (positions as unknown as { positions: Position[] }).positions
+    : [];
+
+  const userPosition = positionsArray.find((p) => p.market_id === marketId) ?? null;
   const showTradePanel = market.status === 'OPEN';
 
   return (
