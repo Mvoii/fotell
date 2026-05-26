@@ -1,6 +1,6 @@
 import React from 'react';
 import type { Market, Position, PlaceTradeRequest, MarketOrderFormProps } from '@/lib/api/types/api';
-import { formatPrice, formatKES } from '@/lib/formatters';
+import { formatPrice, formatKES, estimateCostKES, resolutionPayoutKES } from '@/lib/formatters';
 
 // Maximum trade amount in KES per trade
 const MAX_TRADE_AMOUNT_KES = 5000;
@@ -41,14 +41,14 @@ export function MarketOrderForm({
   if (inputMode === 'cash') {
     const cashValue = parseFloat(amountInput) || 0;
     sharesCount = currentPrice > 0 ? Math.floor(cashValue / (currentPrice / 100)) : 0;
-    totalCost = (sharesCount * currentPrice) / 100;
+    totalCost = estimateCostKES(sharesCount, currentPrice);
   } else {
     sharesCount = parseInt(amountInput) || 0;
-    totalCost = (sharesCount * currentPrice) / 100;
+    totalCost = estimateCostKES(sharesCount, currentPrice);
   }
 
-  // Each share pays out 100 KES at resolution
-  const maxPayout = sharesCount * 100;
+  // Each share resolves at 1 KES (= 100 cents) per API spec
+  const maxPayout = resolutionPayoutKES(sharesCount); // in KES
   const potentialProfit = maxPayout - totalCost;
   const potentialProfitPct = totalCost > 0 ? (potentialProfit / totalCost) * 100 : 0;
 
