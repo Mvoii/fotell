@@ -3,6 +3,7 @@ import { usePositions } from '@/hooks/useUser';
 import Link from 'next/link';
 import { MarketName } from './MarketName';
 import { formatKES } from '@/lib/formatters';
+import type { Position } from '@/lib/api/types/api';
 
 interface PositionsListProps {
   className?: string;
@@ -10,6 +11,12 @@ interface PositionsListProps {
 
 export function PositionsList({ className = '' }: PositionsListProps) {
   const { data: positions, isLoading, error } = usePositions();
+
+  const positionsArray: Position[] = Array.isArray(positions)
+    ? positions
+    : Array.isArray((positions as unknown as { positions?: Position[] })?.positions)
+    ? (positions as unknown as { positions: Position[] }).positions
+    : [];
 
   return (
     <div className={`bg-surface border border-subtle rounded-lg p-6 ${className}`}>
@@ -35,7 +42,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
 
       {!isLoading && !error && (
         <div>
-          {(!positions || positions.length === 0) ? (
+          {(!positionsArray || positionsArray.length === 0) ? (
             <div className="text-center py-8">
               <p className="text-secondary text-sm">You don't have any open positions yet.</p>
               <Link href="/markets" className="inline-block mt-4 text-sm bg-primary text-primary-inverse px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
@@ -44,7 +51,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
             </div>
           ) : (
             <div className="space-y-3">
-              {positions.map((position) => {
+              {positionsArray.map((position) => {
                 const totalShares = position.yes_shares + position.no_shares;
                 const dominantOutcome = position.yes_shares > position.no_shares ? 'YES' : 'NO';
                 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useBalance, usePositions } from '@/hooks/useUser';
 import { formatKES } from '@/lib/formatters';
+import type { Position } from '@/lib/api/types/api';
 
 interface PortfolioSummaryProps {
   className?: string;
@@ -10,10 +11,16 @@ export function PortfolioSummary({ className = '' }: PortfolioSummaryProps) {
   const { data: balance } = useBalance();
   const { data: positions } = usePositions();
 
+  const positionsArray: Position[] = Array.isArray(positions)
+    ? positions
+    : Array.isArray((positions as unknown as { positions?: Position[] })?.positions)
+    ? (positions as unknown as { positions: Position[] }).positions
+    : [];
+
   // Calculate portfolio metrics (placeholder calculations)
-  const positionsValue = positions?.reduce((total, position) => {
+  const positionsValue = positionsArray.reduce((total, position) => {
     return total + position.cost_basis;
-  }, 0) || 0;
+  }, 0);
 
   const cashBalance = balance?.balance_smallest_unit || 0;
   const totalValue = cashBalance + positionsValue;
@@ -43,7 +50,7 @@ export function PortfolioSummary({ className = '' }: PortfolioSummaryProps) {
             {formatKES(positionsValueKES)}
           </div>
           <div className="text-xs text-primary">
-            {positions?.length || 0} positions
+            {positionsArray.length} positions
           </div>
         </div>
 
