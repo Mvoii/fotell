@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useMarketTrades } from '@/hooks/useTrade';
-import { formatPrice } from '@/lib/formatters';
+import { formatPrice, formatKES } from '@/lib/formatters';
 import type { Trade } from '@/lib/api/types/api';
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
@@ -144,7 +144,7 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
             {trades.map((trade: Trade) => {
               const shares = Number(trade.shares);
               const costPaid = Number(trade.cost_paid);
-              const totalCostDollars = costPaid / 100;
+              const totalCostKES = costPaid / 100;
               const pricePerShare = shares > 0 ? costPaid / shares : 0; // in cents = percentage
               const date = new Date(trade.created_at);
               const timeString = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
@@ -172,7 +172,7 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
                     {formatPrice(pricePerShare, 'percent')}
                   </td>
                   <td className="px-4 py-3 text-sm text-primary font-mono text-right">
-                    ${totalCostDollars.toFixed(2)}
+                    {formatKES(totalCostKES)}
                   </td>
                 </tr>
               );
