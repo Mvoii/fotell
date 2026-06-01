@@ -142,8 +142,10 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
           </thead>
           <tbody className="divide-y divide-subtle">
             {trades.map((trade: Trade) => {
-              const totalCostDollars = trade.cost_paid / 100;
-              const pricePerShare = trade.cost_paid / trade.shares; // in cents = percentage
+              const shares = Number(trade.shares);
+              const costPaid = Number(trade.cost_paid);
+              const totalCostDollars = costPaid / 100;
+              const pricePerShare = shares > 0 ? costPaid / shares : 0; // in cents = percentage
               const date = new Date(trade.created_at);
               const timeString = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
               const isYes = trade.outcome === 'YES';
@@ -164,7 +166,7 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-primary font-mono">
-                    {trade.shares.toFixed(2)}
+                    {shares.toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-sm text-primary font-mono">
                     {formatPrice(pricePerShare, 'percent')}
