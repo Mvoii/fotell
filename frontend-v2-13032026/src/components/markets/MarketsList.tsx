@@ -96,23 +96,58 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
         </ul>
       )}
       {pageCount > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-6">
-          <button
-
-            className="px-3 py-1 rounded-md border border-subtle text-primary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-50"
-            onClick={() => onPageChange?.(offset - limit)}
-            disabled={currentPage === 1}
-          >
-            Prev
-          </button>
-          <span className="text-body-md text-primary">Page {currentPage} of {pageCount}</span>
-          <button
-            className="px-3 py-1 rounded-md border border-subtle text-primary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-50"
-            onClick={() => onPageChange?.(offset + limit)}
-            disabled={currentPage === pageCount}
-          >
-            Next
-          </button>
+        <div className="flex flex-col items-center gap-2 mt-6">
+          <nav className="flex items-center gap-1" aria-label="Markets pagination">
+            <button
+              className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={() => onPageChange?.(offset - limit)}
+              disabled={currentPage === 1}
+              aria-label="Previous page"
+            >
+              ‹ Prev
+            </button>
+            {(() => {
+              const pages: (number | '…')[] = [];
+              if (pageCount <= 7) {
+                for (let i = 1; i <= pageCount; i++) pages.push(i);
+              } else {
+                pages.push(1);
+                if (currentPage > 3) pages.push('…');
+                for (let i = Math.max(2, currentPage - 1); i <= Math.min(pageCount - 1, currentPage + 1); i++) pages.push(i);
+                if (currentPage < pageCount - 2) pages.push('…');
+                pages.push(pageCount);
+              }
+              return pages.map((p, idx) =>
+                p === '…' ? (
+                  <span key={`ellipsis-${idx}`} className="px-2 text-secondary text-sm select-none">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    className={`w-8 h-8 rounded-md text-sm font-medium transition ${
+                      p === currentPage
+                        ? 'bg-accent-blue text-white border border-accent-blue shadow-sm'
+                        : 'border border-subtle text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary'
+                    }`}
+                    onClick={() => onPageChange?.((p as number - 1) * limit)}
+                    aria-current={p === currentPage ? 'page' : undefined}
+                  >
+                    {p}
+                  </button>
+                )
+              );
+            })()}
+            <button
+              className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+              onClick={() => onPageChange?.(offset + limit)}
+              disabled={currentPage === pageCount}
+              aria-label="Next page"
+            >
+              Next ›
+            </button>
+          </nav>
+          <p className="text-xs text-subtle">
+            Page {currentPage} of {pageCount} &middot; {total} market{total !== 1 ? 's' : ''}
+          </p>
         </div>
       )}
     </div>
