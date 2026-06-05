@@ -50,3 +50,9 @@ coverage/
 *.sh
 
 .github/
+.windsurf
+.gitignore
+frontend/
+frontend-v2*/
+docs/frontend/
+.gitignore
