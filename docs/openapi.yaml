@@ -511,6 +511,50 @@ paths:
                   total:
                     type: integer
 
+/markets/{marketID}/quote:
+    get:
+      tags:
+        - Trading
+      summary: Get trade quote
+      description: |
+        Calculate how many shares you will receive for a specific budget.
+        
+        **Budget:** Must be provided in cents.
+      operationId: getQuote
+      parameters:
+        - $ref: '#/components/parameters/marketID'
+        - name: outcome
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [YES, NO]
+        - name: budget
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            description: Budget to spend in cents
+            example: 500
+      responses:
+        '200':
+          description: Quote retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shares_expected:
+                    type: number
+                    format: double
+                  price_per_share:
+                    type: number
+                    format: double
+                  budget_spent:
+                    type: integer
+                    format: int64
+
   # ============================================================================
   # TRADING
   # ============================================================================
@@ -521,7 +565,8 @@ paths:
         - Trading
       summary: Place a trade
       description: |
-        Buy shares on YES or NO outcome for a market.
+        Buy shares on YES or NO outcome. You may provide either `budget` (to spend a fixed amount) 
+        OR `shares` (to buy a specific amount). Providing both will result in an error.
         
         **Requirements:**
         - Market must be OPEN
@@ -554,9 +599,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - outcome
-                - shares
+              required: [outcome]
               properties:
                 outcome:
                   type: string
@@ -567,8 +610,13 @@ paths:
                   type: number
                   format: double
                   minimum: 1
-                  description: Number of shares to buy
+                  description: Number of shares to buy (optional)
                   example: 10.0
+                budget_cents:
+                  type: integer
+                  format: int64
+                  description: Amount to spend in cents (optional)
+                  example: 50000
       responses:
         '201':
           description: Trade executed successfully
