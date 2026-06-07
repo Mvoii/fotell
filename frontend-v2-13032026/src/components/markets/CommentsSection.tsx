@@ -236,14 +236,11 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
       )}
 
       {/* Replies Thread */}
-      {showReplies && repliesData?.comments && (
+      {showReplies && repliesData?.comments && repliesData.comments.length > 0 && (
         <div className="mt-2 pl-6 ml-2 border-l border-subtle space-y-0">
           {repliesData.comments.map((reply) => (
             <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId} />
           ))}
-          {repliesData.comments.length === 0 && (
-            <p className="text-xs text-muted-foreground py-2">No replies yet.</p>
-          )}
         </div>
       )}
     </div>
