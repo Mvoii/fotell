@@ -50,7 +50,7 @@ export function LoginForm() {
     if (Object.keys(errors).length > 0) return;
     const res = await login(form);
     if (res) {
-      router.push("/dashboard");
+      router.push("/portfolio");
     }
   };
 

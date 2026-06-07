@@ -4,7 +4,6 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Home,
   TrendingUp,
   User,
   Settings,
@@ -36,10 +35,10 @@ export function LeftSidebar() {
 
   const navItems: NavItem[] = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <Home className="h-5 w-5" />,
-      href: '/dashboard',
+      id: 'portfolio',
+      label: 'Portfolio',
+      icon: <User className="h-5 w-5" />,
+      href: '/portfolio',
       requireAuth: true,
     },
     {
@@ -51,10 +50,9 @@ export function LeftSidebar() {
     {
       id: 'profile',
       label: 'Profile',
-      icon: <User className="h-5 w-5" />,
+      icon: <Settings className="h-5 w-5" />,
       href: '/profile',
       requireAuth: true,
-      badge: 3, // Example: pending orders count
     },
   ];
 
@@ -68,7 +66,7 @@ export function LeftSidebar() {
     },
     {
       id: 'admin',
-      label: 'Admin',
+      label: 'Dashboard',
       icon: <Shield className="h-5 w-5" />,
       href: '/admin',
       requireAuth: true,

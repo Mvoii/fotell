@@ -4,7 +4,6 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Home,
   TrendingUp,
   ArrowUpDown,
   Eye,
@@ -40,13 +39,6 @@ export function BottomNav({
 
   const navItems: NavItem[] = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <Home className="h-5 w-5" />,
-      href: '/dashboard',
-      requireAuth: true,
-    },
-    {
       id: 'markets',
       label: 'Markets',
       icon: <TrendingUp className="h-5 w-5" />,
@@ -72,7 +64,7 @@ export function BottomNav({
   const adminItems: NavItem[] = [
     {
       id: 'admin',
-      label: 'Admin',
+      label: 'Dashboard',
       icon: <Shield className="h-5 w-5" />,
       href: '/admin',
       requireAuth: true,
