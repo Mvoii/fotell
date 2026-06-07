@@ -5,9 +5,9 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
   TrendingUp,
+  PieChart,
   User,
-  Settings,
-  Shield,
+  LayoutDashboard,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -37,7 +37,7 @@ export function LeftSidebar() {
     {
       id: 'portfolio',
       label: 'Portfolio',
-      icon: <User className="h-5 w-5" />,
+      icon: <PieChart className="h-5 w-5" />,
       href: '/portfolio',
       requireAuth: true,
     },
@@ -50,7 +50,7 @@ export function LeftSidebar() {
     {
       id: 'profile',
       label: 'Profile',
-      icon: <Settings className="h-5 w-5" />,
+      icon: <User className="h-5 w-5" />,
       href: '/profile',
       requireAuth: true,
     },
@@ -58,16 +58,9 @@ export function LeftSidebar() {
 
   const secondaryItems: NavItem[] = [
     {
-      id: 'settings',
-      label: 'Settings',
-      icon: <Settings className="h-5 w-5" />,
-      href: '/settings',
-      requireAuth: true,
-    },
-    {
       id: 'admin',
       label: 'Dashboard',
-      icon: <Shield className="h-5 w-5" />,
+      icon: <LayoutDashboard className="h-5 w-5" />,
       href: '/admin',
       requireAuth: true,
       requireAdmin: true,
