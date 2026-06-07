@@ -61,7 +61,7 @@ export function RegisterForm() {
     if (Object.keys(errors).length > 0) return;
     const res = await register(form);
     if (res) {
-      router.push("/dashboard");
+      router.push("/portfolio");
     }
   };
 
