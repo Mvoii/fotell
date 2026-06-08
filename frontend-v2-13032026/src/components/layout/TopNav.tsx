@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Bell, Settings, User, LogOut, Menu } from 'lucide-react';
+import { Bell, Settings, LogOut, Menu } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
 import { cn } from '@/lib/utils';
