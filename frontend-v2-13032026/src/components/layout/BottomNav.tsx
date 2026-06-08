@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   TrendingUp,
   ArrowUpDown,
-  Eye,
   User,
   Shield,
   Settings
@@ -33,7 +32,6 @@ interface NavItem {
 export function BottomNav({
   onTradePress
 }: BottomNavProps) {
-  const pathname = usePathname();
   const { data: user } = useUser();
   const { activeTab, navigateToTab, openTradeSheet } = useNavigation();
 
@@ -74,7 +72,7 @@ export function BottomNav({
       id: 'settings',
       label: 'Settings',
       icon: <Settings className="h-5 w-5" />,
-      href: '/settings',
+      href: '/profile',
       requireAuth: true,
     },
   ];
