@@ -111,10 +111,11 @@ export function useNavigation() {
   }, [router, setActiveTab, setMobileMenuOpen, openTradeSheet]);
 
   // Update active tab when pathname changes
-  React.useEffect(() => {
-    const currentTab = getCurrentTabFromPath(pathname);
-    setActiveTab(currentTab);
-  }, [pathname, setActiveTab]);
+  const [prevPathname, setPrevPathname] = React.useState(pathname);
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setState(prev => ({ ...prev, activeTab: getCurrentTabFromPath(pathname) }));
+  }
 
   const actions: NavigationActions = {
     setActiveTab,
