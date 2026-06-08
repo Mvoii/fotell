@@ -128,7 +128,7 @@ export function TradesList({ className = '' }: TradesListProps) {
         <div>
           {trades.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-secondary text-sm">You haven't made any trades yet.</p>
+              <p className="text-secondary text-sm">You haven&apos;t made any trades yet.</p>
             </div>
           ) : (
             <>

@@ -133,7 +133,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
         <div>
           {positionsArray.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-secondary text-sm">You don't have any open positions yet.</p>
+              <p className="text-secondary text-sm">You don&apos;t have any open positions yet.</p>
               <Link href="/markets" className="inline-block mt-4 text-sm bg-primary text-primary-inverse px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
                 Browse Markets
               </Link>

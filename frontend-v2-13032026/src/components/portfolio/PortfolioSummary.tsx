@@ -67,7 +67,7 @@ export function PortfolioSummary({ className = '' }: PortfolioSummaryProps) {
         {/* Today's P&L (placeholder) */}
         <div className="space-y-2">
           <div className="text-xs text-primary uppercase tracking-wide">
- 	    Today's P&L
+ 	    Today&apos;s P&L
 	  </div>
           <div className="font-mono tabular-nums text-xl">
             <span className="text-primary">KES 0.00</span>

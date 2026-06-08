@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Market, Position, PlaceTradeRequest, MarketOrderFormProps } from '@/lib/api/types/api';
+import type { MarketOrderFormProps } from '@/lib/api/types/api';
 import { formatPrice, formatKES, estimateCostKES, resolutionPayoutKES } from '@/lib/formatters';
 
 // Maximum trade amount in KES per trade
@@ -19,7 +19,6 @@ export function MarketOrderForm({
   const [side, setSide] = React.useState<'BUY' | 'SELL'>('BUY');
   const [outcome, setOutcome] = React.useState<'YES' | 'NO'>('YES');
   const [amountInput, setAmountInput] = React.useState<string>('');
-  const [maxSlippagePct] = React.useState<number>(5);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   // ── Derived values
@@ -41,8 +40,6 @@ export function MarketOrderForm({
 
   // Each share resolves at 1 KES (= 100 cents) per API spec
   const maxPayout = resolutionPayoutKES(sharesCount); // in KES
-  const potentialProfit = maxPayout - totalCost;
-  const potentialProfitPct = totalCost > 0 ? (potentialProfit / totalCost) * 100 : 0;
 
   // ── Validation
   const isOverLimit = totalCost > MAX_TRADE_AMOUNT_KES;
@@ -114,7 +111,8 @@ export function MarketOrderForm({
   // Sync API errors into local error state
   React.useEffect(() => {
     if (tradeHook.error) {
-      setErrorMsg(tradeHook.error.error);
+      const timer = setTimeout(() => setErrorMsg(tradeHook.error!.error), 0);
+      return () => clearTimeout(timer);
     }
   }, [tradeHook.error]);
 
