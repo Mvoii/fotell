@@ -3,8 +3,20 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import type { Market } from '@/lib/api/types/api';
-import { formatPrice } from '@/lib/formatters';
+
 import ProbabilityBar from '@/components/markets/ProbabilityBar';
+import { useMarketTrades } from '@/hooks/useTrade';
+
+/** Fetches and displays the trade count for a single market. */
+function MarketTradeCount({ marketId }: { marketId: string }) {
+  const { data } = useMarketTrades(marketId);
+  if (data?.total === undefined) return null;
+  return (
+    <span className="text-xs text-secondary font-mono">
+      {data.total.toLocaleString()}&nbsp;trades
+    </span>
+  );
+}
 
 interface MarketsListProps {
   markets: Market[];
@@ -44,52 +56,56 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
           {markets.map((market) => (
             <li
               key={market.id}
-              className="bg-surface border border-subtle rounded-lg p-6 shadow-lg hover:border-active hover:shadow-2 transition duration-150 cursor-pointer"
+              className="group bg-surface border border-subtle rounded-xl p-5 shadow-sm hover:border-active hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col gap-3"
               tabIndex={0}
               role="button"
               onClick={() => router.push(`/markets/${market.id}`)}
               onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') router.push(`/markets/${market.id}`); }}
               aria-label={`View details for market: ${market.question}`}
             >
-              <div className="flex items-center gap-2 mb-2">
+              {/* Header row: status badge (left) + closing date (right) */}
+              <div className="flex items-center justify-between">
+                {/* Status badge — top left */}
                 <span
-                  className={`text-xs font-bold px-2 py-1 rounded-full border ${market.status === 'OPEN'
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                    market.status === 'OPEN'
                       ? 'bg-yes-dim text-yes-strong border-[rgba(0,200,83,0.3)]'
                       : market.status === 'PENDING'
-                        ? 'bg-[rgba(255,152,0,0.15)] text-warning border-[rgba(255,152,0,0.3)]'
+                        ? 'bg-[rgba(255,152,0,0.1)] text-warning border-[rgba(255,152,0,0.3)]'
                         : market.status === 'CLOSED'
-                          ? 'bg-[rgba(139,146,165,0.15)] text-primary border-[rgba(139,146,165,0.3)]'
+                          ? 'bg-[rgba(139,146,165,0.1)] text-secondary border-[rgba(139,146,165,0.3)]'
                           : 'bg-accent-blue-dim text-primary border-[rgba(33,150,243,0.3)]'
-                    }`}
+                  }`}
                 >
                   {market.status}
                 </span>
-                <span className="flex items-center text-xs font-bold px-2 py-1 rounded-full border bg-[rgba(255,152,0,0.15)] text-warning border-[rgba(255,152,0,0.3)] ml-auto">
-                  <svg width="14" height="14" fill="none" viewBox="0 0 14 14" className="mr-1"><circle cx="7" cy="7" r="6" stroke="#FF9800" strokeWidth="2" /><path d="M7 4v3l2 2" stroke="#FF9800" strokeWidth="2" strokeLinecap="round" /></svg>
-                  {new Date(market.closes_at).toLocaleDateString()}
+
+                {/* Closing date — top right with clock icon */}
+                <span className="flex items-center gap-1 text-xs text-secondary">
+                  <svg width="11" height="11" fill="none" viewBox="0 0 14 14" aria-hidden="true">
+                    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
+                    <path d="M7 4v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                  {new Date(market.closes_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                 </span>
               </div>
-              <div className="text-heading-md font-semibold mb-2 text-primary">{market.question}</div>
-              <div className="flex flex-col gap-4 mt-4">
-                {/* Shared ProbabilityBar with YES/NO percentages and bar */}
-                <ProbabilityBar yesPrice={market.yes_price} noPrice={market.no_price} />
-                {/* Outcome Pills */}
-                <div className="flex items-center gap-2 mt-2">
-                  <span className="inline-flex items-center px-4 py-2 rounded-md bg-yes-dim border border-[rgba(0,200,83,0.35)] text-yes-strong font-mono font-bold text-lg gap-2">
-                    {/* Up icon SVG */}
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 3v12M9 3l-4 4M9 3l4 4" stroke="#00c853" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    Yes {typeof market.yes_price === 'number' ? formatPrice(market.yes_price, 'percent') : '--'}
-                  </span>
-                  <span className="inline-flex items-center px-4 py-2 rounded-md bg-no-dim border border-[rgba(255,23,68,0.35)] text-no-strong font-mono font-bold text-lg gap-2">
-                    {/* Down icon SVG */}
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 15V3M9 15l-4-4M9 15l4-4" stroke="#ff1744" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                    No {typeof market.no_price === 'number' ? formatPrice(market.no_price, 'percent') : '--'}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-center mt-4">
-                <span className="text-body-sm text-primary font-mono">VOLUME</span>
-                <span className="ml-3 text-body-sm text-primary font-mono">{market.liquidity_param ? market.liquidity_param : '--'}</span>
+
+              {/* Question */}
+              <p className="text-sm font-semibold text-primary leading-snug line-clamp-2">
+                {market.question}
+              </p>
+
+              {/* Single probability bar */}
+              <ProbabilityBar yesPrice={market.yes_price} noPrice={market.no_price} />
+
+              {/* Footer: liquidity (left) + trade count (right) */}
+              <div className="flex items-center justify-between pt-1 border-t border-subtle">
+                <span className="text-xs text-secondary font-mono">
+                  {market.liquidity_param
+                    ? `Liquidity ${market.liquidity_param >= 1_000_000 ? `KES ${(market.liquidity_param / 1_000_000).toFixed(1).replace(/\.0$/, '')}M` : market.liquidity_param >= 1_000 ? `KES ${(market.liquidity_param / 1_000).toFixed(1).replace(/\.0$/, '')}K` : `KES ${market.liquidity_param}`}`
+                    : 'Liquidity --'}
+                </span>
+                <MarketTradeCount marketId={market.id} />
               </div>
             </li>
           ))}
