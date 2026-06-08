@@ -7,6 +7,7 @@ import { CommentsSection } from '@/components/markets/CommentsSection';
 import { TradePanel } from '@/components/trade/TradePanel';
 import { useParams } from 'next/navigation';
 import { useBalance, usePositions, useUser } from '@/hooks/useUser';
+import { useMarketTrades } from '@/hooks/useTrade';
 import type { Position } from '@/lib/api/types/api';
 import { AppShell } from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
@@ -19,6 +20,7 @@ export default function MarketDetailsPage() {
   const { data: balanceData } = useBalance();
   const { data: positions } = usePositions();
   const { data: user } = useUser();
+  const { data: tradesData } = useMarketTrades(marketId);
 
   if (isLoading) {
     return (
@@ -68,6 +70,7 @@ export default function MarketDetailsPage() {
               <MarketDetailsCard
                 market={market}
                 prices={prices}
+                tradesTotal={tradesData?.total}
               />
               <Accordion type="single" collapsible className="rounded-xl border border-subtle bg-surface px-4 shadow-sm">
                 <AccordionItem value="trades" className="border-none">
