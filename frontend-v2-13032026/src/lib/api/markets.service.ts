@@ -20,7 +20,7 @@ export const marketsService = {
       method: 'GET',
       params: params
         ? Object.fromEntries(
-            Object.entries(params).filter(([_, v]) => v !== undefined)
+            Object.entries(params).filter(([, v]) => v !== undefined)
           )
         : undefined,
     }),
