@@ -27,7 +27,7 @@ export default function PortfolioPage() {
       <PageContainer maxWidth="xl" inAppShell>
         <div className="mb-6">
           <h1 className="heading-xl text-primary mb-1">Portfolio</h1>
-          <p className="text-secondary text-sm">
+          <p className="text-muted-foreground text-sm">
             Your balance, positions, and trade activity
           </p>
         </div>
@@ -42,7 +42,7 @@ export default function PortfolioPage() {
                 "px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors",
                 activeTab === tab.id
                   ? "border-accent-blue text-accent-blue"
-                  : "border-transparent text-secondary hover:text-primary hover:border-subtle"
+                  : "border-transparent text-muted-foreground hover:text-primary hover:border-subtle"
               )}
             >
               {tab.label}

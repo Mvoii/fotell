@@ -86,7 +86,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
 
         {/* Close / resolved date */}
         {isResolved && market.resolved_at ? (
-          <div className="flex items-center gap-1 text-xs text-secondary shrink-0">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
             <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
               <path d="M4.5 7.5l2 2 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -94,7 +94,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
             <span>Resolved {formatCloseDate(market.resolved_at)}</span>
           </div>
         ) : (
-          <div className="flex items-center gap-1 text-xs text-secondary shrink-0">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
             <svg width="11" height="11" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
               <path d="M7 4v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -110,7 +110,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
           {market.question}
         </h1>
         {market.description && (
-          <p className="mt-1.5 text-xs text-secondary leading-relaxed line-clamp-2">
+          <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed line-clamp-2">
             {market.description}
           </p>
         )}
@@ -121,7 +121,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
         {isResolved ? (
           /* Resolved outcome banner */
           <div className="flex flex-col items-center gap-2 py-3">
-            <span className="text-xs text-secondary font-medium uppercase tracking-widest">Outcome</span>
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Outcome</span>
             <span
               className={`text-3xl font-extrabold font-mono tracking-tight ${
                 market.resolved_outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
@@ -138,7 +138,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
                 <span className="text-2xl font-extrabold font-mono leading-none text-yes-strong">
                   {yesLabel}
                 </span>
-                <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider mt-0.5">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                   Yes
                 </span>
               </div>
@@ -146,7 +146,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
                 <span className="text-2xl font-extrabold font-mono leading-none text-no-strong">
                   {noLabel}
                 </span>
-                <span className="text-[10px] font-semibold text-secondary uppercase tracking-wider mt-0.5">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                   No
                 </span>
               </div>
@@ -168,7 +168,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
           >
             <span className="text-sm font-semibold text-yes-strong">Yes</span>
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-xs text-secondary font-mono">{yesMult}</span>
+              <span className="text-xs text-muted-foreground font-mono">{yesMult}</span>
               <span className="text-sm font-bold font-mono text-yes-strong px-2.5 py-0.5 rounded-full bg-[rgba(0,200,83,0.15)] border border-[rgba(0,200,83,0.3)]">
                 {yesLabel}
               </span>
@@ -182,7 +182,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
           >
             <span className="text-sm font-semibold text-no-strong">No</span>
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-xs text-secondary font-mono">{noMult}</span>
+              <span className="text-xs text-muted-foreground font-mono">{noMult}</span>
               <span className="text-sm font-bold font-mono text-no-strong px-2.5 py-0.5 rounded-full bg-[rgba(255,23,68,0.1)] border border-[rgba(255,23,68,0.25)]">
                 {noLabel}
               </span>
@@ -196,10 +196,10 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
         {/* Liquidity */}
         <div className="flex items-center gap-1.5">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" className="text-secondary" />
-            <path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-secondary" />
+            <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" className="text-muted-foreground" />
+            <path d="M8 5v3.5l2.5 1.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" className="text-muted-foreground" />
           </svg>
-          <span className="text-xs text-secondary font-mono">
+          <span className="text-xs text-muted-foreground font-mono">
             Liquidity&nbsp;{formatLiquidityKES(market.liquidity_param)}
           </span>
         </div>
@@ -216,7 +216,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
             {market.resolved_outcome}
           </span>
         ) : tradesTotal !== undefined ? (
-          <span className="text-xs text-secondary font-mono">
+          <span className="text-xs text-muted-foreground font-mono">
             {tradesTotal.toLocaleString()}&nbsp;trades
           </span>
         ) : null}

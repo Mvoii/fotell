@@ -8,9 +8,14 @@
   /* ── Shadcn / base token mappings ───────────────────────────────────── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+
+  /* ── Font stack ─────────────────────────────────────────────────────── */
+  /* Inter  → body / dense data labels                                     */
+  /* Sora   → headings, large price displays, brand wordmark               */
+  /* JetBrains Mono → tickers, numbers, order books, probability %s        */
+  --font-sans:    var(--font-inter),    ui-sans-serif,  system-ui, sans-serif;
+  --font-heading: var(--font-sora),     var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono:    var(--font-jetbrains-mono), ui-monospace, 'Fira Code', monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -85,8 +90,18 @@
   /* ── Typography scale ────────────────────────────────────────────────── */
   --text-heading-lg:  1.5rem;
   --text-heading-md:  1.25rem;
+  --text-heading-sm:  1.0625rem;
   --text-body-md:     1rem;
   --text-body-sm:     0.875rem;
+  --text-label:       0.75rem;   /* 12 px — stat labels, badges */
+
+  /* ── Text colour hierarchy (three-tier contrast) ─────────────────────── */
+  /* Primary   → high-contrast off-white — primary numbers, headlines       */
+  /* Secondary → mid-grey — supporting labels, metadata                    */
+  /* Tertiary  → low-contrast muted grey — timestamps, page counters        */
+  --color-text-primary:   var(--ft-text-primary);
+  --color-text-secondary: var(--ft-text-secondary);
+  --color-text-tertiary:  var(--ft-text-tertiary);
 }
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -95,21 +110,24 @@
    ──────────────────────────────────────────────────────────────────────── */
 :root {
   /* ── Shadcn base variables ───────────────────────────────────────────── */
-  --background:              oklch(0.09 0.008 240);   /* #0A0E17  near-black charcoal */
-  --foreground:              oklch(0.96 0 0);          /* #F5F5F7  crisp white         */
-  --card:                    oklch(0.13 0.008 240);   /* #111827  deep navy card      */
-  --card-foreground:         oklch(0.96 0 0);
+  --background:              oklch(0.09 0.008 240);   /* #0A0E17  near-black charcoal  */
+  /* Off-white body text — avoids pure-white eye-strain over long sessions.  */
+  /* Equivalent to #E5E7EB (Tailwind gray-200).                               */
+  --foreground:              oklch(0.92 0.004 250);   /* #E5E7EB  off-white            */
+  --card:                    oklch(0.13 0.008 240);   /* #111827  deep navy card       */
+  --card-foreground:         oklch(0.92 0.004 250);
   --popover:                 oklch(0.13 0.008 240);
-  --popover-foreground:      oklch(0.96 0 0);
-  --primary:                 oklch(0.96 0 0);          /* primary text = crisp white   */
+  --popover-foreground:      oklch(0.92 0.004 250);
+  /* primary = highest-contrast text (headlines, prices) — still off-white  */
+  --primary:                 oklch(0.93 0.004 250);   /* #ECEFF1  near-white           */
   --primary-foreground:      oklch(0.09 0.008 240);
   --secondary:               oklch(0.17 0.008 240);   /* #1a2130  elevated surface     */
-  --secondary-foreground:    oklch(0.96 0 0);
+  --secondary-foreground:    oklch(0.92 0.004 250);
   --muted:                   oklch(0.17 0.008 240);
-  --muted-foreground:        oklch(0.58 0.02 250);    /* #8E8E93  slate blue-grey      */
+  --muted-foreground:        oklch(0.55 0.02 250);    /* #6B7280  mid-grey labels      */
   --accent:                  oklch(0.17 0.008 240);
-  --accent-foreground:       oklch(0.96 0 0);
-  --destructive:             oklch(0.65 0.22 22);     /* warm red, desaturated         */
+  --accent-foreground:       oklch(0.92 0.004 250);
+  --destructive:             oklch(0.65 0.24 22);     /* warm red                      */
   --border:                  oklch(0.25 0.01 240 / 60%);
   --input:                   oklch(0.17 0.008 240);
   --ring:                    oklch(0.65 0.18 250 / 50%);
@@ -145,16 +163,25 @@
   --ft-subtle-border:     oklch(0.25 0.01 240 / 70%); /* dividers, subtle borders    */
 
   /* Interactive text states */
-  --ft-primary-hover:     oklch(0.80 0 0);            /* hover on primary text        */
+  --ft-primary-hover:     oklch(0.96 0.004 250);      /* hover on primary text        */
   --ft-active:            oklch(0.65 0.18 250);       /* active nav, selected state   */
 
-  /* YES / buy — vibrant teal-green (#00C853) */
-  --ft-yes-strong:        oklch(0.78 0.18 158);
-  --ft-yes-dim:           oklch(0.78 0.18 158 / 12%);
+  /* ── Three-tier text contrast hierarchy ────────────────────────────────
+     Primary   → #ECEFF1 — high-contrast for prices, headlines, key data
+     Secondary → #9CA3AF — mid-grey for labels, metadata, timestamps
+     Tertiary  → #6B7280 — low-contrast for page counters, minor annotations
+     ──────────────────────────────────────────────────────────────────── */
+  --ft-text-primary:      oklch(0.93 0.004 250);      /* #ECEFF1  off-white           */
+  --ft-text-secondary:    oklch(0.65 0.01 250);       /* #9CA3AF  cool mid-grey       */
+  --ft-text-tertiary:     oklch(0.52 0.01 250);       /* #6B7280  muted grey          */
 
-  /* NO / sell — warm red, purposefully desaturated (#FF3B30) */
-  --ft-no-strong:         oklch(0.65 0.22 22);
-  --ft-no-dim:            oklch(0.65 0.22 22 / 12%);
+  /* YES / buy — vibrant teal-green, semi-bold weight ensures visibility    */
+  --ft-yes-strong:        oklch(0.80 0.20 158);       /* slightly brighter green      */
+  --ft-yes-dim:           oklch(0.80 0.20 158 / 12%);
+
+  /* NO / sell — warm red, enough saturation to pop on dark backgrounds    */
+  --ft-no-strong:         oklch(0.68 0.24 22);        /* cleaner, more vivid red      */
+  --ft-no-dim:            oklch(0.68 0.24 22 / 12%);
 
   /* Accent / CTA — electric blue (#3B82F6) */
   --ft-accent-blue:       oklch(0.65 0.18 250);
@@ -162,27 +189,27 @@
   --ft-accent-blue-dim:   oklch(0.65 0.18 250 / 12%);
 
   /* Status */
-  --ft-warning:           oklch(0.78 0.16 70);        /* amber (#FF9800)              */
-  --ft-warning-bg:        oklch(0.78 0.16 70 / 12%);
+  --ft-warning:           oklch(0.80 0.17 70);        /* amber                        */
+  --ft-warning-bg:        oklch(0.80 0.17 70 / 12%);
 }
 
 /* .dark kept for shadcn component compatibility — mirrors :root */
 .dark {
   --background:              oklch(0.09 0.008 240);
-  --foreground:              oklch(0.96 0 0);
+  --foreground:              oklch(0.92 0.004 250);
   --card:                    oklch(0.13 0.008 240);
-  --card-foreground:         oklch(0.96 0 0);
+  --card-foreground:         oklch(0.92 0.004 250);
   --popover:                 oklch(0.13 0.008 240);
-  --popover-foreground:      oklch(0.96 0 0);
-  --primary:                 oklch(0.96 0 0);
+  --popover-foreground:      oklch(0.92 0.004 250);
+  --primary:                 oklch(0.93 0.004 250);
   --primary-foreground:      oklch(0.09 0.008 240);
   --secondary:               oklch(0.17 0.008 240);
-  --secondary-foreground:    oklch(0.96 0 0);
+  --secondary-foreground:    oklch(0.92 0.004 250);
   --muted:                   oklch(0.17 0.008 240);
-  --muted-foreground:        oklch(0.58 0.02 250);
+  --muted-foreground:        oklch(0.55 0.02 250);
   --accent:                  oklch(0.17 0.008 240);
-  --accent-foreground:       oklch(0.96 0 0);
-  --destructive:             oklch(0.65 0.22 22);
+  --accent-foreground:       oklch(0.92 0.004 250);
+  --destructive:             oklch(0.65 0.24 22);
   --border:                  oklch(0.25 0.01 240 / 60%);
   --input:                   oklch(0.17 0.008 240);
   --ring:                    oklch(0.65 0.18 250 / 50%);
@@ -207,13 +234,56 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Inter as the default body font for maximum legibility */
+    font-family: var(--font-sans);
+    /* Slightly increased letter-spacing improves readability in dark mode */
+    letter-spacing: 0.01em;
   }
   html {
     @apply font-sans;
   }
+  /* Headings use Sora for a premium, geometric feel */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;  /* tighter tracking for large headings */
+  }
+  /* All code, prices, percentages, and numeric data use JetBrains Mono */
+  .font-mono, code, pre, [data-numeric] {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1;  /* tabular nums for aligned columns */
+  }
 }
 
 @layer utilities {
+  /* Typography Utilities */
+  .heading-xl {
+    font-size: 2.25rem;
+    line-height: 1.2;
+    font-weight: 800;
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+  .heading-lg {
+    font-size: var(--text-heading-lg);
+    line-height: 1.3;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
+  .heading-md {
+    font-size: var(--text-heading-md);
+    line-height: 1.3;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
+  .heading-sm {
+    font-size: var(--text-heading-sm);
+    line-height: 1.4;
+    font-weight: 600;
+    font-family: var(--font-heading);
+  }
+
   /* App Shell utilities */
   .has-bottom-nav {
     padding-bottom: 3.5rem; /* 56px for bottom nav */

@@ -30,7 +30,7 @@ function Paginator({
   return (
     <nav className="flex items-center justify-center gap-1 py-3 border-t border-subtle" aria-label="Market trades pagination">
       <button
-        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         aria-label="Previous page"
@@ -39,14 +39,14 @@ function Paginator({
       </button>
       {pages.map((p, idx) =>
         p === '…' ? (
-          <span key={`ellipsis-${idx}`} className="px-2 text-secondary text-sm select-none">…</span>
+          <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground text-sm select-none">…</span>
         ) : (
           <button
             key={p}
             className={`w-8 h-8 rounded-md text-sm font-medium transition ${
               p === currentPage
                 ? 'bg-accent-blue text-white border border-accent-blue shadow-sm'
-                : 'border border-subtle text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary'
+                : 'border border-subtle text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary'
             }`}
             onClick={() => onPageChange(p as number)}
             aria-current={p === currentPage ? 'page' : undefined}
@@ -56,7 +56,7 @@ function Paginator({
         )
       )}
       <button
-        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next page"
@@ -115,7 +115,7 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
         <h3 className="text-heading-sm font-semibold text-primary">Recent Trades</h3>
         <div className="flex items-center gap-2">
           {total > 0 && (
-            <span className="text-xs text-secondary">{total} total</span>
+            <span className="text-xs text-muted-foreground">{total} total</span>
           )}
           <select
             className="text-xs bg-elevated border border-subtle rounded px-2 py-1 text-primary focus:outline-none focus:border-accent-blue"

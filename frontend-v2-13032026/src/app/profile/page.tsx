@@ -19,7 +19,7 @@ export default function ProfilePage() {
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="mb-8">
           <h1 className="heading-xl text-primary mb-1">Profile</h1>
-          <p className="text-secondary text-sm">
+          <p className="text-muted-foreground text-sm">
             Your account information and preferences
           </p>
         </div>
@@ -52,19 +52,19 @@ export default function ProfilePage() {
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-xs text-secondary uppercase tracking-wide">Full Name</label>
+                        <label className="text-xs text-muted-foreground uppercase tracking-wide">Full Name</label>
                         <p className="text-primary font-medium mt-1">{user.full_name}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-secondary uppercase tracking-wide">Username</label>
+                        <label className="text-xs text-muted-foreground uppercase tracking-wide">Username</label>
                         <p className="text-primary font-mono tabular-nums mt-1">@{user.username}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-secondary uppercase tracking-wide">Email</label>
+                        <label className="text-xs text-muted-foreground uppercase tracking-wide">Email</label>
                         <p className="text-primary font-mono tabular-nums mt-1">{user.email}</p>
                       </div>
                       <div>
-                        <label className="text-xs text-secondary uppercase tracking-wide">Account Type</label>
+                        <label className="text-xs text-muted-foreground uppercase tracking-wide">Account Type</label>
                         <p className="mt-1">
                           <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
                             user.role === 'ADMIN'
@@ -79,13 +79,13 @@ export default function ProfilePage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-subtle">
                       <div>
-                        <label className="text-xs text-secondary uppercase tracking-wide">Member Since</label>
+                        <label className="text-xs text-muted-foreground uppercase tracking-wide">Member Since</label>
                         <p className="text-primary font-mono tabular-nums mt-1">
                           {new Date(user.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       <div>
-                        <label className="text-xs text-secondary uppercase tracking-wide">Account Status</label>
+                        <label className="text-xs text-muted-foreground uppercase tracking-wide">Account Status</label>
                         <p className="mt-1">
                           <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
                             user.is_active
@@ -100,7 +100,7 @@ export default function ProfilePage() {
 
                     {user.last_login_at && (
                       <div className="pt-4 border-t border-subtle">
-                        <label className="text-xs text-secondary uppercase tracking-wide">Last Login</label>
+                        <label className="text-xs text-muted-foreground uppercase tracking-wide">Last Login</label>
                         <p className="text-primary font-mono tabular-nums mt-1">
                           {new Date(user.last_login_at).toLocaleString()}
                         </p>
@@ -117,9 +117,9 @@ export default function ProfilePage() {
                   <div className="flex items-center justify-between py-3 border-b border-subtle">
                     <div>
                       <h3 className="text-sm font-medium text-primary">Email Notifications</h3>
-                      <p className="text-xs text-secondary mt-0.5">Receive updates about your trades and market resolutions</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Receive updates about your trades and market resolutions</p>
                     </div>
-                    <button className="text-secondary hover:text-primary transition-colors" aria-label="Configure email notifications">
+                    <button className="text-muted-foreground hover:text-primary transition-colors" aria-label="Configure email notifications">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -129,9 +129,9 @@ export default function ProfilePage() {
                   <div className="flex items-center justify-between py-3 border-b border-subtle">
                     <div>
                       <h3 className="text-sm font-medium text-primary">Security</h3>
-                      <p className="text-xs text-secondary mt-0.5">Manage your password and authentication settings</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Manage your password and authentication settings</p>
                     </div>
-                    <button className="text-secondary hover:text-primary transition-colors" aria-label="Configure security settings">
+                    <button className="text-muted-foreground hover:text-primary transition-colors" aria-label="Configure security settings">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
@@ -141,9 +141,9 @@ export default function ProfilePage() {
                   <div className="flex items-center justify-between py-3">
                     <div>
                       <h3 className="text-sm font-medium text-primary">Privacy</h3>
-                      <p className="text-xs text-secondary mt-0.5">Control your data and privacy preferences</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">Control your data and privacy preferences</p>
                     </div>
-                    <button className="text-secondary hover:text-primary transition-colors" aria-label="Configure privacy settings">
+                    <button className="text-muted-foreground hover:text-primary transition-colors" aria-label="Configure privacy settings">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
