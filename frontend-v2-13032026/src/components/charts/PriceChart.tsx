@@ -99,7 +99,7 @@ export function PriceChart({
               className={`
                 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150
                 ${timeRange === option.value
-                  ? 'bg-primary text-white'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-surface border border-subtle text-muted-foreground hover:text-primary hover:border-primary/50'
                 }
               `}

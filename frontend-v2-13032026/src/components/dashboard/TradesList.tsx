@@ -35,7 +35,7 @@ function Paginator({
   return (
     <nav className="flex items-center justify-center gap-1 mt-4" aria-label="Trades pagination">
       <button
-        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         aria-label="Previous page"
@@ -44,14 +44,14 @@ function Paginator({
       </button>
       {pages.map((p, idx) =>
         p === '…' ? (
-          <span key={`ellipsis-${idx}`} className="px-2 text-secondary text-sm select-none">…</span>
+          <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground text-sm select-none">…</span>
         ) : (
           <button
             key={p}
             className={`w-8 h-8 rounded-md text-sm font-medium transition ${
               p === currentPage
                 ? 'bg-accent-blue text-white border border-accent-blue shadow-sm'
-                : 'border border-subtle text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary'
+                : 'border border-subtle text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary'
             }`}
             onClick={() => onPageChange(p as number)}
             aria-current={p === currentPage ? 'page' : undefined}
@@ -61,7 +61,7 @@ function Paginator({
         )
       )}
       <button
-        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next page"
@@ -93,7 +93,7 @@ export function TradesList({ className = '' }: TradesListProps) {
         <h3 className="heading-lg text-primary">Recent Trades</h3>
         {total > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-secondary">Show</span>
+            <span className="text-xs text-muted-foreground">Show</span>
             <select
               className="text-xs bg-elevated border border-subtle rounded px-2 py-1 text-primary focus:outline-none focus:border-accent-blue"
               value={pageSize}
@@ -128,7 +128,7 @@ export function TradesList({ className = '' }: TradesListProps) {
         <div>
           {trades.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-secondary text-sm">You haven&apos;t made any trades yet.</p>
+              <p className="text-muted-foreground text-sm">You haven&apos;t made any trades yet.</p>
             </div>
           ) : (
             <>
@@ -144,13 +144,13 @@ export function TradesList({ className = '' }: TradesListProps) {
                           <MarketName marketId={trade.market_id} />
                         </Link>
                       </div>
-                      <div className="text-xs text-secondary">
+                      <div className="text-xs text-muted-foreground">
                         {new Date(trade.created_at).toLocaleString()}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
                       <div className="font-mono text-sm text-primary font-medium">{trade.shares} Shares</div>
-                      <div className="text-xs text-secondary">Cost: {formatKES(trade.cost_paid / 100)}</div>
+                      <div className="text-xs text-muted-foreground">Cost: {formatKES(trade.cost_paid / 100)}</div>
                     </div>
                   </div>
                 ))}
@@ -162,7 +162,7 @@ export function TradesList({ className = '' }: TradesListProps) {
                   totalPages={totalPages}
                   onPageChange={handlePageChange}
                 />
-                <p className="text-xs text-subtle mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {total} trade{total !== 1 ? 's' : ''} total
                 </p>
               </div>

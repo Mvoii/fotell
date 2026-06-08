@@ -12,7 +12,7 @@ function MarketTradeCount({ marketId }: { marketId: string }) {
   const { data } = useMarketTrades(marketId);
   if (data?.total === undefined) return null;
   return (
-    <span className="text-xs text-secondary font-mono">
+    <span className="text-xs text-muted-foreground font-mono">
       {data.total.toLocaleString()}&nbsp;trades
     </span>
   );
@@ -73,7 +73,7 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
                       : market.status === 'PENDING'
                         ? 'bg-[rgba(255,152,0,0.1)] text-warning border-[rgba(255,152,0,0.3)]'
                         : market.status === 'CLOSED'
-                          ? 'bg-[rgba(139,146,165,0.1)] text-secondary border-[rgba(139,146,165,0.3)]'
+                          ? 'bg-[rgba(139,146,165,0.1)] text-muted-foreground border-[rgba(139,146,165,0.3)]'
                           : 'bg-accent-blue-dim text-primary border-[rgba(33,150,243,0.3)]'
                   }`}
                 >
@@ -81,7 +81,7 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
                 </span>
 
                 {/* Closing date — top right with clock icon */}
-                <span className="flex items-center gap-1 text-xs text-secondary">
+                <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <svg width="11" height="11" fill="none" viewBox="0 0 14 14" aria-hidden="true">
                     <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
                     <path d="M7 4v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -100,7 +100,7 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
 
               {/* Footer: liquidity (left) + trade count (right) */}
               <div className="flex items-center justify-between pt-1 border-t border-subtle">
-                <span className="text-xs text-secondary font-mono">
+                <span className="text-xs text-muted-foreground font-mono">
                   {market.liquidity_param
                     ? `Liquidity ${market.liquidity_param >= 1_000_000 ? `KES ${(market.liquidity_param / 1_000_000).toFixed(1).replace(/\.0$/, '')}M` : market.liquidity_param >= 1_000 ? `KES ${(market.liquidity_param / 1_000).toFixed(1).replace(/\.0$/, '')}K` : `KES ${market.liquidity_param}`}`
                     : 'Liquidity --'}
@@ -115,7 +115,7 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
         <div className="flex flex-col items-center gap-2 mt-6">
           <nav className="flex items-center gap-1" aria-label="Markets pagination">
             <button
-              className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 rounded-md border border-subtle text-sm text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
               onClick={() => onPageChange?.(offset - limit)}
               disabled={currentPage === 1}
               aria-label="Previous page"
@@ -135,14 +135,14 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
               }
               return pages.map((p, idx) =>
                 p === '…' ? (
-                  <span key={`ellipsis-${idx}`} className="px-2 text-secondary text-sm select-none">…</span>
+                  <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground text-sm select-none">…</span>
                 ) : (
                   <button
                     key={p}
                     className={`w-8 h-8 rounded-md text-sm font-medium transition ${
                       p === currentPage
                         ? 'bg-accent-blue text-white border border-accent-blue shadow-sm'
-                        : 'border border-subtle text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary'
+                        : 'border border-subtle text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary'
                     }`}
                     onClick={() => onPageChange?.((p as number - 1) * limit)}
                     aria-current={p === currentPage ? 'page' : undefined}
@@ -153,7 +153,7 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
               );
             })()}
             <button
-              className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 rounded-md border border-subtle text-sm text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
               onClick={() => onPageChange?.(offset + limit)}
               disabled={currentPage === pageCount}
               aria-label="Next page"
@@ -161,7 +161,7 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
               Next ›
             </button>
           </nav>
-          <p className="text-xs text-subtle">
+          <p className="text-xs text-muted-foreground">
             Page {currentPage} of {pageCount} &middot; {total} market{total !== 1 ? 's' : ''}
           </p>
         </div>

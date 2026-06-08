@@ -119,7 +119,7 @@ export function BottomNav({
                   "flex flex-col items-center justify-center gap-1 px-3 py-1 w-full transition-colors relative",
                   isActive
                     ? "text-accent-blue"
-                    : "text-muted-foreground-foreground hover:text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
                 )}
                 aria-current={isActive ? 'page' : undefined}
                 aria-label={item.label}
@@ -149,7 +149,7 @@ export function BottomNav({
                 "flex flex-col items-center justify-center gap-1 px-3 py-1 w-full transition-colors relative",
                 isActive
                   ? "text-accent-blue"
-                  : "text-muted-foreground-foreground hover:text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
               )}
               aria-label={item.label}
               aria-pressed={isActive}
@@ -174,7 +174,7 @@ export function BottomNav({
         {filteredAdminItems.length > 0 && (
           <div className="relative group">
             <button
-              className="flex flex-col items-center justify-center gap-1 px-3 py-1 w-full transition-colors text-muted-foreground-foreground hover:text-foreground"
+              className="flex flex-col items-center justify-center gap-1 px-3 py-1 w-full transition-colors text-muted-foreground hover:text-foreground"
               aria-label="More options"
               aria-haspopup="menu"
               aria-expanded="false"
@@ -197,7 +197,7 @@ export function BottomNav({
                   className="flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-muted first:rounded-t-lg last:rounded-b-lg transition-colors"
                   role="menuitem"
                 >
-                  <span className="flex-shrink-0 text-muted-foreground-foreground">{item.icon}</span>
+                  <span className="flex-shrink-0 text-muted-foreground">{item.icon}</span>
                   <span>{item.label}</span>
                 </Link>
               ))}

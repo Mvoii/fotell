@@ -31,7 +31,7 @@ export default function DemoPage() {
                 {isAuthenticated ? 'Sign Out' : 'Sign In'}
               </button>
             </div>
-            <p className="text-muted-foreground-foreground mb-4">
+            <p className="text-muted-foreground mb-4">
               This page demonstrates three-axis navigation system with responsive behavior and authentication states.
             </p>
 
@@ -72,7 +72,7 @@ export default function DemoPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold mb-2">Unauthenticated State</h3>
-                <ul className="space-y-1 text-sm text-muted-foreground-foreground">
+                <ul className="space-y-1 text-sm text-muted-foreground">
                   <li>• Top navbar visible</li>
                   <li>• Left sidebar hidden</li>
                   <li>• Bottom navigation hidden</li>
@@ -82,7 +82,7 @@ export default function DemoPage() {
 
               <div>
                 <h3 className="font-semibold mb-2">Authenticated State</h3>
-                <ul className="space-y-1 text-sm text-muted-foreground-foreground">
+                <ul className="space-y-1 text-sm text-muted-foreground">
                   <li>• Top navbar visible</li>
                   <li>• Left sidebar visible (desktop)</li>
                   <li>• Bottom navigation visible (mobile)</li>
@@ -90,7 +90,7 @@ export default function DemoPage() {
                 </ul>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground-foreground mt-4">
+            <p className="text-sm text-muted-foreground mt-4">
               Click the &quot;Sign In/Out&quot; button above to toggle authentication state and see how navigation adapts.
             </p>
           </div>
@@ -100,7 +100,7 @@ export default function DemoPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <h3 className="font-semibold mb-2">Mobile Testing (&lt; 1024px)</h3>
-                <ul className="space-y-1 text-sm text-muted-foreground-foreground">
+                <ul className="space-y-1 text-sm text-muted-foreground">
                   <li>• Bottom navigation should be visible (auth only)</li>
                   <li>• Left sidebar should be hidden</li>
                   <li>• Hamburger menu should toggle mobile menu (auth only)</li>
@@ -112,7 +112,7 @@ export default function DemoPage() {
 
               <div>
                 <h3 className="font-semibold mb-2">Desktop Testing (≥ 1024px)</h3>
-                <ul className="space-y-1 text-sm text-muted-foreground-foreground">
+                <ul className="space-y-1 text-sm text-muted-foreground">
                   <li>• Left sidebar should be visible (auth only)</li>
                   <li>• Bottom navigation should be hidden</li>
                   <li>• Search bar should appear in top nav</li>
@@ -134,7 +134,7 @@ export default function DemoPage() {
                 </button>
               )}
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground-foreground">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <span>Resize your browser window to test responsive behavior</span>
               </div>
             </div>
@@ -145,7 +145,7 @@ export default function DemoPage() {
             {Array.from({ length: 10 }, (_, i) => (
               <div key={i} className="bg-card border border-border rounded-lg p-6">
                 <h3 className="font-semibold mb-2">Content Block {i + 1}</h3>
-                <p className="text-muted-foreground-foreground">
+                <p className="text-muted-foreground">
                   This is demo content to test scrolling and layout behavior.
                   The navigation should remain fixed while content scrolls.
                   {isAuthenticated && ' Navigation elements are shown for authenticated users.'}

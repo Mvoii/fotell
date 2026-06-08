@@ -36,7 +36,7 @@ function Paginator({
   return (
     <nav className="flex items-center justify-center gap-1 mt-4" aria-label="Positions pagination">
       <button
-        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}
         aria-label="Previous page"
@@ -45,14 +45,14 @@ function Paginator({
       </button>
       {pages.map((p, idx) =>
         p === '…' ? (
-          <span key={`ellipsis-${idx}`} className="px-2 text-secondary text-sm select-none">…</span>
+          <span key={`ellipsis-${idx}`} className="px-2 text-muted-foreground text-sm select-none">…</span>
         ) : (
           <button
             key={p}
             className={`w-8 h-8 rounded-md text-sm font-medium transition ${
               p === currentPage
                 ? 'bg-accent-blue text-white border border-accent-blue shadow-sm'
-                : 'border border-subtle text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary'
+                : 'border border-subtle text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary'
             }`}
             onClick={() => onPageChange(p as number)}
             aria-current={p === currentPage ? 'page' : undefined}
@@ -62,7 +62,7 @@ function Paginator({
         )
       )}
       <button
-        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-secondary bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-md border border-subtle text-sm text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary transition disabled:opacity-40 disabled:cursor-not-allowed"
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
         aria-label="Next page"
@@ -98,7 +98,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
         <h3 className="heading-lg text-primary">Your Positions</h3>
         {positionsArray.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-secondary">Show</span>
+            <span className="text-xs text-muted-foreground">Show</span>
             <select
               className="text-xs bg-elevated border border-subtle rounded px-2 py-1 text-primary focus:outline-none focus:border-accent-blue"
               value={pageSize}
@@ -133,7 +133,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
         <div>
           {positionsArray.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-secondary text-sm">You don&apos;t have any open positions yet.</p>
+              <p className="text-muted-foreground text-sm">You don&apos;t have any open positions yet.</p>
               <Link href="/markets" className="inline-block mt-4 text-sm bg-primary text-primary-inverse px-4 py-2 rounded-full hover:opacity-90 transition-opacity">
                 Browse Markets
               </Link>
@@ -151,9 +151,9 @@ export function PositionsList({ className = '' }: PositionsListProps) {
                         <Link href={`/markets/${position.market_id}`} className="font-semibold text-primary hover:text-accent-blue transition-colors line-clamp-1 mb-1">
                           <MarketName marketId={position.market_id} />
                         </Link>
-                        <div className="text-xs text-secondary flex items-center gap-2">
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
                           <span className="font-medium text-primary">{totalShares}</span> Shares
-                          <span className="text-subtle">•</span>
+                          <span className="text-muted-foreground">•</span>
                           <span>Avg Cost: {totalShares > 0 ? formatKES(position.cost_basis / totalShares) : '0.00'}</span>
                         </div>
                       </div>
@@ -181,7 +181,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
                   totalPages={totalPages}
                   onPageChange={handlePageChange}
                 />
-                <p className="text-xs text-subtle mt-1">
+                <p className="text-xs text-muted-foreground mt-1">
                   {positionsArray.length} position{positionsArray.length !== 1 ? 's' : ''} total
                 </p>
               </div>
