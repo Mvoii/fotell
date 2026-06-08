@@ -7,7 +7,6 @@ import {
   Home,
   TrendingUp,
   ArrowUpDown,
-  Eye,
   User,
   Settings,
   Shield,
@@ -93,8 +92,7 @@ export function AppShell({
   topNavProps = {},
   bottomNavProps = {},
 }: AppShellProps) {
-  const { data: user, isLoading } = useUser();
-  const router = useRouter();
+  const { data: user } = useUser();
   const pathname = usePathname();
   const {
     mobileMenuOpen,
