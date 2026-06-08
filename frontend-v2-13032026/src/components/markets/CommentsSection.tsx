@@ -107,8 +107,6 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
   const isOwnComment = currentUserId === comment.user_id;
 
   const handleVote = (voteType: 'UPVOTE' | 'DOWNVOTE') => {
-    // If clicking the same vote type, untoggle by sending NONE (assumed API behavior)
-    const newVote = comment.current_user_vote === voteType ? 'NONE' : voteType;
     // We send UPVOTE or DOWNVOTE based on the API spec. If it only accepts UPVOTE/DOWNVOTE, we might not be able to untoggle.
     // Assuming we can send the voteType directly for now.
     voteComment.mutate({ commentId: comment.id, data: { vote_type: voteType } });
