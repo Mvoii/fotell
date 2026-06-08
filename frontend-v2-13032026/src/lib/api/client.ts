@@ -142,14 +142,14 @@ export async function apiRequest<T>(
             credentials,
           });
           if (refreshRes.ok) {
-            const refreshData = await parseJsonSafe<any>(refreshRes);
+            const refreshData = await parseJsonSafe<Record<string, unknown>>(refreshRes);
             if (refreshData && typeof refreshData === 'object' && 'access_token' in refreshData && 'refresh_token' in refreshData) {
               setTokens({
-                access_token: refreshData.access_token,
-                refresh_token: refreshData.refresh_token,
+                access_token: refreshData.access_token as string,
+                refresh_token: refreshData.refresh_token as string,
               });
               // Retry original request with new token
-              finalHeaders['Authorization'] = `Bearer ${refreshData.access_token}`;
+              finalHeaders['Authorization'] = `Bearer ${refreshData.access_token as string}`;
               response = await fetch(buildUrl(path, params), {
                 method,
                 credentials,
@@ -168,7 +168,7 @@ export async function apiRequest<T>(
             window.location.href = '/auth/login';
             throw new ApiRequestError('Session expired. Please log in again.', 401, null);
           }
-        } catch (refreshErr) {
+        } catch {
           clearTokens();
           window.location.href = '/auth/login';
           throw new ApiRequestError('Session expired. Please log in again.', 401, null);
