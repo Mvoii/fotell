@@ -1,7 +1,6 @@
 "use client";
 
 import React from 'react';
-import Link from 'next/link';
 import { useUser } from '@/hooks/useUser';
 import { ClientOnly } from '@/components/ui/ClientOnly';
 import { AppShell } from '@/components/layout/AppShell';

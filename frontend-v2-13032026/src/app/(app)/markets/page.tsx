@@ -5,7 +5,6 @@ import { useMarkets } from '@/hooks/useMarkets';
 import { MarketsList } from '@/components/markets/MarketsList';
 import PageContainer from '@/components/layout/PageContainer';
 import { AppShell } from '@/components/layout/AppShell';
-import { useNavigation } from '@/hooks/useNavigation';
 import { useUser } from '@/hooks/useUser';
 
 export default function MarketsPage() {
@@ -14,7 +13,6 @@ export default function MarketsPage() {
   const limit = 50;
 
   const { data, isLoading, isError, refetch } = useMarkets({ status, limit, offset });
-  const { activeTab } = useNavigation();
   const { data: user } = useUser();
 
   return (
