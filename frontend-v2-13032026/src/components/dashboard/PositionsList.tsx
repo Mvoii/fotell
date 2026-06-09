@@ -154,7 +154,7 @@ export function PositionsList({ className = '' }: PositionsListProps) {
                         <div className="text-xs text-muted-foreground flex items-center gap-2">
                           <span className="font-medium text-primary">{totalShares}</span> Shares
                           <span className="text-muted-foreground">•</span>
-                          <span>Avg Cost: {totalShares > 0 ? formatKES(position.cost_basis / totalShares) : '0.00'}</span>
+                          <span>Avg Cost: {totalShares > 0 ? formatKES(position.cost_basis / totalShares / 100) : '0.00'}</span>
                         </div>
                       </div>
                       <div className="flex flex-col items-start sm:items-end">

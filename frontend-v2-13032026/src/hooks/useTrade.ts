@@ -1,7 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tradingService } from '@/lib/api/trading.service';
-import type { PlaceTradeRequest, TradeReceipt, ApiError } from '@/lib/api/types/api';
+import type { PlaceTradeRequest, TradeReceipt, ApiError, Trade } from '@/lib/api/types/api';
 import { queryKeys } from '@/lib/queryKeys';
+
+/**
+ * Normalize a trade object: coerce decimal.Decimal string fields to numbers.
+ * Go's shopspring/decimal serializes as JSON strings (e.g. "10" not 10).
+ */
+function normalizeTrade<T extends Partial<Trade>>(t: T): T {
+  return {
+    ...t,
+    ...(t.shares != null && { shares: Number(t.shares) }),
+    ...(t.cost_paid != null && { cost_paid: Number(t.cost_paid) }),
+  };
+}
 
 /**
  * useTrade hook for market trading actions.
@@ -12,7 +24,21 @@ export function useTrade(marketId: string) {
 	const mutation = useMutation<TradeReceipt, ApiError, PlaceTradeRequest>({
 		mutationFn: async (data) => {
 			const response = await tradingService.placeTrade(marketId, data);
-			return response.data;
+			const receipt = response.data;
+			// Normalize decimal.Decimal strings in receipt
+			return {
+				...receipt,
+				shares: Number(receipt.shares),
+				cost_paid: Number(receipt.cost_paid),
+				avg_price: Number(receipt.avg_price),
+				balance_after: Number(receipt.balance_after),
+				position: receipt.position ? {
+					...receipt.position,
+					yes_shares: Number(receipt.position.yes_shares),
+					no_shares: Number(receipt.position.no_shares),
+					cost_basis: Number(receipt.position.cost_basis),
+				} : receipt.position,
+			};
 		},
 		onMutate: async () => {
 			await queryClient.cancelQueries({ queryKey: queryKeys.user.balance() });
@@ -49,7 +75,10 @@ export function useMarketTrades(marketId: string, limit?: number, offset?: numbe
 		queryKey: queryKeys.trades.byMarketList(marketId, { limit, offset }),
 		queryFn: async () => {
 			const { data } = await tradingService.getMarketTrades(marketId, limit, offset);
-			return data;
+			return {
+				...data,
+				trades: (data?.trades ?? []).map(normalizeTrade),
+			};
 		},
 		enabled: !!marketId,
 	});
@@ -60,7 +89,10 @@ export function useUserTrades(limit?: number, offset?: number) {
 		queryKey: queryKeys.trades.byUserList({ limit, offset }),
 		queryFn: async () => {
 			const { data } = await tradingService.getUserTrades(limit, offset);
-			return data;
+			return {
+				...data,
+				trades: (data?.trades ?? []).map(normalizeTrade),
+			};
 		},
 	});
 }
