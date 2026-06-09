@@ -107,7 +107,7 @@ export function TradeHistoryTable({ trades, isLoading = false, className = '' }:
                     {formatKES(trade.cost_paid / 100)}
                   </td>
                   <td className="py-3 px-2 text-primary font-mono tabular-nums text-right">
-                    {(trade.cost_paid / trade.shares / 100).toFixed(1)}¢
+                    {(trade.cost_paid / trade.shares).toFixed(1)}¢
                   </td>
                 </tr>
               ))}
