@@ -8,7 +8,13 @@ import { AppShell } from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import { useUser } from '@/hooks/useUser';
 import { useMarkets } from '@/hooks/useMarkets';
-import { useCloseMarket, useOpenMarket, useResolveMarket } from '@/hooks/useAdmin';
+import { 
+  useCloseMarket, 
+  useOpenMarket, 
+  useResolveMarket, 
+  useAdminUsers, 
+  useSettlementStatus 
+} from '@/hooks/useAdmin';
 
 export default function AdminPage() {
   const { data: user } = useUser();
@@ -16,6 +22,11 @@ export default function AdminPage() {
 
   // Fetch pending markets to show on dashboard as action items
   const { data, isLoading } = useMarkets({ status: 'PENDING', limit: 10 });
+  const { data: allMarkets } = useMarkets({ limit: 1 });
+  const { data: openMarkets } = useMarkets({ status: 'OPEN', limit: 1 });
+  const { data: usersData } = useAdminUsers(100, 0);
+  const { data: settlementData } = useSettlementStatus();
+
   const openMarketMutation = useOpenMarket();
   const closeMarketMutation = useCloseMarket();
   const resolveMarketMutation = useResolveMarket();
@@ -49,6 +60,16 @@ export default function AdminPage() {
       setActionError(e instanceof Error ? e.message : 'Failed to resolve market');
     }
   };
+
+  const totalMarkets = allMarkets?.total ?? '--';
+  const activeMarkets = openMarkets?.total ?? '--';
+  // Backend ListUsers doesn't return 'total' currently, using length of fetched array as fallback
+  const totalUsers = usersData?.users ? usersData.users.length : '--';
+  
+  // Aggregate total payouts from settlements as a proxy metric (since 24h volume isn't directly available)
+  const totalPayoutsKes = settlementData?.settlements 
+    ? settlementData.settlements.reduce((sum, s) => sum + (s.total_paid_cents || 0), 0) / 100
+    : null;
 
   return (
     <AuthGuard requireAdmin={true}>
@@ -97,19 +118,22 @@ export default function AdminPage() {
             </Link>
 
             {/* User Management */}
-            <div className="bg-surface border border-subtle rounded-lg p-6 opacity-60">
+            <Link 
+              href="/admin/users"
+              className="block bg-surface border border-subtle rounded-lg p-6 hover:border-accent-blue transition-colors"
+            >
               <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mr-4">
-                  <svg className="w-6 h-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-accent-blue/10 rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
                 <h3 className="heading-lg text-primary">User Management</h3>
               </div>
               <p className="text-primary text-sm">
-                Manage user accounts and permissions (Coming soon)
+                Manage user accounts and view statuses
               </p>
-            </div>
+            </Link>
 
             {/* System Settings */}
             <div className="bg-surface border border-subtle rounded-lg p-6 opacity-60">
@@ -164,19 +188,21 @@ export default function AdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="bg-surface border border-subtle rounded-lg p-4">
                 <h3 className="text-sm text-primary mb-1">Total Markets</h3>
-                <p className="heading-xl text-primary">--</p>
+                <p className="heading-xl text-primary">{totalMarkets}</p>
               </div>
               <div className="bg-surface border border-subtle rounded-lg p-4">
                 <h3 className="text-sm text-primary mb-1">Active Markets</h3>
-                <p className="heading-xl text-primary">--</p>
+                <p className="heading-xl text-primary">{activeMarkets}</p>
               </div>
               <div className="bg-surface border border-subtle rounded-lg p-4">
                 <h3 className="text-sm text-primary mb-1">Total Users</h3>
-                <p className="heading-xl text-primary">--</p>
+                <p className="heading-xl text-primary">{totalUsers}</p>
               </div>
               <div className="bg-surface border border-subtle rounded-lg p-4">
-                <h3 className="text-sm text-primary mb-1">24h Volume</h3>
-                <p className="heading-xl text-primary">--</p>
+                <h3 className="text-sm text-primary mb-1">Total Settled (KES)</h3>
+                <p className="heading-xl text-primary">
+                  {totalPayoutsKes !== null ? `KSh ${totalPayoutsKes.toLocaleString()}` : '--'}
+                </p>
               </div>
             </div>
           </div>

@@ -39,4 +39,12 @@ export const queryKeys = {
     repliesList: (commentId: string, params: { limit?: number; offset?: number }) =>
       [...queryKeys.comments.replies(commentId), params] as const,
   },
+
+  admin: {
+    all: ['admin'] as const,
+    settlement: () => [...queryKeys.admin.all, 'settlement'] as const,
+    users: (params?: { limit?: number; offset?: number }) =>
+      params ? [...queryKeys.admin.all, 'users', params] as const : [...queryKeys.admin.all, 'users'] as const,
+    user: (id: string) => [...queryKeys.admin.all, 'user', id] as const,
+  },
 };
