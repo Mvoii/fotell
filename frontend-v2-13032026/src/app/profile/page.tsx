@@ -6,7 +6,7 @@ import { ClientOnly } from '@/components/ui/ClientOnly';
 import { AppShell } from '@/components/layout/AppShell';
 import { useLogout } from '@/hooks/useLogout';
 import { LogOut } from 'lucide-react';
-
+import { formatTimeAgo } from '@/lib/utils';
 export default function ProfilePage() {
   const { data: user, isLoading, error } = useUser();
   const { logout, loading: isLoggingOut } = useLogout();
@@ -81,7 +81,7 @@ export default function ProfilePage() {
                       <div>
                         <label className="text-xs text-muted-foreground uppercase tracking-wide">Member Since</label>
                         <p className="text-primary font-mono tabular-nums mt-1">
-                          {new Date(user.created_at).toLocaleDateString()}
+                          {formatTimeAgo(user.created_at)}
                         </p>
                       </div>
                       <div>
@@ -102,7 +102,7 @@ export default function ProfilePage() {
                       <div className="pt-4 border-t border-subtle">
                         <label className="text-xs text-muted-foreground uppercase tracking-wide">Last Login</label>
                         <p className="text-primary font-mono tabular-nums mt-1">
-                          {new Date(user.last_login_at).toLocaleString()}
+                          {formatTimeAgo(user.last_login_at)}
                         </p>
                       </div>
                     )}

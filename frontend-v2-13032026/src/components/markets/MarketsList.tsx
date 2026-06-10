@@ -7,6 +7,7 @@ import type { Market, MarketPrices } from '@/lib/api/types/api';
 import ProbabilityBar from '@/components/markets/ProbabilityBar';
 import { useMarketTrades } from '@/hooks/useTrade';
 import { multiplier } from '@/lib/formatters';
+import { formatTimeAgo } from '@/lib/utils';
 
 /** Fetches and displays the trade count for a single market. */
 function MarketTradeCount({ marketId }: { marketId: string }) {
@@ -92,7 +93,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                     <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
                     <path d="M7 4v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
-                  {new Date(market.closes_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  {formatTimeAgo(market.closes_at)}
                 </span>
               </div>
 
