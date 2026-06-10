@@ -2,7 +2,7 @@ import React from 'react';
 import type { Market, MarketPrices } from '@/lib/api/types/api';
 import MarketStatusBadge from '@/components/markets/MarketStatusBadge';
 import ProbabilityBar from '@/components/markets/ProbabilityBar';
-
+import { formatTimeAgo } from '@/lib/utils';
 interface MarketDetailsCardProps {
   market: Market;
   prices?: MarketPrices;
@@ -22,27 +22,6 @@ function formatLiquidityKES(value: number): string {
 function multiplier(price: number | null): string {
   if (price === null || price <= 0) return '--';
   return `${(100 / price).toFixed(2)}×`;
-}
-
-/** "X min ago" / "X hr ago" from an ISO timestamp. */
-function timeAgo(iso: string): string {
-  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (diff < 60)          return 'just now';
-  if (diff < 3600)        return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400)       return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
-/** Short close-date label: "Jun 14" or "Jun 14, 2027". */
-function formatCloseDate(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const sameYear = d.getFullYear() === now.getFullYear();
-  return d.toLocaleDateString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    ...(sameYear ? {} : { year: 'numeric' }),
-  });
 }
 
 // ── Status dot colours ────────────────────────────────────────────────────────
@@ -91,7 +70,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
               <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
               <path d="M4.5 7.5l2 2 3.5-3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-            <span>Resolved {formatCloseDate(market.resolved_at)}</span>
+            <span>Resolved {formatTimeAgo(market.resolved_at)}</span>
           </div>
         ) : (
           <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
@@ -99,7 +78,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
               <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5" />
               <path d="M7 4v3l2 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
-            <span>{formatCloseDate(market.closes_at)}</span>
+            <span>{formatTimeAgo(market.closes_at)}</span>
           </div>
         )}
       </div>

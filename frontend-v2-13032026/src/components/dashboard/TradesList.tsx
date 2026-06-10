@@ -3,6 +3,7 @@ import { useTrades } from '@/hooks/useUser';
 import Link from 'next/link';
 import { MarketName } from './MarketName';
 import { formatKES } from '@/lib/formatters';
+import { formatTimeAgo } from '@/lib/utils';
 
 interface TradesListProps {
   className?: string;
@@ -145,7 +146,7 @@ export function TradesList({ className = '' }: TradesListProps) {
                         </Link>
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {new Date(trade.created_at).toLocaleString()}
+                        {formatTimeAgo(trade.created_at)}
                       </div>
                     </div>
                     <div className="text-right shrink-0">

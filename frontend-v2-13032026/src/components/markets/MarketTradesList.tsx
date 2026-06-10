@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useMarketTrades } from '@/hooks/useTrade';
 import { formatPrice, formatKES } from '@/lib/formatters';
 import type { Trade } from '@/lib/api/types/api';
-
+import { formatTimeAgo } from '@/lib/utils';
 const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 function Paginator({
@@ -146,8 +146,7 @@ export function MarketTradesList({ marketId }: { marketId: string }) {
               const costPaid = Number(trade.cost_paid);
               const totalCostKES = costPaid / 100;
               const pricePerShare = shares > 0 ? costPaid / shares : 0; // in cents = percentage
-              const date = new Date(trade.created_at);
-              const timeString = `${date.toLocaleDateString()} ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+              const timeString = formatTimeAgo(trade.created_at);
               const isYes = trade.outcome === 'YES';
 
               return (
