@@ -1,0 +1,106 @@
+
+> frontend-v2-13032026@0.1.0 lint
+> eslint
+
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/app/(app)/markets/page.tsx
+  17:11  warning  'activeTab' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/app/profile/page.tsx
+  4:8  warning  'Link' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/charts/PriceChart.tsx
+  139:21  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/dashboard/PositionsList.tsx
+  136:60  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/dashboard/TradesList.tsx
+  131:62  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/layout/AppShell.tsx
+  10:3   warning  'Eye' is defined but never used                 @typescript-eslint/no-unused-vars
+  96:23  warning  'isLoading' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  97:9   warning  'router' is assigned a value but never used     @typescript-eslint/no-unused-vars
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/layout/BottomNav.tsx
+   9:3  warning  'Eye' is defined but never used                @typescript-eslint/no-unused-vars
+  36:9  warning  'pathname' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/layout/TopNav.tsx
+  5:26  warning  'User' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/markets/CommentsSection.tsx
+  111:11  warning  'newVote' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/portfolio/PortfolioSummary.tsx
+  70:12  error  `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/trade/MarketOrderForm.tsx
+    2:15  warning  'Market' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               @typescript-eslint/no-unused-vars
+    2:23  warning  'Position' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             @typescript-eslint/no-unused-vars
+    2:33  warning  'PlaceTradeRequest' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    @typescript-eslint/no-unused-vars
+   22:10  warning  'maxSlippagePct' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+   45:9   warning  'potentialProfitPct' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          @typescript-eslint/no-unused-vars
+  117:7   error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/trade/MarketOrderForm.tsx:117:7
+  115 |   React.useEffect(() => {
+  116 |     if (tradeHook.error) {
+> 117 |       setErrorMsg(tradeHook.error.error);
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  118 |     }
+  119 |   }, [tradeHook.error]);
+  120 |  react-hooks/set-state-in-effect
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/ui/ClientOnly.tsx
+  14:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/components/ui/ClientOnly.tsx:14:5
+  12 |
+  13 |   useEffect(() => {
+> 14 |     setIsClient(true);
+     |     ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  15 |   }, []);
+  16 |
+  17 |   return isClient ? <>{children}</> : <>{fallback}</>;  react-hooks/set-state-in-effect
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/hooks/useNavigation.ts
+  116:5  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/hooks/useNavigation.ts:116:5
+  114 |   React.useEffect(() => {
+  115 |     const currentTab = getCurrentTabFromPath(pathname);
+> 116 |     setActiveTab(currentTab);
+      |     ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  117 |   }, [pathname, setActiveTab]);
+  118 |
+  119 |   const actions: NavigationActions = {  react-hooks/set-state-in-effect
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/lib/api/client.ts
+  145:53  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  171:18  warning  'refreshErr' is defined but never used    @typescript-eslint/no-unused-vars
+
+/home/esiepe/Documents/fotell/frontend-v2-13032026/src/lib/api/markets.service.ts
+  23:45  warning  '_' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 24 problems (8 errors, 16 warnings)
+

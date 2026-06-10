@@ -36,3 +36,41 @@ export function formatPrice(price: number, style: 'cents' | 'percent' = 'cents')
     ? `${price.toFixed(1)}¢`
     : `${price.toFixed(1)}%`;
 }
+
+/**
+ * Estimate trade cost in KES from share count and **spot price**.
+ *
+ * ⚠️  LSMR APPROXIMATION WARNING
+ * This is a **linear** (spot-price) estimate: `shares × priceCents / 100`.
+ * The real LSMR marginal cost (returned as `receipt.cost_paid`) is always
+ * **≥ this estimate** because the log-sum-exp cost function is convex —
+ * each additional share moves the price up, so later shares cost more than
+ * earlier ones. The gap grows with:
+ *   - Larger trade sizes (more shares)
+ *   - Lower `liquidity_param` (`b`) on the market (more price sensitivity)
+ *
+ * Use this only for pre-trade UI estimates. Always display `receipt.cost_paid`
+ * via `formatCentsAsKES()` for the confirmed / executed cost.
+ *
+ * @param shares      Number of shares
+ * @param priceCents  Spot price in cents (yes_price / no_price, 0–100 range)
+ */
+export function estimateCostKES(shares: number, priceCents: number): number {
+  return (shares * priceCents) / 100;
+}
+
+/**
+ * Resolution payout in KES for a given share count.
+ * Per API spec, each share resolves at 100 cents = 1 KES.
+ *
+ * @param shares  Number of shares held
+ */
+export function resolutionPayoutKES(shares: number): number {
+  return shares; // 1 KES per share
+}
+
+/** Format price as a multiplier (e.g. 25 -> "4.00x"). */
+export function multiplier(price: number | null): string {
+  if (price === null || price <= 0) return '0.0x';
+  return `${(100 / price).toFixed(2)}x`;
+}

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Trade } from '@/lib/api/types/api';
 import { formatKES } from '@/lib/formatters';
+import { formatTimeAgo } from '@/lib/utils';
 
 interface TradeHistoryTableProps {
   trades: Trade[];
@@ -86,7 +87,7 @@ export function TradeHistoryTable({ trades, isLoading = false, className = '' }:
               {trades.map((trade) => (
                 <tr key={trade.id} className="border-b border-subtle hover:bg-elevated transition-colors">
                   <td className="py-3 px-2 text-primary font-mono tabular-nums text-xs">
-                    {new Date(trade.created_at).toLocaleDateString()}
+                    {formatTimeAgo(trade.created_at)}
                   </td>
                   <td className="py-3 px-2 text-primary text-xs truncate max-w-50" title={trade.market_id}>
                     Market ID: {trade.market_id.slice(0, 8)}...
@@ -107,7 +108,7 @@ export function TradeHistoryTable({ trades, isLoading = false, className = '' }:
                     {formatKES(trade.cost_paid / 100)}
                   </td>
                   <td className="py-3 px-2 text-primary font-mono tabular-nums text-right">
-                    {(trade.cost_paid / trade.shares / 100).toFixed(1)}¢
+                    {(trade.cost_paid / trade.shares).toFixed(1)}¢
                   </td>
                 </tr>
               ))}

@@ -7,7 +7,6 @@ import {
   Home,
   TrendingUp,
   ArrowUpDown,
-  Eye,
   User,
   Settings,
   Shield,
@@ -58,7 +57,7 @@ function MobileNavigationItem({
     >
       <span className={cn(
         "flex-shrink-0",
-        isActive ? "text-white" : "text-muted-foreground-foreground"
+        isActive ? "text-white" : "text-muted-foreground"
       )}>{icon}</span>
       <span className="text-sm font-medium">{label}</span>
     </button>
@@ -93,8 +92,7 @@ export function AppShell({
   topNavProps = {},
   bottomNavProps = {},
 }: AppShellProps) {
-  const { data: user, isLoading } = useUser();
-  const router = useRouter();
+  const { data: user } = useUser();
   const pathname = usePathname();
   const {
     mobileMenuOpen,
@@ -233,7 +231,7 @@ export function AppShell({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate">{user.username}</p>
-                    <p className="text-xs text-muted-foreground-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {isAdmin ? 'Administrator' : 'User'}
                     </p>
                   </div>
@@ -271,7 +269,7 @@ export function AppShell({
                 >
                   <span className={cn(
                     "shrink-0",
-                    activeTab === 'trade' ? "text-white" : "text-muted-foreground-foreground"
+                    activeTab === 'trade' ? "text-white" : "text-muted-foreground"
                   )}>
                     <ArrowUpDown className="h-5 w-5" />
                   </span>
@@ -288,7 +286,7 @@ export function AppShell({
                   href="/settings"
                   icon={<Settings className={cn(
                     "h-5 w-5",
-                    pathname === '/settings' ? "text-white" : "text-muted-foreground-foreground"
+                    pathname === '/settings' ? "text-white" : "text-muted-foreground"
                   )} />}
                   label="Settings"
                   isActive={pathname === '/settings'}
@@ -300,7 +298,7 @@ export function AppShell({
                     href="/admin"
                     icon={<Shield className={cn(
                       "h-5 w-5",
-                      pathname === '/admin' ? "text-white" : "text-muted-foreground-foreground"
+                      pathname === '/admin' ? "text-white" : "text-muted-foreground"
                     )} />}
                     label="Admin"
                     isActive={pathname === '/admin'}
@@ -312,7 +310,7 @@ export function AppShell({
                   onClick={handleLogout}
                   className="w-full flex items-center gap-3 px-3 py-3 rounded-md hover:bg-muted transition-colors text-left text-foreground"
                 >
-                  <span className="shrink-0 text-muted-foreground-foreground">
+                  <span className="shrink-0 text-muted-foreground">
                     <LogOut className="h-5 w-5" />
                   </span>
                   <span className="text-sm font-medium">Sign Out</span>
@@ -322,7 +320,7 @@ export function AppShell({
 
             {/* Footer */}
             <div className="p-4 border-t border-border text-center">
-              <p className="text-xs text-muted-foreground-foreground">
+              <p className="text-xs text-muted-foreground">
                 © {new Date().getFullYear()} FoTell
               </p>
             </div>

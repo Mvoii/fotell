@@ -97,14 +97,20 @@ For atomic trades, use CreateTx instead
 func (r *TradeRepository) Create(ctx context.Context, params CreateTradeParams) (*Trade, error) {
 	query := `
 		INSERT INTO trades (
-			user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit,
+			user_id, market_id, outcome, shares_amount, shares_bought_smallest_unit, cost_paid_smallest_unit,
 			yes_price_before, yes_price_after, no_price_before, no_price_after
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		RETURNING id, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at
 	`
 
 	var trade Trade
 	sharesFloat, _ := params.Shares.Float64()
+
+	sharesSmallestUnit := params.Shares.Mul(decimal.NewFromInt(1000000)).IntPart()
+	if sharesSmallestUnit <= 0 {
+		sharesSmallestUnit = 1
+	}
+
 	yesPriceBefore, _ := params.YesPriceBefore.Float64()
 	yesPriceAfter, _ := params.YesPriceAfter.Float64()
 	noPriceBefore, _ := params.NoPriceBefore.Float64()
@@ -117,6 +123,7 @@ func (r *TradeRepository) Create(ctx context.Context, params CreateTradeParams) 
 		params.MarketID,
 		params.Outcome,
 		sharesFloat,
+		sharesSmallestUnit,
 		params.CostPaid,
 		yesPriceBefore,
 		yesPriceAfter,
@@ -159,14 +166,22 @@ USAGE:
 func (r *TradeRepository) CreateTx(ctx context.Context, tx *sql.Tx, params CreateTradeParams) (*Trade, error) {
 	query := `
 		INSERT INTO trades (
-			user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit,
+			user_id, market_id, outcome,
+			shares_amount, shares_bought_smallest_unit, cost_paid_smallest_unit,
 			yes_price_before, yes_price_after, no_price_before, no_price_after
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		RETURNING id, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at
 	`
 
 	var trade Trade
 	sharesFloat, _ := params.Shares.Float64()
+
+	// ensure we satisf =y legacy check (shares_bought_smallest_unit > 0)
+	sharesSmallestUnit := params.Shares.Mul(decimal.NewFromInt(100)).IntPart()
+	if sharesSmallestUnit <= 0 {
+		sharesSmallestUnit = 1
+	}
+
 	yesPriceBefore, _ := params.YesPriceBefore.Float64()
 	yesPriceAfter, _ := params.YesPriceAfter.Float64()
 	noPriceBefore, _ := params.NoPriceBefore.Float64()
@@ -179,6 +194,7 @@ func (r *TradeRepository) CreateTx(ctx context.Context, tx *sql.Tx, params Creat
 		params.MarketID,
 		params.Outcome,
 		sharesFloat,
+		sharesSmallestUnit,
 		params.CostPaid,
 		yesPriceBefore,
 		yesPriceAfter,
@@ -215,7 +231,7 @@ RETURNS:
 */
 func (r *TradeRepository) GetByID(ctx context.Context, id string) (*Trade, error) {
 	query := `
-		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		SELECT id, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at
 		FROM trades
 		WHERE id = $1
 	`
@@ -254,7 +270,7 @@ USAGE:
 */
 func (r *TradeRepository) ListByUserAndMarket(ctx context.Context, userID, marketID string) ([]*Trade, error) {
 	query := `
-		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		SELECT id, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at
 		FROM trades
 		WHERE user_id = $1 AND market_id = $2
 		ORDER BY created_at DESC
@@ -313,7 +329,7 @@ func (r *TradeRepository) ListByMarket(ctx context.Context, marketID string, lim
 
 	// Get trades
 	query := `
-		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		SELECT id, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at
 		FROM trades
 		WHERE market_id = $1
 		ORDER BY created_at DESC
@@ -367,8 +383,10 @@ func (r *TradeRepository) ListByUser(ctx context.Context, userID string, limit, 
 	}
 
 	// Get trades
+	//SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+	// To this: SELECT id, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at
 	query := `
-		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		SELECT id, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at
 		FROM trades
 		WHERE user_id = $1
 		ORDER BY created_at DESC

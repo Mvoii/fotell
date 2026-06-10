@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/esiepe/fotell/amm"
-	"github.com/esiepe/fotell/api/repository"
+	"github.com/Mvoii/fotell/amm"
+	"github.com/Mvoii/fotell/api/repository"
 	"github.com/shopspring/decimal"
 )
 

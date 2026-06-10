@@ -4,11 +4,10 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Home,
   TrendingUp,
+  PieChart,
   User,
-  Settings,
-  Shield,
+  LayoutDashboard,
   LogOut,
   ChevronLeft,
   ChevronRight
@@ -36,10 +35,10 @@ export function LeftSidebar() {
 
   const navItems: NavItem[] = [
     {
-      id: 'dashboard',
-      label: 'Dashboard',
-      icon: <Home className="h-5 w-5" />,
-      href: '/dashboard',
+      id: 'portfolio',
+      label: 'Portfolio',
+      icon: <PieChart className="h-5 w-5" />,
+      href: '/portfolio',
       requireAuth: true,
     },
     {
@@ -54,22 +53,14 @@ export function LeftSidebar() {
       icon: <User className="h-5 w-5" />,
       href: '/profile',
       requireAuth: true,
-      badge: 3, // Example: pending orders count
     },
   ];
 
   const secondaryItems: NavItem[] = [
     {
-      id: 'settings',
-      label: 'Settings',
-      icon: <Settings className="h-5 w-5" />,
-      href: '/settings',
-      requireAuth: true,
-    },
-    {
       id: 'admin',
-      label: 'Admin',
-      icon: <Shield className="h-5 w-5" />,
+      label: 'Dashboard',
+      icon: <LayoutDashboard className="h-5 w-5" />,
       href: '/admin',
       requireAuth: true,
       requireAdmin: true,
@@ -110,7 +101,7 @@ export function LeftSidebar() {
       "flex items-center gap-3 px-3 py-2 rounded-md transition-colors group",
       active
         ? "bg-accent-blue text-white"
-        : "text-muted-foreground-foreground hover:text-foreground hover:bg-muted"
+        : "text-muted-foreground hover:text-foreground hover:bg-muted"
     );
 
     if (isAction) {
@@ -224,7 +215,7 @@ export function LeftSidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium truncate">{user.username}</p>
-              <p className="text-xs text-muted-foreground-foreground truncate">
+              <p className="text-xs text-muted-foreground truncate">
                 {user.role === 'ADMIN' ? 'Administrator' : 'User'}
               </p>
             </div>

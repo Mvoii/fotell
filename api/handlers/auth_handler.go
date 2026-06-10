@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/esiepe/fotell/api/middleware"
-	"github.com/esiepe/fotell/api/repository"
+	"github.com/Mvoii/fotell/api/middleware"
+	"github.com/Mvoii/fotell/api/repository"
 	"golang.org/x/crypto/bcrypt"
 )
 

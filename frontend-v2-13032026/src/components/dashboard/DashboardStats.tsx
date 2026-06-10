@@ -1,6 +1,7 @@
 import React from 'react';
 import { useBalance, usePositions } from '@/hooks/useUser';
 import { formatKES } from '@/lib/formatters';
+import type { Position } from '@/lib/api/types/api';
 
 interface DashboardStatsProps {
   className?: string;
@@ -10,11 +11,19 @@ export function DashboardStats({ className = '' }: DashboardStatsProps) {
   const { data: balance } = useBalance();
   const { data: positions } = usePositions();
 
+  // Normalise: API may return a bare array, a wrapped object, or nothing.
+  // This guards against the `positions?.reduce is not a function` TypeError.
+  const positionsArray: Position[] = Array.isArray(positions)
+    ? positions
+    : Array.isArray((positions as unknown as { positions?: Position[] })?.positions)
+    ? (positions as unknown as { positions: Position[] }).positions
+    : [];
+
   // Calculate portfolio value (placeholder - will be enhanced when positions are implemented)
-  const positionsValue = positions?.reduce((total, position) => {
+  const positionsValue = positionsArray.reduce((total, position) => {
     // This is a simplified calculation - will be enhanced with current market prices
     return total + position.cost_basis;
-  }, 0) || 0;
+  }, 0);
 
   const totalValue = (balance?.balance_kes || 0) + (positionsValue / 100); // Convert positions from cents to KES
 
@@ -40,7 +49,7 @@ export function DashboardStats({ className = '' }: DashboardStatsProps) {
             {formatKES(positionsValue / 100)}
           </div>
           <div className="text-xs text-primary">
-            {positions?.length || 0} position(s)
+            {positionsArray.length} position(s)
           </div>
         </div>
       </div>

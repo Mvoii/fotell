@@ -6,6 +6,7 @@ import type { CreateMarketRequest } from '@/lib/api/types/admin';
 import { MARKET_CREATION_LIMITS } from '@/lib/api/types/admin';
 import { validateMarketCreation, formatLiquidityParam, parseLiquidityParam } from '@/lib/validation';
 import { Button } from '@/components/ui/button';
+import { formatTimeAgo } from '@/lib/utils';
 
 interface CreateMarketWizardProps {
   onSuccess?: (marketId: string) => void;
@@ -222,7 +223,7 @@ export function CreateMarketWizard({ onSuccess, onCancel }: CreateMarketWizardPr
                 <div>
                   <h4 className="font-medium text-primary mb-2">Closing Date</h4>
                   <p className="text-primary">
-                    {new Date(formData.closes_at).toLocaleString()}
+                    {formatTimeAgo(formData.closes_at)}
                   </p>
                 </div>
 

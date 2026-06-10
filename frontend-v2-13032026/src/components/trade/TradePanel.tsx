@@ -3,7 +3,7 @@ import type { TradePanelProps, PlaceTradeRequest } from '@/lib/api/types/api';
 import { MarketOrderForm } from './MarketOrderForm';
 import { useTrade } from '@/hooks/useTrade';
 import { TradeConfirmModal } from './TradeConfirmModal';
-import { toKES } from '@/lib/formatters';
+import { estimateCostKES } from '@/lib/formatters';
 
 /**
  * TradePanel — Market orders only.
@@ -46,7 +46,7 @@ export function TradePanel({
   const currentPrice = pendingParams 
     ? (pendingParams.outcome === 'YES' ? currentPrices.yes_price : currentPrices.no_price)
     : 0;
-  const estimatedCostKES = pendingParams ? toKES(pendingParams.shares * currentPrice) : 0;
+  const estimatedCostKES = pendingParams ? estimateCostKES(pendingParams.shares, currentPrice) : 0;
 
   return (
     <div className="bg-surface border border-subtle rounded-lg p-4 shadow-md w-full">
@@ -63,6 +63,7 @@ export function TradePanel({
         isOpen={isConfirmModalOpen}
         onClose={handleCloseModal}
         market={market}
+        currentPrices={currentPrices}
         tradeParams={pendingParams}
         estimatedCost={estimatedCostKES}
         isPending={tradeHook.isPending}

@@ -292,9 +292,12 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Position'
+                type: object
+                properties:
+                  positions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Position'
 
   /users/me/trades:
     get:
@@ -508,6 +511,50 @@ paths:
                   total:
                     type: integer
 
+/markets/{marketID}/quote:
+    get:
+      tags:
+        - Trading
+      summary: Get trade quote
+      description: |
+        Calculate how many shares you will receive for a specific budget.
+        
+        **Budget:** Must be provided in cents.
+      operationId: getQuote
+      parameters:
+        - $ref: '#/components/parameters/marketID'
+        - name: outcome
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [YES, NO]
+        - name: budget
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+            description: Budget to spend in cents
+            example: 500
+      responses:
+        '200':
+          description: Quote retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  shares_expected:
+                    type: number
+                    format: double
+                  price_per_share:
+                    type: number
+                    format: double
+                  budget_spent:
+                    type: integer
+                    format: int64
+
   # ============================================================================
   # TRADING
   # ============================================================================
@@ -518,7 +565,8 @@ paths:
         - Trading
       summary: Place a trade
       description: |
-        Buy shares on YES or NO outcome for a market.
+        Buy shares on YES or NO outcome. You may provide either `budget` (to spend a fixed amount) 
+        OR `shares` (to buy a specific amount). Providing both will result in an error.
         
         **Requirements:**
         - Market must be OPEN
@@ -551,9 +599,7 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - outcome
-                - shares
+              required: [outcome]
               properties:
                 outcome:
                   type: string
@@ -564,8 +610,13 @@ paths:
                   type: number
                   format: double
                   minimum: 1
-                  description: Number of shares to buy
+                  description: Number of shares to buy (optional)
                   example: 10.0
+                budget_cents:
+                  type: integer
+                  format: int64
+                  description: Amount to spend in cents (optional)
+                  example: 50000
       responses:
         '201':
           description: Trade executed successfully
@@ -1086,6 +1137,92 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: List users
+      description: Retrieve a paginated list of all registered users (admin only). Password hashes are omitted.
+      operationId: listUsers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Users retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          description: Authentication required
+        '403':
+          description: Requires admin role
+
+  /admin/users/{userID}:
+    get:
+      tags:
+        - Admin
+      summary: Get user details
+      description: Retrieve detailed information about a specific user (admin only).
+      operationId: getUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/userID'
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+  /admin/users/{userID}/deactivate:
+    post:
+      tags:
+        - Admin
+      summary: Deactivate user
+      description: Deactivates a user account. Deactivated users cannot log in.
+      operationId: deactivateUser
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/userID'
+      responses:
+        '200':
+          description: User deactivated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: User deactivated successfully
 
 # ==============================================================================
 # COMPONENTS
@@ -1124,6 +1261,15 @@ components:
         format: uuid
       description: Comment UUID
       example: c3f9f2d7-8f3a-4b2d-9c1a-1234567890ab
+    userID:
+      name: userID
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: User UUID
+      example: 02104dfb-cc72-44f8-8c8d-d57ae4450493
 
   schemas:
     # ==========================================================================

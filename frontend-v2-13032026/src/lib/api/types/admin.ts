@@ -41,3 +41,33 @@ export const MARKET_CREATION_LIMITS = {
   DESCRIPTION_MAX_LENGTH: 1000,
   LIQUIDITY_PARAM_MIN: 10000, // in smallest units
 } as const;
+
+export interface AdminUser {
+  id: string;
+  email: string;
+  username: string;
+  full_name: string;
+  role: string;
+  is_active: boolean;
+  email_verified: boolean;
+  created_at: string;
+  last_login_at: string;
+}
+
+export interface AdminUsersResponse {
+  users: AdminUser[];
+  limit: number;
+  offset: number;
+}
+
+export interface SettlementStatus {
+  market_id: string;
+  question: string;
+  resolved_outcome: string;
+  resolved_at: string;
+  users_pending: number;
+  users_ready: number;
+  users_processing: number;
+  users_settled: number;
+  total_paid_cents: number;
+}

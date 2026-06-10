@@ -7,6 +7,8 @@ import { CommentsSection } from '@/components/markets/CommentsSection';
 import { TradePanel } from '@/components/trade/TradePanel';
 import { useParams } from 'next/navigation';
 import { useBalance, usePositions, useUser } from '@/hooks/useUser';
+import { useMarketTrades } from '@/hooks/useTrade';
+import type { Position } from '@/lib/api/types/api';
 import { AppShell } from '@/components/layout/AppShell';
 import PageContainer from '@/components/layout/PageContainer';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -18,6 +20,7 @@ export default function MarketDetailsPage() {
   const { data: balanceData } = useBalance();
   const { data: positions } = usePositions();
   const { data: user } = useUser();
+  const { data: tradesData } = useMarketTrades(marketId);
 
   if (isLoading) {
     return (
@@ -47,7 +50,15 @@ export default function MarketDetailsPage() {
     notFound();
   }
 
-  const userPosition = positions?.find((p) => p.market_id === marketId) ?? null;
+  // Normalise: API may return a bare array, a wrapped object, or nothing.
+  // This guards against the `positions?.find is not a function` TypeError.
+  const positionsArray: Position[] = Array.isArray(positions)
+    ? positions
+    : Array.isArray((positions as unknown as { positions?: Position[] })?.positions)
+    ? (positions as unknown as { positions: Position[] }).positions
+    : [];
+
+  const userPosition = positionsArray.find((p) => p.market_id === marketId) ?? null;
   const showTradePanel = market.status === 'OPEN';
 
   return (
@@ -59,6 +70,7 @@ export default function MarketDetailsPage() {
               <MarketDetailsCard
                 market={market}
                 prices={prices}
+                tradesTotal={tradesData?.total}
               />
               <Accordion type="single" collapsible className="rounded-xl border border-subtle bg-surface px-4 shadow-sm">
                 <AccordionItem value="trades" className="border-none">

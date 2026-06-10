@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/esiepe/fotell/amm"
-	"github.com/esiepe/fotell/api/handlers"
-	"github.com/esiepe/fotell/api/middleware"
-	"github.com/esiepe/fotell/api/repository"
-	"github.com/esiepe/fotell/api/startup"
-	"github.com/esiepe/fotell/api/workers"
+	"github.com/Mvoii/fotell/amm"
+	"github.com/Mvoii/fotell/api/handlers"
+	"github.com/Mvoii/fotell/api/middleware"
+	"github.com/Mvoii/fotell/api/repository"
+	"github.com/Mvoii/fotell/api/startup"
+	"github.com/Mvoii/fotell/api/workers"
 	"github.com/joho/godotenv"
 
 	"github.com/go-chi/chi/v5"
@@ -91,7 +91,7 @@ func main() {
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
 	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
-	userHandler := handlers.NewUserHandler(userRepo, balanceRepo)
+	userHandler := handlers.NewUserHandler(userRepo, balanceRepo, positionRepo, tradeRepo)
 	commentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
 
 	// Build router with middleware stack
@@ -143,11 +143,10 @@ func main() {
 		r.Get("/markets", marketHandler.ListMarkets)
 		r.Get("/markets/{marketID}", marketHandler.GetMarket)
 		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
-		r.Get("/markets/{marketID}/trades", marketHandler.ListMarketTrades)
+		r.Get("/markets/{marketID}/trades", tradeHandler.ListMarketTrades)
+		r.Get("/markets/{marketID}/quote", tradeHandler.GetQuote)
 
 		// public comments routes
-		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
 		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
 		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
 
@@ -190,20 +189,21 @@ func main() {
 				r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
 				r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
 
-				r.Get("/admin/settlement/status", func(w http.ResponseWriter, r *http.Request) { 
+				r.Get("/admin/settlement/status", func(w http.ResponseWriter, r *http.Request) {
 					status, err := settlementMinion.GetSettlementStatus(r.Context())
-					            if err != nil {
-									handlers.ErrorJSON(w, 500, "Failed to get settlement status", nil)
-									return
-								}
-								handlers.JSON(w, 200, map[string]interface{}{
-									"settlements": status,
-								})})
+					if err != nil {
+						handlers.ErrorJSON(w, 500, "Failed to get settlement status", nil)
+						return
+					}
+					handlers.JSON(w, 200, map[string]interface{}{
+						"settlements": status,
+					})
+				})
 
 				// User management
-				// r.Get("/admin/users", userHandler.ListUsers)
-				// r.Get("/admin/users/{userID}", userHandler.GetUser)
-				// r.Post("/admin/users/{userID}/deactivate", userHandler.DeactivateUser)
+				r.Get("/admin/users", userHandler.ListUsers)
+				r.Get("/admin/users/{userID}", userHandler.GetUser)
+				r.Post("/admin/users/{userID}/deactivate", userHandler.DeactivateUser)
 			})
 		})
 	})

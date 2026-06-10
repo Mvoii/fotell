@@ -5,140 +5,14 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
 
-	"github.com/esiepe/fotell/engine"
+	"github.com/Mvoii/fotell/engine"
 )
-
-/*
-// represents current lifecycle of teh market
-type MarketStatus int
-
-const (
-	StatusActive MarketStatus = iota
-	StatusResolved
-)
-
-const (
-	OutcomeYes = 0
-	OutcomeNo  = 1
-)
-
-var (
-	ErrMarketResolved = errors.New("market is already resolved, trading is halted")
-	ErrInvalidOutcome  = errors.New("invalid outcome: must be OutcomeYes (0) pr outcomeNo (1)")
-)
-
-// trade receipt represents an uimmutable record of a successful transaction
-type TradeReceipt struct {
-	MarketID     string
-	OutcomeIndex int
-	SharesBought decimal.Decimal
-	CostPaid     decimal.Decimal
-	NewPrices    []decimal.Decimal
-	Timestamp    time.Time
-}
-
-// binary market; a thread safe wrapper around teh lsmr
-type BinaryMarket struct {
-	mu sync.RWMutex // protects all fields below
-
-	id             string
-	question       string
-	engine         *engine.LSMREngine
-	status         MarketStatus
-	winningOutcome *int // nil until resolved
-	createdAt      time.Time
-}
-
-*/
-
-/*
-/// NewBinaryMarket init a new amm for yes/no market
-
-/// params:
-/// - id: unique id for market
-/// - question: the prediction market question
-/// - liquidityParam: teh 'b' param controlling price volatility
-
-func NewBinaryMarket(id, question string, liquidityParam decimal.Decimal) (*BinaryMarket, error) {
-	// enforce two outcomes
-	lsmrEngine, err := engine.NewLSMREngine(2, liquidityParam)
-	if err != nil {
-		return nil, fmt.Errorf("failed to init lsmr: %w", err)
-	}
-
-	return &BinaryMarket{
-		id:        id,
-		question:  question,
-		engine:    lsmrEngine,
-		status:    StatusActive,
-		createdAt: time.Now(),
-	}, nil
-}
-*/
-
-/*
-/// buy safely execs a purchase in a concurrent env
-/// it locks the market to prevent race conditions durin state mutayion
-
-func (m *BinaryMarket) Buy(outcomeIndex int, amount decimal.Decimal) (*TradeReceipt, error) {
-	// Acquire an exclusive write lock
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	// 1. Validate Market State
-	if m.status != StatusActive {
-		return nil, ErrMarketResolved
-	}
-
-	// 2. Validate Outcome Domain
-	if outcomeIndex != OutcomeYes && outcomeIndex != OutcomeNo {
-		return nil, ErrInvalidOutcome
-	}
-
-	// 3. Execute Purchase via Engine
-	// ExecutePurchase updates the quantities state and calculates new prices
-	cost, newPrices, err := m.engine.ExecutePurchase(outcomeIndex, amount)
-	if err != nil {
-		return nil, fmt.Errorf("trade execution failed: %w", err)
-	}
-
-	// 4. Generate Receipt
-	return &TradeReceipt{
-		MarketID:     m.id,
-		OutcomeIndex: outcomeIndex,
-		SharesBought: amount,
-		CostPaid:     cost,
-		NewPrices:    newPrices,
-		Timestamp:    time.Now(),
-	}, nil
-}
-
-*/
-
-/*
-/// GetPrices safely reads the current market probabilities/prices.
-/// Uses a read-lock, allowing multiple users to view prices simultaneously without blocking.
-
-func (m *BinaryMarket) GetPrices() (yesPrice, noPrice decimal.Decimal, err error) {
-	// Acquire a shared read lock
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	prices, err := m.engine.CalculatePrices()
-	if err != nil {
-		return decimal.Zero, decimal.Zero, fmt.Errorf("failed to calculate prices: %w", err)
-	}
-
-	return prices[OutcomeYes], prices[OutcomeNo], nil
-}
-
-
-*/
 
 /*
  market.go - The market struct: a thhread safe binary market
@@ -314,11 +188,11 @@ Parameters:
   - resolvedBy: the operator/admin user ID recording the result
 
 What happens here:
-  1. The outcome is recorded on the market.
-  2. Every user's RealizedPnL is computed:
-       - Winners: payout = shares × 100  (each winning share redeems at KES 100)
-       - Losers:  payout = 0
-       - PnL = payout − TotalCostBasis
+ 1. The outcome is recorded on the market.
+ 2. Every user's RealizedPnL is computed:
+    - Winners: payout = shares × 100  (each winning share redeems at KES 100)
+    - Losers:  payout = 0
+    - PnL = payout − TotalCostBasis
 
 Thread-safe: acquires write lock.
 */
@@ -371,8 +245,7 @@ func (m *Market) Resolve(outcome Outcome, resolvedBy string) error {
 	return nil
 }
 
-
-// ── Core trading operation 
+// ── Core trading operation
 
 /*
 Buy executes a purchase of shares in a binary outcome.
@@ -382,8 +255,8 @@ Parameters:
   - outcome:     BuyYES or BuyNO
   - shareAmount: number of shares to purchase (must be ≥ MinShareAmount)
   - maxCost:     slippage guard — if the computed cost exceeds this value,
-                 the trade is rejected and ErrTradeWouldExceedMaxCost is
-                 returned. Pass decimal.Zero to disable the guard.
+    the trade is rejected and ErrTradeWouldExceedMaxCost is
+    returned. Pass decimal.Zero to disable the guard.
 
 Returns a TradeReceipt on success. The receipt contains the exact KES cost
 that must be debited from the user's external balance — this layer does NOT
@@ -480,17 +353,17 @@ func (m *Market) Buy(
 
 	// Append to the immutable trade ledger
 	record := Trade{
-		ID:              tradeID,
-		MarketID:        m.id,
-		UserID:          userID,
-		Outcome:         outcome,
-		SharesBought:    shareAmount,
-		CostPaid:        cost,
-		YesPriceBefore:  yesBefore,
-		YesPriceAfter:   yesAfter,
-		NoPriceBefore:   noBefore,
-		NoPriceAfter:    noAfter,
-		Timestamp:       now,
+		ID:             tradeID,
+		MarketID:       m.id,
+		UserID:         userID,
+		Outcome:        outcome,
+		SharesBought:   shareAmount,
+		CostPaid:       cost,
+		YesPriceBefore: yesBefore,
+		YesPriceAfter:  yesAfter,
+		NoPriceBefore:  noBefore,
+		NoPriceAfter:   noAfter,
+		Timestamp:      now,
 	}
 	m.trades = append(m.trades, record)
 
@@ -528,7 +401,7 @@ func (m *Market) Buy(
 	}, nil
 }
 
-// ── Read-only queries 
+// Read-only queries
 
 /*
 GetPrices returns the current YES and NO prices.
@@ -554,7 +427,6 @@ func (m *Market) GetPrices() (*PriceQuote, error) {
 		Timestamp: time.Now().UTC(),
 	}, nil
 }
-
 
 /*
 GetUserPosition returns a copy of the calling user's position in this market.
@@ -689,4 +561,151 @@ func generateID() (string, error) {
 		return "", fmt.Errorf("crypto/rand read failed: %w", err)
 	}
 	return hex.EncodeToString(b), nil
+}
+
+/*
+GetSharesQuote calculates the exact amount of fractional shares a user can buy
+for a fixed amount of KES
+Uses mathematically closed form inverse LSMR
+*/
+func (m *Market) GetSharesForBudget(outcome BinaryOutcome, budgetKES decimal.Decimal) (decimal.Decimal, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.status != StatusOpen {
+		return decimal.Zero, fmt.Errorf("market is closed for trading")
+	}
+
+	if budgetKES.LessThanOrEqual((decimal.Zero)) {
+		return decimal.Zero, fmt.Errorf("budget must me positive")
+	}
+
+	// 1. fetch current state
+	_, b, quantities, _, err := m.engine.GetCurrentState()
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("failed to read engine state")
+	}
+
+	if len(quantities) < 2 {
+		return decimal.Zero, fmt.Errorf("invalid quantities state")
+	}
+
+	// assume buyYes use idx 0 annd buyyNo use idx 1
+	qTarget := quantities[0]
+	qOther := quantities[1]
+	if outcome == BuyNO {
+		qTarget = quantities[1]
+		qOther = quantities[0]
+	}
+
+	// 2. calculate current cost
+	currentCost, err := m.engine.CalculateCost(quantities)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("failed to vet current cost: %w", err)
+	}
+
+	// 3. formular delta_q = b * ln (e^((B + currentCost)/b) - e^(qOther/b)) - qTarget
+	// (B + currentcost)/b
+	exponent1 := budgetKES.Add(currentCost).Div(b)
+	exponent2 := qOther.Div(b)
+
+	// perf ln using float64 for exp/log
+	e1, _ := exponent1.Float64()
+	e2, _ := exponent2.Float64()
+
+	val := math.Exp(e1) - math.Exp(e2)
+	if val <= 0 {
+		return decimal.Zero, fmt.Errorf("budget insuficient or math oveflow")
+	}
+
+	sharesFloat := b.InexactFloat64()*math.Log(val) - qTarget.InexactFloat64()
+
+	return decimal.NewFromFloat(sharesFloat), nil
+
+	/* idx := outcome.ToOutcomeIndex()
+
+	// extract quants and b param safely as float64 for other ops
+	bFloat, _ := m.engine.B.Float64()
+	cashFloat, _ := cashKES.Float64()
+	quantities := m.engine.GetQuantities()
+
+	// log sum exp protection against floats overflows during prob calculations.
+	var maxQ float64
+	for _, q := range quantities {
+		qF, _ := q.Float64()
+		if qF > maxQ {
+			maxQ = qF
+		}
+	}
+
+	var sumExp float64
+	expValues := make([]float64, len(quantities))
+	for i, q := range quantities {
+		qF, _ := q.Float64()
+		expValues[i] = math.Exp((qF - maxQ) / bFloat)
+		sumExp += expValues[i]
+	}
+
+	// current instantaneous prob of targeted outcome
+	pkFloat := expValues[idx] / sumExp
+	if pkFloat <= 0 {
+		return decimal.Zero, fmt.Errorf("Invalid instantaneous prob state")
+	}
+
+	// inverse LSMR: delta_q = b * ln(1 + (exp(deta_c / b) - 1) / P_k)
+	expTerm := math.Exp(cashFloat / bFloat)
+	logArg := 1.0 + (expTerm-1.0)/pkFloat
+	if logArg <= 0 {
+		return decimal.Zero, fmt.Errorf("numerical instability encountered in inverse func calc")
+	}
+
+	deltaQ := bFloat * math.Log(logArg)
+
+	return decimal.NewFromFloat(deltaQ), nil */
+
+}
+
+/*
+GetBuyQuote simulates a purchase and returns the exact cost in KES required
+to buy the requested shares at the current market probability.
+
+Thread-safe: acquires a read lock so it doesn't block concurrent trades.
+*/
+func (m *Market) GetBuyQuote(outcome BinaryOutcome, shareAmount decimal.Decimal) (decimal.Decimal, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if m.status != StatusOpen {
+		return decimal.Zero, fmt.Errorf("market is not open for trading")
+	}
+
+	// Calculate marginal cost using LSMR engine without mutating state
+	projectedCost, err := m.engine.CalculatePurchaseCost(outcome.ToOutcomeIndex(), shareAmount)
+	if err != nil {
+		return decimal.Zero, fmt.Errorf("failed to project trade cost: %w", err)
+	}
+
+	return projectedCost, nil
+}
+
+/*
+GetQuantities returns a copy of teh current lsmr quant vectors
+
+thread safe: acquires read lock
+*/
+
+func (m *Market) GetQuantities() ([]decimal.Decimal, error) {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	_, _, quantities, _, err := m.engine.GetCurrentState()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get engine quants")
+	}
+
+	// return a deep copy to ensure immutablitty outside the pack
+	copyQuants := make([]decimal.Decimal, len(quantities))
+	copy(copyQuants, quantities)
+
+	return copyQuants, nil
 }

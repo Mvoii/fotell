@@ -58,7 +58,22 @@ export function usePositions(options?: { enabled?: boolean }) {
     queryKey: queryKeys.user.positions(),
     queryFn: async () => {
       const { data } = await userService.getPositions();
-      return data;
+      
+      const positionsArray: Position[] = Array.isArray(data)
+        ? data
+        : Array.isArray((data as unknown as { positions?: Position[] })?.positions)
+        ? (data as unknown as { positions: Position[] }).positions
+        : [];
+
+      // Normalize: Go's shopspring/decimal serializes as JSON strings
+      // (e.g. "3589" not 3589). Coerce to numbers so arithmetic works.
+      return positionsArray.map((p) => ({
+        ...p,
+        yes_shares: Number(p.yes_shares),
+        no_shares: Number(p.no_shares),
+        cost_basis: Number(p.cost_basis),
+        realized_pnl: p.realized_pnl != null ? Number(p.realized_pnl) : null,
+      }));
     },
     enabled,
     retry: (failureCount, error) => {
@@ -78,7 +93,13 @@ export function useTrades(limit = 50, offset = 0, options?: { enabled?: boolean 
     queryKey: queryKeys.user.trades({ limit, offset }),
     queryFn: async () => {
       const { data } = await userService.getTrades(limit, offset);
-      return data;
+      // Normalize: Go's shopspring/decimal serializes shares as JSON strings
+      const trades = (data?.trades ?? []).map((t) => ({
+        ...t,
+        shares: Number(t.shares),
+        cost_paid: Number(t.cost_paid),
+      }));
+      return { ...data, trades };
     },
     enabled,
     retry: (failureCount, error) => {

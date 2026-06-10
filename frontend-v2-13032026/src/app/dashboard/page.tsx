@@ -1,105 +1,45 @@
 "use client";
 
-import React from 'react';
-import { BalanceCard } from '@/components/dashboard/BalanceCard';
-import { PositionsList } from '@/components/dashboard/PositionsList';
-import { TradesList } from '@/components/dashboard/TradesList';
-import { DashboardStats } from '@/components/dashboard/DashboardStats';
-import { AppShell } from '@/components/layout/AppShell';
-import PageContainer from '@/components/layout/PageContainer';
-import { useNavigation } from '@/hooks/useNavigation';
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
+import { AppShell } from '@/components/layout/AppShell';
 
+/**
+ * /dashboard — admin-only landing page.
+ *
+ * Regular users are redirected to /portfolio (their primary hub).
+ * Admin users are redirected to /admin (system & market management).
+ *
+ * This page acts as an intelligent router rather than rendering content
+ * directly, keeping the UX clean and role-appropriate.
+ */
 export default function DashboardPage() {
-  const { activeTab } = useNavigation();
-  const { data: user } = useUser();
+  const router = useRouter();
+  const { data: user, isLoading } = useUser();
 
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      router.replace('/auth/login');
+      return;
+    }
+    if (user.role === 'ADMIN') {
+      router.replace('/admin');
+    } else {
+      router.replace('/portfolio');
+    }
+  }, [user, isLoading, router]);
+
+  // Show a brief loading state while we determine the destination
   return (
-    <AppShell
-      isAuthenticated={!!user}
-      topNavProps={{
-        showSearch: false,
-      }}
-      bottomNavProps={{
-        // activeTab: 'home',
-      }}
-    >
-      <PageContainer maxWidth="7xl" inAppShell>
-        <div className="mb-8">
-          <h1 className="heading-xl text-primary mb-2">Dashboard</h1>
-          <p className="text-primary">
-            Manage your portfolio and track your trading activity
-          </p>
+    <AppShell isAuthenticated={!!user}>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center space-y-3">
+          <div className="w-6 h-6 border-2 border-accent-blue border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-secondary text-sm">Redirecting…</p>
         </div>
-
-        {/* Stats Overview */}
-        <div className="mb-8">
-          <DashboardStats />
-        </div>
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Balance Card - Takes 1 column on desktop */}
-          <div className="lg:col-span-1">
-            <BalanceCard />
-          </div>
-
-          {/* Positions and Trades - Take 2 columns on desktop */}
-          <div className="lg:col-span-2 space-y-6">
-            <PositionsList />
-            <TradesList />
-          </div>
-        </div>
-
-        {/* Additional Information */}
-        <div className="mt-12 bg-surface border border-subtle rounded-lg p-6">
-          <h2 className="heading-lg text-primary mb-4">Portfolio Overview</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="heading-md text-primary mb-3">Getting Started</h3>
-              <ul className="space-y-2 text-sm text-primary">
-                <li className="flex items-start">
-                  <span className="text-primary mr-2">•</span>
-                  Browse markets to find prediction opportunities
-                </li>
-                <li className="flex items-start">
-                  <span className="text-primary mr-2">•</span>
-                  Buy YES or NO shares based on your predictions
-                </li>
-                <li className="flex items-start">
-                  <span className="text-primary mr-2">•</span>
-                  Monitor your positions and track performance
-                </li>
-                <li className="flex items-start">
-                  <span className="text-primary mr-2">•</span>
-                  Collect payouts when markets resolve
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h3 className="heading-md text-primary mb-3">Account Features</h3>
-              <ul className="space-y-2 text-sm text-primary">
-                <li className="flex items-start">
-                  <span className="text-success mr-2">✓</span>
-                  Real-time balance tracking
-                </li>
-                <li className="flex items-start">
-                  <span className="text-success mr-2">✓</span>
-                  Position tracking
-                </li>
-                <li className="flex items-start">
-                  <span className="text-success mr-2">✓</span>
-                  Trade history
-                </li>
-                <li className="flex items-start">
-                  <span className="text-warning mr-2">⚠</span>
-                  Advanced analytics (coming soon)
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </PageContainer>
+      </div>
     </AppShell>
   );
 }

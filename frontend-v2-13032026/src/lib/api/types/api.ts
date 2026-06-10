@@ -101,10 +101,10 @@ export interface TradeReceipt {
   trade_id: string;
   outcome: 'YES' | 'NO';
   shares: number;
-  cost_paid: number;     // cents
-  avg_price: number;
+  cost_paid: number;      // cents (int64 from API) — actual LSMR marginal cost
+  avg_price: number;      // cents per share (= cost_paid / shares)
   position: Position;
-  balance_after: number;  // cents
+  balance_after: number;  // cents (int64 from API)
   timestamp: string;
 }
 
@@ -134,7 +134,7 @@ export interface PositionWithMarket extends Position {
   market?: Market;
 }
 
-// ── User / Dashboard ────────────────────────────────────────────────────
+// ── User ───────────────────────────────────────────────────────────────
 
 export interface BalanceResponse {
   balance_smallest_unit: number;  // cents
@@ -151,19 +151,9 @@ export interface MarketTradesResponse {
   total: number;
 }
 
-export interface PortfolioSummary {
-  total_positions: number;
-  total_invested: number;   // cents
-  total_pnl: number;        // cents
-  active_markets: number;
-}
-
-export interface DashboardStats {
-  balance: BalanceResponse;
-  portfolio: PortfolioSummary;
-  recent_trades: Trade[];
-  open_positions: PositionWithMarket[];
-}
+// NOTE: PortfolioSummary and DashboardStats have been intentionally removed.
+// These composite types have no corresponding backend endpoints.
+// Derive equivalent stats client-side from Position[] and UserTradesResponse.
 
 // ── Comments ────────────────────────────────────────────────────────────
 

@@ -3,6 +3,7 @@
 import React from 'react';
 import type { Market } from '@/lib/api/types/api';
 import { Button } from '@/components/ui/button';
+import { formatTimeAgo } from '@/lib/utils';
 
 interface AdminMarketTableProps {
   markets: Market[];
@@ -65,10 +66,7 @@ export function AdminMarketTable({
               </td>
               <td className="py-3 px-2 text-primary">{market.status}</td>
               <td className="py-3 px-2 text-primary">
-                {new Date(market.closes_at).toLocaleString('en-KE', {
-                  dateStyle: 'medium',
-                  timeStyle: 'short',
-                })}
+                {formatTimeAgo(market.closes_at)}
               </td>
               <td className="py-3 px-2 text-primary">{market.resolved_outcome || '-'}</td>
               <td className="py-3 px-2">

@@ -107,8 +107,6 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
   const isOwnComment = currentUserId === comment.user_id;
 
   const handleVote = (voteType: 'UPVOTE' | 'DOWNVOTE') => {
-    // If clicking the same vote type, untoggle by sending NONE (assumed API behavior)
-    const newVote = comment.current_user_vote === voteType ? 'NONE' : voteType;
     // We send UPVOTE or DOWNVOTE based on the API spec. If it only accepts UPVOTE/DOWNVOTE, we might not be able to untoggle.
     // Assuming we can send the voteType directly for now.
     voteComment.mutate({ commentId: comment.id, data: { vote_type: voteType } });
@@ -236,14 +234,11 @@ function CommentItem({ comment, currentUserId }: { comment: Comment; currentUser
       )}
 
       {/* Replies Thread */}
-      {showReplies && repliesData?.comments && (
+      {showReplies && repliesData?.comments && repliesData.comments.length > 0 && (
         <div className="mt-2 pl-6 ml-2 border-l border-subtle space-y-0">
           {repliesData.comments.map((reply) => (
             <CommentItem key={reply.id} comment={reply} currentUserId={currentUserId} />
           ))}
-          {repliesData.comments.length === 0 && (
-            <p className="text-xs text-muted-foreground py-2">No replies yet.</p>
-          )}
         </div>
       )}
     </div>

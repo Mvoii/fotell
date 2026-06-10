@@ -331,6 +331,13 @@ func (w *SettlementMinion) processSettlement(
 			market_resolved_at, 
 			execution_batch_id
 		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, gen_random_uuid())
+		ON CONFLICT (user_id, market_id) DO UPDATE SET
+			trade_count = settlement_executed.trade_count + EXCLUDED.trade_count,
+			total_shares_won = settlement_executed.total_shares_won + EXCLUDED.total_shares_won,
+			total_cost_basis_cents = settlement_executed.total_cost_basis_cents + EXCLUDED.total_cost_basis_cents,
+			total_payout_cents = settlement_executed.total_payout_cents + EXCLUDED.total_payout_cents,
+			pnl_cents = settlement_executed.pnl_cents + EXCLUDED.pnl_cents,
+			balance_after_cents = EXCLUDED.balance_after_cents
 		RETURNING id`,
 		marketID,
 		userID,
