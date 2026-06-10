@@ -18,16 +18,18 @@ export function ProbabilityBar({ yesPrice, noPrice, showLabels = false }: Probab
 
   return (
     <>
-      <div className="flex items-center justify-between mb-1">
-        <span className="font-mono text-sm font-bold text-yes-strong flex items-center gap-1">
-          {yesPrice !== null ? `${Math.round(yesPrice)}%` : '--'}
-          {/* Optional: add checkmark or up icon */}
-        </span>
-        <span className="font-mono text-sm font-bold text-no-strong flex items-center gap-1">
-          {noPrice !== null ? `${Math.round(noPrice)}%` : '--'}
-          {/* Optional: add cross or down icon */}
-        </span>
-      </div>
+      {showLabels && (
+        <div className="flex items-center justify-between mb-1">
+          <span className="font-mono text-sm font-bold text-yes-strong flex items-center gap-1">
+            {yesLabel}
+            {/* Optional: add checkmark or up icon */}
+          </span>
+          <span className="font-mono text-sm font-bold text-no-strong flex items-center gap-1">
+            {noLabel}
+            {/* Optional: add cross or down icon */}
+          </span>
+        </div>
+      )}
       <div className="relative h-2 w-full rounded-full border border-subtle overflow-hidden">
         {/* NO background: red, full width */}
         <div className="absolute left-0 top-0 h-full w-full rounded-full bg-red-500" />
@@ -38,7 +40,7 @@ export function ProbabilityBar({ yesPrice, noPrice, showLabels = false }: Probab
         />
         <div className="absolute left-1/2 top-0 h-full w-0.5 bg-surface" />
       </div>
-    </div>
+    </>
   );
 }
 
