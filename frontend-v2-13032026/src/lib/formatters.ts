@@ -68,3 +68,9 @@ export function estimateCostKES(shares: number, priceCents: number): number {
 export function resolutionPayoutKES(shares: number): number {
   return shares; // 1 KES per share
 }
+
+/** Format price as a multiplier (e.g. 25 -> "4.00x"). */
+export function multiplier(price: number | null): string {
+  if (price === null || price <= 0) return '0.0x';
+  return `${(100 / price).toFixed(2)}x`;
+}

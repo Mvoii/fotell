@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import type { Market } from '@/lib/api/types/api';
+import type { Market, MarketPrices } from '@/lib/api/types/api';
 
 import ProbabilityBar from '@/components/markets/ProbabilityBar';
 import { useMarketTrades } from '@/hooks/useTrade';
+import { multiplier } from '@/lib/formatters';
 
 /** Fetches and displays the trade count for a single market. */
 function MarketTradeCount({ marketId }: { marketId: string }) {
@@ -20,6 +21,7 @@ function MarketTradeCount({ marketId }: { marketId: string }) {
 
 interface MarketsListProps {
   markets: Market[];
+  prices?: Record<string, MarketPrices>;
   total: number;
   limit: number;
   offset: number;
@@ -28,7 +30,7 @@ interface MarketsListProps {
   status: string;
 }
 
-export function MarketsList({ markets, total, limit, offset, onPageChange, onFilterChange, status }: MarketsListProps) {
+export function MarketsList({ markets, prices, total, limit, offset, onPageChange, onFilterChange, status }: MarketsListProps) {
   const pageCount = Math.ceil(total / limit);
   const currentPage = Math.floor(offset / limit) + 1;
 
@@ -53,7 +55,12 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
         <div className="text-muted-foreground text-center py-12">No markets found.</div>
       ) : (
         <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {markets.map((market) => (
+          {markets.map((market) => {
+            const marketPrices = prices?.[market.id];
+            const yesPrice = marketPrices?.yes_price ?? market.yes_price;
+            const noPrice = marketPrices?.no_price ?? market.no_price;
+
+            return (
             <li
               key={market.id}
               className="group bg-surface border border-subtle rounded-xl p-5 shadow-sm hover:border-active hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col gap-3"
@@ -67,15 +74,14 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
               <div className="flex items-center justify-between">
                 {/* Status badge — top left */}
                 <span
-                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                    market.status === 'OPEN'
+                  className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${market.status === 'OPEN'
                       ? 'bg-yes-dim text-yes-strong border-[rgba(0,200,83,0.3)]'
                       : market.status === 'PENDING'
                         ? 'bg-[rgba(255,152,0,0.1)] text-warning border-[rgba(255,152,0,0.3)]'
                         : market.status === 'CLOSED'
                           ? 'bg-[rgba(139,146,165,0.1)] text-muted-foreground border-[rgba(139,146,165,0.3)]'
                           : 'bg-accent-blue-dim text-primary border-[rgba(33,150,243,0.3)]'
-                  }`}
+                    }`}
                 >
                   {market.status}
                 </span>
@@ -95,8 +101,58 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
                 {market.question}
               </p>
 
-              {/* Single probability bar */}
-              <ProbabilityBar yesPrice={market.yes_price} noPrice={market.no_price} />
+              {/* Probability section */}
+              <div className="flex flex-col gap-1.5 mt-1">
+                <div className="flex items-end justify-between">
+                  <div className="flex flex-col items-start">
+                    <span className="text-2xl font-extrabold font-mono leading-none text-yes-strong">
+                      {yesPrice !== null ? `${Math.round(yesPrice)}%` : '--'}
+                    </span>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
+                      Yes
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end">
+                    <span className="text-2xl font-extrabold font-mono leading-none text-no-strong">
+                      {noPrice !== null ? `${Math.round(noPrice)}%` : '--'}
+                    </span>
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
+                      No
+                    </span>
+                  </div>
+                </div>
+                <ProbabilityBar yesPrice={yesPrice} noPrice={noPrice} />
+              </div>
+
+              {/* ── BUY YES / BUY NO pills */}
+              {market.status === 'OPEN' && (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      router.push(`/markets/${market.id}?outcome=YES`);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full border border-[rgba(0,200,83,0.4)] bg-yes-dim text-yes-strong text-[11px] font-bold hover:bg-[rgba(0,200,83,0.15)] transition-colors duration-150"
+                    aria-label={`Buy YES on market: ${market.question}`}
+                  >
+                    BUY YES
+                    <span className="font-mono opacity-80">{multiplier(yesPrice)}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={e => {
+                      e.stopPropagation();
+                      router.push(`/markets/${market.id}?outcome=NO`);
+                    }}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-full border border-[rgba(255,23,68,0.35)] bg-no-dim text-no-strong text-[11px] font-bold hover:bg-[rgba(255,23,68,0.12)] transition-colors duration-150"
+                    aria-label={`Buy NO on market: ${market.question}`}
+                  >
+                    BUY NO
+                    <span className="font-mono opacity-80">{multiplier(noPrice)}</span>
+                  </button>
+                </div>
+              )}
 
               {/* Footer: liquidity (left) + trade count (right) */}
               <div className="flex items-center justify-between pt-1 border-t border-subtle">
@@ -108,7 +164,7 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
                 <MarketTradeCount marketId={market.id} />
               </div>
             </li>
-          ))}
+          )})}
         </ul>
       )}
       {pageCount > 1 && (
@@ -139,11 +195,10 @@ export function MarketsList({ markets, total, limit, offset, onPageChange, onFil
                 ) : (
                   <button
                     key={p}
-                    className={`w-8 h-8 rounded-md text-sm font-medium transition ${
-                      p === currentPage
+                    className={`w-8 h-8 rounded-md text-sm font-medium transition ${p === currentPage
                         ? 'bg-accent-blue text-white border border-accent-blue shadow-sm'
                         : 'border border-subtle text-muted-foreground bg-transparent hover:bg-accent-blue-dim hover:text-primary'
-                    }`}
+                      }`}
                     onClick={() => onPageChange?.((p as number - 1) * limit)}
                     aria-current={p === currentPage ? 'page' : undefined}
                   >
