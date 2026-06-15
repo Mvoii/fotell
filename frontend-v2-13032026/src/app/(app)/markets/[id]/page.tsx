@@ -60,11 +60,79 @@ export default function MarketDetailsPage() {
 
   const userPosition = positionsArray.find((p) => p.market_id === marketId) ?? null;
   const showTradePanel = market.status === 'OPEN';
+  const isResolved = market.status === 'RESOLVED';
+  const isClosed   = market.status === 'CLOSED';
 
   return (
     <AppShell isAuthenticated={!!user}>
       <PageContainer maxWidth="xl" inAppShell>
         <div className="w-full flex flex-col gap-6 pt-2 pb-8">
+
+          {/* ── RESOLVED / CLOSED SETTLEMENT BANNER ──────────────────────────── */}
+          {(isResolved || isClosed) && (
+            <div
+              className={`flex items-center gap-4 rounded-2xl border px-5 py-4 shadow-sm ${
+                isResolved && market.resolved_outcome === 'YES'
+                  ? 'bg-yes-dim border-[rgba(0,200,83,0.3)]'
+                  : isResolved && market.resolved_outcome === 'NO'
+                  ? 'bg-no-dim border-[rgba(255,23,68,0.25)]'
+                  : 'bg-surface border-subtle'
+              }`}
+              role="status"
+              aria-label="Market settlement status"
+            >
+              {/* Icon */}
+              <span
+                className={`flex-shrink-0 flex items-center justify-center w-9 h-9 rounded-full ${
+                  isResolved && market.resolved_outcome === 'YES'
+                    ? 'bg-[rgba(0,200,83,0.15)] text-yes-strong'
+                    : isResolved && market.resolved_outcome === 'NO'
+                    ? 'bg-[rgba(255,23,68,0.1)] text-no-strong'
+                    : 'bg-[rgba(139,146,165,0.12)] text-muted-foreground'
+                }`}
+              >
+                {isResolved ? (
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.6" />
+                    <path d="M6 10.5l3 3 5-5.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <circle cx="10" cy="10" r="9" stroke="currentColor" strokeWidth="1.6" />
+                    <path d="M10 6v4.5l3 1.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                )}
+              </span>
+
+              {/* Text */}
+              <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                <span className="text-sm font-semibold text-primary">
+                  {isResolved
+                    ? `Market resolved — ${market.resolved_outcome ?? 'outcome pending'}`
+                    : 'Market closed — awaiting resolution'}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {isResolved
+                    ? 'Payouts are being processed for winning positions.'
+                    : 'Trading has ended. The outcome will be announced shortly.'}
+                </span>
+              </div>
+
+              {/* Outcome pill (resolved only) */}
+              {isResolved && market.resolved_outcome && (
+                <span
+                  className={`flex-shrink-0 text-sm font-extrabold font-mono px-3 py-1 rounded-full border ${
+                    market.resolved_outcome === 'YES'
+                      ? 'text-yes-strong border-[rgba(0,200,83,0.4)] bg-yes-dim'
+                      : 'text-no-strong border-[rgba(255,23,68,0.3)] bg-no-dim'
+                  }`}
+                >
+                  {market.resolved_outcome}
+                </span>
+              )}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className={`flex flex-col gap-6 ${showTradePanel ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
               <MarketDetailsCard

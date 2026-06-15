@@ -107,7 +107,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                 <div className="flex items-end justify-between">
                   <div className="flex flex-col items-start">
                     <span className="text-2xl font-extrabold font-mono leading-none text-yes-strong">
-                      {yesPrice !== null ? `${Math.round(yesPrice)}%` : '--'}
+                      {Number.isFinite(yesPrice) ? `${Math.round(yesPrice as number)}%` : '--'}
                     </span>
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                       Yes
@@ -115,7 +115,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-2xl font-extrabold font-mono leading-none text-no-strong">
-                      {noPrice !== null ? `${Math.round(noPrice)}%` : '--'}
+                      {Number.isFinite(noPrice) ? `${Math.round(noPrice as number)}%` : '--'}
                     </span>
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                       No

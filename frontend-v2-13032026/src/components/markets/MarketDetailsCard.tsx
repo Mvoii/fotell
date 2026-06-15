@@ -38,8 +38,8 @@ const STATUS_DOT: Record<string, string> = {
 export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetailsCardProps) {
   const yesPrice  = prices?.yes_price  ?? market.yes_price;
   const noPrice   = prices?.no_price   ?? market.no_price;
-  const yesLabel  = yesPrice !== null ? `${Math.round(yesPrice)}%`  : '--';
-  const noLabel   = noPrice  !== null ? `${Math.round(noPrice)}%`   : '--';
+  const yesLabel  = Number.isFinite(yesPrice) ? `${Math.round(yesPrice as number)}%` : '--';
+  const noLabel   = Number.isFinite(noPrice)  ? `${Math.round(noPrice  as number)}%` : '--';
   const yesMult   = multiplier(yesPrice);
   const noMult    = multiplier(noPrice);
   const isResolved = market.status === 'RESOLVED';
@@ -183,17 +183,22 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
           </span>
         </div>
 
-        {/* Trades count OR resolved outcome badge */}
+        {/* Trades count OR resolved outcome badge + payout note */}
         {market.resolved_outcome ? (
-          <span
-            className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
-              market.resolved_outcome === 'YES'
-                ? 'text-yes-strong border-[rgba(0,200,83,0.4)] bg-yes-dim'
-                : 'text-no-strong border-[rgba(255,23,68,0.3)] bg-no-dim'
-            }`}
-          >
-            {market.resolved_outcome}
-          </span>
+          <div className="flex flex-col items-end gap-0.5">
+            <span
+              className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
+                market.resolved_outcome === 'YES'
+                  ? 'text-yes-strong border-[rgba(0,200,83,0.4)] bg-yes-dim'
+                  : 'text-no-strong border-[rgba(255,23,68,0.3)] bg-no-dim'
+              }`}
+            >
+              {market.resolved_outcome}
+            </span>
+            <span className="text-[10px] text-muted-foreground font-medium">
+              Awaiting Payout
+            </span>
+          </div>
         ) : tradesTotal !== undefined ? (
           <span className="text-xs text-muted-foreground font-mono">
             {tradesTotal.toLocaleString()}&nbsp;trades
