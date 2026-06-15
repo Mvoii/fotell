@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Bell, Settings, LogOut, Menu } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useLogout } from '@/hooks/useLogout';
 import { cn } from '@/lib/utils';
 
 interface TopNavProps {
@@ -22,6 +23,7 @@ export function TopNav({
 }: TopNavProps) {
   const { data: user } = useUser();
   const { mobileMenuOpen, toggleMobileMenu } = useNavigation();
+  const { logout, loading: logoutLoading } = useLogout();
 
   const handleMenuToggle = () => {
     if (onMenuToggle) {
@@ -112,13 +114,11 @@ export function TopNav({
 
                 {/* Sign out - Desktop only */}
                 <button
-                  className="hidden lg:flex p-2 rounded-md hover:bg-muted transition-colors"
+                  className="hidden lg:flex p-2 rounded-md hover:bg-muted transition-colors disabled:opacity-50"
                   title="Sign out"
                   aria-label="Sign out"
-                  onClick={() => {
-                    // TODO: Implement logout logic
-                    console.log('Logout clicked');
-                  }}
+                  onClick={logout}
+                  disabled={logoutLoading}
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
