@@ -40,8 +40,7 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
   const noPrice   = prices?.no_price   ?? market.no_price;
   const yesLabel  = Number.isFinite(yesPrice) ? `${Math.round(yesPrice as number)}%` : '--';
   const noLabel   = Number.isFinite(noPrice)  ? `${Math.round(noPrice  as number)}%` : '--';
-  const yesMult   = multiplier(yesPrice);
-  const noMult    = multiplier(noPrice);
+
   const isResolved = market.status === 'RESOLVED';
   const dotColor  = STATUS_DOT[market.status] ?? 'bg-[#8B92A5]';
 
@@ -147,7 +146,6 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
           >
             <span className="text-sm font-semibold text-yes-strong">Yes</span>
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-xs text-muted-foreground font-mono">{yesMult}</span>
               <span className="text-sm font-bold font-mono text-yes-strong px-2.5 py-0.5 rounded-full bg-[rgba(0,200,83,0.15)] border border-[rgba(0,200,83,0.3)]">
                 {yesLabel}
               </span>
@@ -161,7 +159,6 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
           >
             <span className="text-sm font-semibold text-no-strong">No</span>
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-xs text-muted-foreground font-mono">{noMult}</span>
               <span className="text-sm font-bold font-mono text-no-strong px-2.5 py-0.5 rounded-full bg-[rgba(255,23,68,0.1)] border border-[rgba(255,23,68,0.25)]">
                 {noLabel}
               </span>

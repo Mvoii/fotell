@@ -6,7 +6,7 @@ import type { Market, MarketPrices } from '@/lib/api/types/api';
 
 import ProbabilityBar from '@/components/markets/ProbabilityBar';
 import { useMarketTrades } from '@/hooks/useTrade';
-import { multiplier } from '@/lib/formatters';
+
 import { formatTimeAgo } from '@/lib/utils';
 
 /** Fetches and displays the trade count for a single market. */
@@ -138,7 +138,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                     aria-label={`Buy YES on market: ${market.question}`}
                   >
                     BUY YES
-                    <span className="font-mono opacity-80">{multiplier(yesPrice)}</span>
+                    <span className="font-mono opacity-80">{yesPrice !== null ? `${Math.round(yesPrice as number)}%` : '--'}</span>
                   </button>
                   <button
                     type="button"
@@ -150,7 +150,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                     aria-label={`Buy NO on market: ${market.question}`}
                   >
                     BUY NO
-                    <span className="font-mono opacity-80">{multiplier(noPrice)}</span>
+                    <span className="font-mono opacity-80">{noPrice !== null ? `${Math.round(noPrice as number)}%` : '--'}</span>
                   </button>
                 </div>
               )}
