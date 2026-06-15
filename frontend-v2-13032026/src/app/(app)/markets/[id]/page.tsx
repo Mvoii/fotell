@@ -5,7 +5,8 @@ import { MarketDetailsCard } from '@/components/markets/MarketDetailsCard';
 import { MarketTradesList } from '@/components/markets/MarketTradesList';
 import { CommentsSection } from '@/components/markets/CommentsSection';
 import { TradePanel } from '@/components/trade/TradePanel';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
 import { useBalance, usePositions, useUser } from '@/hooks/useUser';
 import { useMarketTrades } from '@/hooks/useTrade';
 import type { Position } from '@/lib/api/types/api';
@@ -15,8 +16,36 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 
 export default function MarketDetailsPage() {
   const routeParams = useParams();
+  const searchParams = useSearchParams();
   const marketId = typeof routeParams.id === 'string' ? routeParams.id : '';
   const { market, prices, isLoading, isError, error, refetch } = useMarketDetails(marketId);
+
+  // Read ?outcome=YES|NO from query string (set by BUY YES/NO buttons on MarketsList)
+  const outcomeParam = searchParams.get('outcome');
+  const defaultOutcome: 'YES' | 'NO' | undefined =
+    outcomeParam === 'YES' || outcomeParam === 'NO' ? outcomeParam : undefined;
+
+  // Auto-scroll to trade panel when arriving via ?outcome query param
+  useEffect(() => {
+    if (!defaultOutcome) return;
+    const panel = document.getElementById('trade-panel');
+    if (panel) {
+      const rect = panel.getBoundingClientRect();
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const targetScrollY = rect.top + scrollTop;
+      const currentScrollY = scrollTop;
+      
+      // Reduce the scroll amount by 30% (scrolling 70% of the distance)
+      const distance = targetScrollY - currentScrollY;
+      const reducedDistance = distance * 0.7;
+      const finalScrollY = currentScrollY + reducedDistance;
+
+      window.scrollTo({
+        top: finalScrollY,
+        behavior: 'smooth',
+      });
+    }
+  }, [defaultOutcome]);
   const { data: balanceData } = useBalance();
   const { data: positions } = usePositions();
   const { data: user } = useUser();
@@ -160,12 +189,13 @@ export default function MarketDetailsPage() {
 
             {/* Trading panel only for OPEN markets */}
             {showTradePanel && (
-              <div className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
+              <div id="trade-panel" className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
                 <TradePanel
                   market={market}
                   currentPrices={{ yes_price: market.yes_price ?? 0, no_price: market.no_price ?? 0 }}
                   userBalance={balanceData?.balance_smallest_unit ?? null}
                   userPosition={userPosition}
+                  defaultOutcome={defaultOutcome}
                 />
               </div>
             )}

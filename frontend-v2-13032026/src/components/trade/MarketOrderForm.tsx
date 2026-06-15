@@ -12,12 +12,13 @@ export function MarketOrderForm({
   userPosition,
   onSubmit,
   tradeHook,
+  defaultOutcome = 'YES',
 }: MarketOrderFormProps) {
   void market; // referenced via MarketOrderFormProps but not used directly in JSX yet
 
   // ── State
   const [side, setSide] = React.useState<'BUY' | 'SELL'>('BUY');
-  const [outcome, setOutcome] = React.useState<'YES' | 'NO'>('YES');
+  const [outcome, setOutcome] = React.useState<'YES' | 'NO'>(defaultOutcome);
   const [amountInput, setAmountInput] = React.useState<string>('');
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 

@@ -206,6 +206,7 @@ export interface MarketOrderFormProps {
   userPosition: Position | null;
   onSubmit: (params: PlaceTradeRequest) => void;
   tradeHook: ReturnType<typeof import('@/hooks/useTrade').useTrade>;
+  defaultOutcome?: 'YES' | 'NO';
 }
 
 export interface TradePanelProps {
