@@ -2,11 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Bell, Settings, LogOut, Menu } from 'lucide-react';
+import { Settings, LogOut, Menu } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useLogout } from '@/hooks/useLogout';
 import { cn } from '@/lib/utils';
+import { NotificationDropdown } from './NotificationDropdown';
 
 interface TopNavProps {
   transparent?: boolean;
@@ -78,14 +79,7 @@ export function TopNav({
           {user ? (
             <>
               {/* Notifications - Only for authenticated users */}
-              <button
-                className="p-2 rounded-md hover:bg-muted transition-colors relative"
-                aria-label="Notifications"
-                title="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
-              </button>
+              <NotificationDropdown />
 
               {/* User menu */}
               <div className="flex items-center gap-2">
