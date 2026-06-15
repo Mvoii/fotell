@@ -52,11 +52,11 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
           <option value="RESOLVED">Resolved</option>
         </select>
       </div>
-      {markets.length === 0 ? (
+      {(markets ?? []).length === 0 ? (
         <div className="text-muted-foreground text-center py-12">No markets found.</div>
       ) : (
         <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {markets.map((market) => {
+          {(markets ?? []).map((market) => {
             const marketPrices = prices?.[market.id];
             const yesPrice = marketPrices?.yes_price ?? market.yes_price;
             const noPrice = marketPrices?.no_price ?? market.no_price;
