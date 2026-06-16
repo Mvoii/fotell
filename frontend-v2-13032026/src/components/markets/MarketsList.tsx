@@ -6,7 +6,7 @@ import type { Market, MarketPrices } from '@/lib/api/types/api';
 
 import ProbabilityBar from '@/components/markets/ProbabilityBar';
 import { useMarketTrades } from '@/hooks/useTrade';
-import { multiplier } from '@/lib/formatters';
+
 import { formatTimeAgo } from '@/lib/utils';
 
 /** Fetches and displays the trade count for a single market. */
@@ -52,11 +52,11 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
           <option value="RESOLVED">Resolved</option>
         </select>
       </div>
-      {markets.length === 0 ? (
+      {(markets ?? []).length === 0 ? (
         <div className="text-muted-foreground text-center py-12">No markets found.</div>
       ) : (
         <ul className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {markets.map((market) => {
+          {(markets ?? []).map((market) => {
             const marketPrices = prices?.[market.id];
             const yesPrice = marketPrices?.yes_price ?? market.yes_price;
             const noPrice = marketPrices?.no_price ?? market.no_price;
@@ -107,7 +107,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                 <div className="flex items-end justify-between">
                   <div className="flex flex-col items-start">
                     <span className="text-2xl font-extrabold font-mono leading-none text-yes-strong">
-                      {yesPrice !== null ? `${Math.round(yesPrice)}%` : '--'}
+                      {Number.isFinite(yesPrice) ? `${Math.round(yesPrice as number)}%` : '--'}
                     </span>
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                       Yes
@@ -115,7 +115,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="text-2xl font-extrabold font-mono leading-none text-no-strong">
-                      {noPrice !== null ? `${Math.round(noPrice)}%` : '--'}
+                      {Number.isFinite(noPrice) ? `${Math.round(noPrice as number)}%` : '--'}
                     </span>
                     <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                       No
@@ -138,7 +138,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                     aria-label={`Buy YES on market: ${market.question}`}
                   >
                     BUY YES
-                    <span className="font-mono opacity-80">{multiplier(yesPrice)}</span>
+                    <span className="font-mono opacity-80">{yesPrice !== null ? `${Math.round(yesPrice as number)}%` : '--'}</span>
                   </button>
                   <button
                     type="button"
@@ -150,7 +150,7 @@ export function MarketsList({ markets, prices, total, limit, offset, onPageChang
                     aria-label={`Buy NO on market: ${market.question}`}
                   >
                     BUY NO
-                    <span className="font-mono opacity-80">{multiplier(noPrice)}</span>
+                    <span className="font-mono opacity-80">{noPrice !== null ? `${Math.round(noPrice as number)}%` : '--'}</span>
                   </button>
                 </div>
               )}

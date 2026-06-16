@@ -2,10 +2,12 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Bell, Settings, LogOut, Menu } from 'lucide-react';
+import { Settings, LogOut, Menu } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
+import { useLogout } from '@/hooks/useLogout';
 import { cn } from '@/lib/utils';
+import { NotificationDropdown } from './NotificationDropdown';
 
 interface TopNavProps {
   transparent?: boolean;
@@ -22,6 +24,7 @@ export function TopNav({
 }: TopNavProps) {
   const { data: user } = useUser();
   const { mobileMenuOpen, toggleMobileMenu } = useNavigation();
+  const { logout, loading: logoutLoading } = useLogout();
 
   const handleMenuToggle = () => {
     if (onMenuToggle) {
@@ -76,14 +79,7 @@ export function TopNav({
           {user ? (
             <>
               {/* Notifications - Only for authenticated users */}
-              <button
-                className="p-2 rounded-md hover:bg-muted transition-colors relative"
-                aria-label="Notifications"
-                title="Notifications"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" aria-hidden="true"></span>
-              </button>
+              <NotificationDropdown />
 
               {/* User menu */}
               <div className="flex items-center gap-2">
@@ -112,13 +108,11 @@ export function TopNav({
 
                 {/* Sign out - Desktop only */}
                 <button
-                  className="hidden lg:flex p-2 rounded-md hover:bg-muted transition-colors"
+                  className="hidden lg:flex p-2 rounded-md hover:bg-muted transition-colors disabled:opacity-50"
                   title="Sign out"
                   aria-label="Sign out"
-                  onClick={() => {
-                    // TODO: Implement logout logic
-                    console.log('Logout clicked');
-                  }}
+                  onClick={logout}
+                  disabled={logoutLoading}
                 >
                   <LogOut className="h-4 w-4" />
                 </button>
@@ -128,13 +122,13 @@ export function TopNav({
             /* Unauthenticated - Auth buttons */
             <div className="flex items-center gap-2">
               <Link
-                href="/login"
+                href="/auth/login"
                 className="px-3 py-2 text-sm font-medium hover:bg-muted rounded-md transition-colors"
               >
                 Log In
               </Link>
               <Link
-                href="/register"
+                href="/auth/register"
                 className="px-3 py-2 text-sm font-medium bg-accent-blue hover:bg-accent-blue-hover text-white rounded-md transition-colors"
               >
                 Sign Up

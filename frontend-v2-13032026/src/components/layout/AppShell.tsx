@@ -18,6 +18,7 @@ import { BottomNav } from './BottomNav';
 import { cn } from '@/lib/utils';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation, type NavigationTab } from '@/hooks/useNavigation';
+import { useLogout } from '@/hooks/useLogout';
 
 interface MobileNavigationItemProps {
   href: string;
@@ -111,11 +112,12 @@ export function AppShell({
     bottomNavProps?.onTradePress?.();
   }, [navigateToTab, bottomNavProps]);
 
+  const { logout } = useLogout();
+
   const handleLogout = useCallback(() => {
-    // TODO: Implement logout logic
-    console.log('Logout clicked');
     setMobileMenuOpen(false);
-  }, [setMobileMenuOpen]);
+    logout();
+  }, [setMobileMenuOpen, logout]);
 
   const handleMobileNav = useCallback((tab: NavigationTab) => {
     navigateToTab(tab);
