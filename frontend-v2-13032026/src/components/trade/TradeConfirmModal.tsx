@@ -2,6 +2,7 @@ import React from 'react';
 import type { Market, PlaceTradeRequest, TradeReceipt, ApiError } from '@/lib/api/types/api';
 import { formatKES, formatPrice } from '@/lib/formatters';
 import { TradeReceiptCard } from './TradeReceiptCard';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 
 interface TradeConfirmModalProps {
   isOpen: boolean;
@@ -34,11 +35,13 @@ export function TradeConfirmModal({
   // If we have a receipt, show the receipt card instead of the confirmation UI
   if (receipt) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-        <div className="w-full max-w-sm">
-          <TradeReceiptCard receipt={receipt} onClose={onClose} />
+      <ModalPortal>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="w-full max-w-sm">
+            <TradeReceiptCard receipt={receipt} onClose={onClose} />
+          </div>
         </div>
-      </div>
+      </ModalPortal>
     );
   }
 
@@ -47,7 +50,8 @@ export function TradeConfirmModal({
   const { outcome, shares } = tradeParams;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+    <ModalPortal>
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-surface border border-subtle rounded-lg shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
         <div className="p-4 border-b border-subtle flex items-center justify-between">
           <h2 className="heading-lg text-primary">Confirm Trade</h2>
@@ -138,5 +142,6 @@ export function TradeConfirmModal({
         </div>
       </div>
     </div>
+    </ModalPortal>
   );
 }

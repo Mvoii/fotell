@@ -7,6 +7,7 @@ import PageContainer from '@/components/layout/PageContainer';
 import { useUser } from '@/hooks/useUser';
 import { useAdminUsers, useDeactivateUser } from '@/hooks/useAdmin';
 import type { AdminUser } from '@/lib/api/types/admin';
+import { ModalPortal } from '@/components/ui/ModalPortal';
 
 export default function AdminUsersPage() {
   const { data: currentUser } = useUser();
@@ -180,7 +181,8 @@ export default function AdminUsersPage() {
 
           {/* Deactivation Modal */}
           {userToDeactivate && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <ModalPortal>
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
               <div className="bg-surface border border-subtle rounded-xl max-w-md w-full p-6 shadow-xl">
                 <h3 className="heading-lg text-primary mb-2">Deactivate User</h3>
                 <p className="text-primary mb-6">
@@ -212,6 +214,7 @@ export default function AdminUsersPage() {
                 </div>
               </div>
             </div>
+            </ModalPortal>
           )}
         </PageContainer>
       </AppShell>
