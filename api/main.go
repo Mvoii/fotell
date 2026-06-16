@@ -144,10 +144,9 @@ func main() {
 		r.Get("/markets/{marketID}", marketHandler.GetMarket)
 		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
 		r.Get("/markets/{marketID}/trades", tradeHandler.ListMarketTrades)
+		r.Get("/markets/{marketID}/quote", tradeHandler.GetQuote)
 
 		// public comments routes
-		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
 		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
 		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
 
@@ -190,15 +189,16 @@ func main() {
 				r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
 				r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
 
-				r.Get("/admin/settlement/status", func(w http.ResponseWriter, r *http.Request) { 
+				r.Get("/admin/settlement/status", func(w http.ResponseWriter, r *http.Request) {
 					status, err := settlementMinion.GetSettlementStatus(r.Context())
-					            if err != nil {
-									handlers.ErrorJSON(w, 500, "Failed to get settlement status", nil)
-									return
-								}
-								handlers.JSON(w, 200, map[string]interface{}{
-									"settlements": status,
-								})})
+					if err != nil {
+						handlers.ErrorJSON(w, 500, "Failed to get settlement status", nil)
+						return
+					}
+					handlers.JSON(w, 200, map[string]interface{}{
+						"settlements": status,
+					})
+				})
 
 				// User management
 				r.Get("/admin/users", userHandler.ListUsers)
