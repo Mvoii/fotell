@@ -56,18 +56,18 @@ export function LoginForm() {
 
   return (
     <form
-      className="bg-surface rounded-lg shadow-lg p-6 max-w-md mx-auto space-y-6"
+      className="bg-elevated border border-subtle rounded-xl shadow-2xl p-8 max-w-md mx-auto space-y-6"
       onSubmit={handleSubmit}
       autoComplete="off"
     >
       <div className="text-center mb-4">
         <span className="font-bold text-2xl text-accent-blue">🔮 FoTell</span>
-        <div className="mt-2 text-heading-lg text-primary font-semibold">Welcome back</div>
-        <div className="text-body-md text-primary mt-1">Sign in to your account</div>
+        <div className="mt-2 text-heading-lg text-foreground font-semibold">Welcome back</div>
+        <div className="text-body-md text-muted-foreground mt-1">Sign in to your account</div>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-heading-md text-primary mb-1">Email</label>
+        <label htmlFor="email" className="block text-heading-md text-foreground mb-1">Email</label>
         <Input
           name="email"
           type="email"
@@ -83,7 +83,7 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-heading-md text-primary mb-1">Password</label>
+        <label htmlFor="password" className="block text-heading-md text-foreground mb-1">Password</label>
         <div className="relative">
           <Input
             name="password"
