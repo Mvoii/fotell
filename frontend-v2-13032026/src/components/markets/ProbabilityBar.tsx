@@ -1,8 +1,8 @@
 import React from 'react';
 
 interface ProbabilityBarProps {
-  yesPrice: number | null;
-  noPrice: number | null;
+  yesPrice: number | null | undefined;
+  noPrice: number | null | undefined;
   /** Show percentage labels above the bar (default: false) */
   showLabels?: boolean;
 }
@@ -12,9 +12,9 @@ interface ProbabilityBarProps {
  * Labels are optional; when omitted the parent card renders them inline.
  */
 export function ProbabilityBar({ yesPrice, noPrice, showLabels = false }: ProbabilityBarProps) {
-  const yes = Math.max(0, Math.min(100, yesPrice ?? 0));
-  const yesLabel = yesPrice !== null ? `${Math.round(yesPrice)}%` : '--';
-  const noLabel  = noPrice  !== null ? `${Math.round(noPrice)}%`  : '--';
+  const yes = Number.isFinite(yesPrice) ? Math.max(0, Math.min(100, yesPrice as number)) : 0;
+  const yesLabel = Number.isFinite(yesPrice) ? `${Math.round(yesPrice as number)}%` : '--';
+  const noLabel  = Number.isFinite(noPrice)  ? `${Math.round(noPrice  as number)}%` : '--';
 
   return (
     <>
@@ -38,7 +38,6 @@ export function ProbabilityBar({ yesPrice, noPrice, showLabels = false }: Probab
           className="absolute left-0 top-0 h-full rounded-l-full bg-[rgba(0,200,83,0.75)] transition-all duration-500"
           style={{ width: `${yes}%` }}
         />
-        <div className="absolute left-1/2 top-0 h-full w-0.5 bg-surface" />
       </div>
     </>
   );

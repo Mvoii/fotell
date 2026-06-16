@@ -6,11 +6,10 @@ import PageContainer from '@/components/layout/PageContainer';
 import { PortfolioSummary } from '@/components/portfolio/PortfolioSummary';
 import { BalanceCard } from '@/components/dashboard/BalanceCard';
 import { PositionsList } from '@/components/dashboard/PositionsList';
-import { TradesList } from '@/components/dashboard/TradesList';
 import { useUser } from '@/hooks/useUser';
 import { cn } from '@/lib/utils';
 
-type Tab = 'overview' | 'positions' | 'activity';
+type Tab = 'overview' | 'positions';
 
 export default function PortfolioPage() {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -19,7 +18,6 @@ export default function PortfolioPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'positions', label: 'Positions' },
-    { id: 'activity', label: 'Activity' },
   ];
 
   return (
@@ -58,23 +56,14 @@ export default function PortfolioPage() {
               <BalanceCard />
               {/* Aggregate portfolio stats */}
               <PortfolioSummary />
-              {/* Quick glance at positions and recent trades */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <PositionsList />
-                <TradesList />
-              </div>
+              {/* Quick glance at positions */}
+              <PositionsList />
             </div>
           )}
 
           {activeTab === 'positions' && (
             <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
               <PositionsList />
-            </div>
-          )}
-
-          {activeTab === 'activity' && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <TradesList />
             </div>
           )}
         </div>

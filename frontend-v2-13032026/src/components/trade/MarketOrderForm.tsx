@@ -12,14 +12,16 @@ export function MarketOrderForm({
   userPosition,
   onSubmit,
   tradeHook,
+  defaultOutcome = 'YES',
 }: MarketOrderFormProps) {
   void market; // referenced via MarketOrderFormProps but not used directly in JSX yet
 
   // ── State
   const [side, setSide] = React.useState<'BUY' | 'SELL'>('BUY');
-  const [outcome, setOutcome] = React.useState<'YES' | 'NO'>('YES');
+  const [outcome, setOutcome] = React.useState<'YES' | 'NO'>(defaultOutcome);
   const [amountInput, setAmountInput] = React.useState<string>('');
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
+  const [inputMode, setInputMode] = React.useState<'SHARES' | 'KES'>('SHARES');
 
   // ── Derived values
   const currentPrice =
@@ -31,12 +33,18 @@ export function MarketOrderForm({
       ? userPosition?.yes_shares ?? 0
       : userPosition?.no_shares ?? 0;
 
-  // Always shares mode
+  // Derive shares and cost based on input mode
   let sharesCount = 0;
   let totalCost = 0;
 
-  sharesCount = parseInt(amountInput) || 0;
-  totalCost = estimateCostKES(sharesCount, currentPrice);
+  if (inputMode === 'KES') {
+    const kesAmount = parseFloat(amountInput) || 0;
+    sharesCount = Math.floor(kesAmount / (currentPrice / 100));
+    totalCost = kesAmount;
+  } else {
+    sharesCount = parseInt(amountInput) || 0;
+    totalCost = estimateCostKES(sharesCount, currentPrice);
+  }
 
   // Each share resolves at 1 KES (= 100 cents) per API spec
   const maxPayout = resolutionPayoutKES(sharesCount); // in KES
@@ -57,11 +65,24 @@ export function MarketOrderForm({
     setErrorMsg(null);
   };
 
+  const handleInputModeSelect = (mode: 'SHARES' | 'KES') => {
+    setInputMode(mode);
+    setAmountInput('');
+    setErrorMsg(null);
+  };
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg(null);
     const value = e.target.value;
-    if (/^\d*$/.test(value)) {
-      setAmountInput(value);
+    // KES mode allows decimals; shares mode integers only
+    if (inputMode === 'KES') {
+      if (/^\d*\.?\d{0,2}$/.test(value)) {
+        setAmountInput(value);
+      }
+    } else {
+      if (/^\d*$/.test(value)) {
+        setAmountInput(value);
+      }
     }
   };
 
@@ -190,21 +211,49 @@ export function MarketOrderForm({
         </button>
       </div>
 
-      {/* ── Input Box (shares only) */}
+      {/* ── KES / Shares Mode Toggle */}
+      <div className="flex bg-subtle p-1 rounded-lg w-full">
+        <button
+          type="button"
+          onClick={() => handleInputModeSelect('SHARES')}
+          className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${
+            inputMode === 'SHARES'
+              ? 'bg-surface text-primary border border-subtle-border shadow-sm'
+              : 'text-muted-foreground hover:text-primary'
+          }`}
+        >
+          Shares
+        </button>
+        <button
+          type="button"
+          onClick={() => handleInputModeSelect('KES')}
+          className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${
+            inputMode === 'KES'
+              ? 'bg-surface text-primary border border-subtle-border shadow-sm'
+              : 'text-muted-foreground hover:text-primary'
+          }`}
+        >
+          KES
+        </button>
+      </div>
+
+      {/* ── Input Box */}
       <div
         className="relative border border-subtle-border rounded-xl bg-subtle px-4 pt-3 pb-4 focus-within:border-active transition-colors cursor-text"
         onClick={() => document.getElementById('amount-input')?.focus()}
       >
         {/* Top row: label only */}
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs font-semibold text-muted-foreground">Shares</span>
+          <span className="text-xs font-semibold text-muted-foreground">
+            {inputMode === 'KES' ? 'Amount (KES)' : 'Shares'}
+          </span>
         </div>
 
         {/* Large amount input — right-aligned */}
         <input
           id="amount-input"
           type="text"
-          inputMode="numeric"
+          inputMode={inputMode === 'KES' ? 'decimal' : 'numeric'}
           placeholder="0"
           value={amountInput}
           onChange={handleAmountChange}
@@ -255,17 +304,41 @@ export function MarketOrderForm({
         {/* Contextual hint */}
         {sharesCount > 0 && (
           <p className="text-xs text-muted-foreground leading-relaxed">
-            You&apos;re buying{' '}
-            <span className="font-semibold text-primary">{sharesCount} contracts</span>{' '}
-            at{' '}
-            <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>{' '}
-            each. If you&apos;re right, payout is{' '}
-            <span className={`font-semibold ${
-              outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
-            }`}>{formatKES(maxPayout)}</span>.
+            {inputMode === 'KES' ? (
+              <>
+                KES <span className="font-semibold text-primary">{(parseFloat(amountInput) || 0).toFixed(2)}</span>
+                {' → ~'}
+                <span className="font-semibold text-primary">{sharesCount} shares</span>
+                {' at '}
+                <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>
+                {'. Payout if right: '}
+                <span className={`font-semibold ${
+                  outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
+                }`}>{formatKES(maxPayout)}</span>.
+              </>
+            ) : (
+              <>
+                You&apos;re buying{' '}
+                <span className="font-semibold text-primary">{sharesCount} contracts</span>{' '}
+                at{' '}
+                <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>{' '}
+                each. If you&apos;re right, payout is{' '}
+                <span className={`font-semibold ${
+                  outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
+                }`}>{formatKES(maxPayout)}</span>.
+              </>
+            )}
           </p>
         )}
       </div>
+
+      {/* ── Cost Breakdown */}
+      {sharesCount > 0 && side === 'BUY' && (
+        <div className="flex justify-between items-center px-1 border-t border-subtle pt-3">
+          <span className="text-xs text-muted-foreground">Estimated Cost</span>
+          <span className="text-xs font-semibold text-primary font-mono">{formatKES(totalCost)}</span>
+        </div>
+      )}
 
       {/* ── Error Display */}
       {errorMsg && (
@@ -290,6 +363,8 @@ export function MarketOrderForm({
           ? 'Selling is not supported by API'
           : isOverLimit
           ? `Limit exceeded (max KES ${MAX_TRADE_AMOUNT_KES})`
+          : inputMode === 'KES'
+          ? `Buy ${outcome} — ~${sharesCount} shares`
           : `Buy ${outcome} Shares — ${formatKES(totalCost)}`}
       </button>
     </form>

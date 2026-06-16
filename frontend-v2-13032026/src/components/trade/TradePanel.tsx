@@ -16,7 +16,7 @@ export function TradePanel({
   userPosition,
   defaultOutcome = 'YES',
 }: TradePanelProps) {
-  void defaultOutcome; // TODO: pass to MarketOrderForm once it supports defaultOutcome prop
+  void defaultOutcome; // passed through to MarketOrderForm
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
   const [pendingParams, setPendingParams] = useState<PlaceTradeRequest | null>(null);
@@ -57,6 +57,7 @@ export function TradePanel({
         userPosition={userPosition}
         onSubmit={handleMarketOrderSubmit}
         tradeHook={tradeHook}
+        defaultOutcome={defaultOutcome}
       />
 
       <TradeConfirmModal
