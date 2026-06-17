@@ -46,9 +46,6 @@ export default function MarketsPage() {
       topNavProps={{
         showSearch: true,
       }}
-      bottomNavProps={{
-        // activeTab: activeTab || undefined,
-      }}
     >
       <PageContainer maxWidth="xl" inAppShell>
         {/* <h1 className="text-display-lg font-bold mb-6">Markets</h1> */}

@@ -3,6 +3,7 @@
 import React, { useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Home,
   TrendingUp,
@@ -79,9 +80,6 @@ interface AppShellProps {
     transparent?: boolean;
     showSearch?: boolean;
   };
-  bottomNavProps?: {
-    onTradePress?: () => void;
-  };
 }
 
 export function AppShell({
@@ -91,7 +89,6 @@ export function AppShell({
   showBottomNav = true,
   isAuthenticated: propIsAuthenticated,
   topNavProps = {},
-  bottomNavProps = {},
 }: AppShellProps) {
   const { data: user } = useUser();
   const pathname = usePathname();
@@ -109,8 +106,7 @@ export function AppShell({
 
   const handleTradePress = useCallback(() => {
     navigateToTab('trade');
-    bottomNavProps?.onTradePress?.();
-  }, [navigateToTab, bottomNavProps]);
+  }, [navigateToTab]);
 
   const { logout } = useLogout();
 
@@ -173,10 +169,7 @@ export function AppShell({
 
       {/* Bottom Navigation - Mobile only, authenticated users only */}
       {shouldShowBottomNav && (
-        <BottomNav
-          {...bottomNavProps}
-          onTradePress={handleTradePress}
-        />
+        <BottomNav />
       )}
 
       {/* Mobile Menu Overlay */}
@@ -205,10 +198,7 @@ export function AppShell({
                   className="flex items-center gap-2 hover:opacity-80 transition-opacity"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  <div className="w-8 h-8 bg-accent-blue rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">F</span>
-                  </div>
-                  <span className="font-bold text-lg">FoTell</span>
+                  <Image src="/logo1.svg" alt="FoTell" width={80} height={26} className="object-contain" />
                 </Link>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
