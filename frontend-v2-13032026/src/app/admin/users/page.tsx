@@ -34,7 +34,7 @@ export default function AdminUsersPage() {
   return (
     <AuthGuard requireAdmin={true}>
       <AppShell isAuthenticated={!!currentUser}>
-        <PageContainer maxWidth="xl" inAppShell>
+        <PageContainer maxWidth="xl" inAppShell showBreadcrumbs={true}>
           <div className="mb-8 flex justify-between items-end">
             <div>
               <h1 className="heading-xl text-primary mb-2">User Management</h1>

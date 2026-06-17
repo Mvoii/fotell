@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 
 type MaxWidth = "sm" | "md" | "lg" | "xl" | "2xl" | "7xl" | "full";
 
@@ -20,6 +21,10 @@ interface PageContainerProps {
   className?: string;
   /** Whether this container is inside an AppShell */
   inAppShell?: boolean;
+  /** Whether to show breadcrumbs navigation at the top */
+  showBreadcrumbs?: boolean;
+  /** Custom labels for specific breadcrumb segments */
+  breadcrumbLabels?: Record<string, string>;
 }
 
 export default function PageContainer({
@@ -28,12 +33,14 @@ export default function PageContainer({
   padding = true,
   className,
   inAppShell = false,
+  showBreadcrumbs = false,
+  breadcrumbLabels,
 }: PageContainerProps) {
   return (
     <main
       className={cn(
         // Center & cap width
-        "mx-auto w-full",
+        "mx-auto w-full flex flex-col",
         MAX_WIDTH_CLASSES[maxWidth],
         // Padding
         padding && "px-4 py-6 md:px-6 lg:px-8",
@@ -47,6 +54,11 @@ export default function PageContainer({
         className
       )}
     >
+      {showBreadcrumbs && (
+        <div className="mb-4">
+          <Breadcrumbs customLabels={breadcrumbLabels} />
+        </div>
+      )}
       {children}
     </main>
   );

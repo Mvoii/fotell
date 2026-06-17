@@ -94,7 +94,12 @@ export default function MarketDetailsPage() {
 
   return (
     <AppShell isAuthenticated={!!user}>
-      <PageContainer maxWidth="xl" inAppShell>
+      <PageContainer 
+        maxWidth="xl" 
+        inAppShell 
+        showBreadcrumbs={true}
+        breadcrumbLabels={{ [marketId]: "Details" }}
+      >
         <div className="w-full flex flex-col gap-6 pt-2 pb-8">
 
           {/* ── RESOLVED / CLOSED SETTLEMENT BANNER ──────────────────────────── */}
