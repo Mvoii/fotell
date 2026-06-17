@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import {
   TrendingUp,
-  ArrowUpDown,
+  CircleUser,
   User,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -32,10 +32,11 @@ export function BottomNav() {
       href: '/markets',
     },
     {
-      id: 'trade',
-      label: 'Trade',
-      icon: <ArrowUpDown className="h-5 w-5" />,
-      href: '/markets',
+      id: 'profile',
+      label: 'Profile',
+      icon: <CircleUser className="h-5 w-5" />,
+      href: '/profile',
+      requireAuth: true,
     },
     {
       id: 'portfolio',
@@ -52,7 +53,6 @@ export function BottomNav() {
   });
 
   const isActive = (item: NavItem) => {
-    if (item.id === 'trade') return false; // trade is an action shortcut, not a page
     return pathname === item.href || pathname.startsWith(item.href + '/');
   };
 
