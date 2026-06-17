@@ -6,6 +6,7 @@ import type { RegisterRequest } from "@/lib/api/types/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 /**
  * RegisterForm
@@ -71,8 +72,15 @@ export function RegisterForm() {
       onSubmit={handleSubmit}
       autoComplete="off"
     >
-      <div className="text-center mb-4">
-        <span className="font-bold text-2xl text-accent-blue">🔮 FoTell</span>
+      <div className="text-center mb-4 flex flex-col items-center">
+        <Image
+          src="/logo1.svg"
+          alt="FoTell"
+          width={120}
+          height={40}
+          className="object-contain mb-2"
+          priority
+        />
         <div className="mt-2 text-heading-lg text-foreground font-semibold">Create your account</div>
         <div className="text-body-md text-accent-blue mt-1">Start with 5,000 KES free</div>
       </div>

@@ -1,4 +1,4 @@
-// import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import { LiveMarketsSection } from "@/components/landing/LiveMarketsSection";
 
@@ -8,10 +8,16 @@ export default function LandingPage() {
       {/* NAVBAR */}
       <header className="sticky top-0 z-50 w-full border-b border-subtle bg-base/80 backdrop-blur-md">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🔮</span>
-            <span className="font-bold text-xl tracking-tight">FoTell</span>
-          </div>
+          <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+            <Image
+              src="/logo1.svg"
+              alt="FoTell"
+              width={90}
+              height={30}
+              className="object-contain"
+              priority
+            />
+          </Link>
           <nav className="flex items-center gap-4">
             <Link
               href="/auth/login"

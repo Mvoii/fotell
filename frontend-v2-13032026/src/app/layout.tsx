@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Sora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "@/components/providers/QueryProvider";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 /**
  * Inter — industry-standard body font for high-density data UIs.
@@ -44,12 +45,36 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    // No class set here — the FOWT script below applies it before React hydrates
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/*
+          Flash-of-wrong-theme prevention script.
+          Runs synchronously before the first paint to apply the stored theme.
+          Default = "light" when no preference is saved.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var t = localStorage.getItem('fotell:theme');
+                  document.documentElement.classList.add(t === 'dark' ? 'dark' : 'light');
+                } catch(e) {
+                  document.documentElement.classList.add('light');
+                }
+              })();
+            `,
+          }}
+        />
+      </head>
       <body
         className={`${inter.variable} ${sora.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <QueryProvider>
-          {children}
+          <ThemeProvider>
+            {children}
+          </ThemeProvider>
         </QueryProvider>
       </body>
     </html>

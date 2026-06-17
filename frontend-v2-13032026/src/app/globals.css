@@ -228,6 +228,75 @@
   --sidebar-ring:                oklch(0.65 0.18 250 / 50%);
 }
 
+/* ── Light theme ──────────────────────────────────────────────────────────
+   Applied via .light class on <html> (default for new users).
+   Inverts the dark palette to a clean, high-contrast pearl-white UI.
+   ──────────────────────────────────────────────────────────────────────── */
+.light {
+  --background:              oklch(0.98 0.004 250);   /* pearl white          */
+  --foreground:              oklch(0.12 0.008 240);   /* near-black           */
+  --card:                    oklch(1.00 0.000 0);     /* pure white card      */
+  --card-foreground:         oklch(0.12 0.008 240);
+  --popover:                 oklch(1.00 0.000 0);
+  --popover-foreground:      oklch(0.12 0.008 240);
+  --primary:                 oklch(0.12 0.008 240);   /* dark headings        */
+  --primary-foreground:      oklch(0.98 0.004 250);
+  --secondary:               oklch(0.93 0.006 250);   /* light surface        */
+  --secondary-foreground:    oklch(0.12 0.008 240);
+  --muted:                   oklch(0.93 0.006 250);
+  --muted-foreground:        oklch(0.45 0.02 250);    /* mid grey labels      */
+  --accent:                  oklch(0.93 0.006 250);
+  --accent-foreground:       oklch(0.12 0.008 240);
+  --destructive:             oklch(0.55 0.24 22);
+  --border:                  oklch(0.82 0.01 240 / 70%);
+  --input:                   oklch(0.95 0.005 250);
+  --ring:                    oklch(0.65 0.18 250 / 40%);
+
+  /* Charts */
+  --chart-1:  oklch(0.65 0.18 158);   /* YES green  */
+  --chart-2:  oklch(0.55 0.22 22);    /* NO red     */
+  --chart-3:  oklch(0.55 0.18 250);   /* accent blue*/
+  --chart-4:  oklch(0.65 0.16 70);    /* amber      */
+  --chart-5:  oklch(0.55 0.02 250);   /* muted grey */
+
+  /* Sidebar */
+  --sidebar:                     oklch(0.95 0.005 250);
+  --sidebar-foreground:          oklch(0.12 0.008 240);
+  --sidebar-primary:             oklch(0.55 0.18 250);
+  --sidebar-primary-foreground:  oklch(0.98 0.004 250);
+  --sidebar-accent:              oklch(0.90 0.006 250);
+  --sidebar-accent-foreground:   oklch(0.12 0.008 240);
+  --sidebar-border:              oklch(0.82 0.01 240 / 50%);
+  --sidebar-ring:                oklch(0.55 0.18 250 / 40%);
+
+  /* FoTell custom tokens — light variants */
+  --ft-base:              oklch(0.96 0.005 250);
+  --ft-surface:           oklch(0.99 0.003 250);
+  --ft-elevated:          oklch(1.00 0.000 0);
+  --ft-subtle:            oklch(0.94 0.005 250);
+  --ft-subtle-border:     oklch(0.82 0.01 240 / 80%);
+
+  --ft-primary-hover:     oklch(0.08 0.008 240);
+  --ft-active:            oklch(0.55 0.18 250);
+
+  --ft-text-primary:      oklch(0.12 0.008 240);
+  --ft-text-secondary:    oklch(0.38 0.015 250);
+  --ft-text-tertiary:     oklch(0.52 0.015 250);
+
+  --ft-yes-strong:        oklch(0.58 0.20 158);
+  --ft-yes-dim:           oklch(0.58 0.20 158 / 12%);
+
+  --ft-no-strong:         oklch(0.52 0.24 22);
+  --ft-no-dim:            oklch(0.52 0.24 22 / 12%);
+
+  --ft-accent-blue:       oklch(0.55 0.18 250);
+  --ft-accent-blue-hover: oklch(0.50 0.18 250);
+  --ft-accent-blue-dim:   oklch(0.55 0.18 250 / 12%);
+
+  --ft-warning:           oklch(0.65 0.17 70);
+  --ft-warning-bg:        oklch(0.65 0.17 70 / 12%);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

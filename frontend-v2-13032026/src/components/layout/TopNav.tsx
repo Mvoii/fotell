@@ -2,12 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Settings, LogOut, Menu } from 'lucide-react';
+import Image from 'next/image';
+import { Settings, LogOut, Menu, Sun, Moon } from 'lucide-react';
 import { useUser } from '@/hooks/useUser';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useLogout } from '@/hooks/useLogout';
 import { cn } from '@/lib/utils';
 import { NotificationDropdown } from './NotificationDropdown';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface TopNavProps {
   transparent?: boolean;
@@ -25,6 +27,7 @@ export function TopNav({
   const { data: user } = useUser();
   const { mobileMenuOpen, toggleMobileMenu } = useNavigation();
   const { logout, loading: logoutLoading } = useLogout();
+  const { theme, toggleTheme } = useTheme();
 
   const handleMenuToggle = () => {
     if (onMenuToggle) {
@@ -54,11 +57,16 @@ export function TopNav({
             </button>
           )}
 
-          <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-            <div className="w-8 h-8 bg-accent-blue rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">F</span>
-            </div>
-            <span className="font-bold text-lg text-foreground">FoTell</span>
+          <Link href={user ? "/dashboard" : "/"} className="flex items-center hover:opacity-80 transition-opacity">
+            {/* Full wordmark — used at all sizes */}
+            <Image
+              src="/logo1.svg"
+              alt="FoTell"
+              width={90}
+              height={30}
+              className="object-contain"
+              priority
+            />
           </Link>
         </div>
 
@@ -76,6 +84,18 @@ export function TopNav({
 
         {/* Right side - User actions */}
         <div className="flex items-center gap-2">
+          {/* Theme toggle — always visible */}
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={theme === 'dark' ? 'Light mode' : 'Dark mode'}
+          >
+            {theme === 'dark'
+              ? <Sun className="h-4 w-4" />
+              : <Moon className="h-4 w-4" />}
+          </button>
+
           {user ? (
             <>
               {/* Notifications - Only for authenticated users */}
