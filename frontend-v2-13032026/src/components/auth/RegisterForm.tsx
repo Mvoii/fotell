@@ -68,25 +68,25 @@ export function RegisterForm() {
 
   return (
     <form
-      className="bg-elevated border border-subtle rounded-xl shadow-2xl p-8 max-w-md mx-auto space-y-6"
+      className="w-full max-w-sm mx-auto space-y-6"
       onSubmit={handleSubmit}
       autoComplete="off"
     >
-      <div className="text-center mb-4 flex flex-col items-center">
+      <div className="text-center mb-8 flex flex-col items-center">
         <Image
           src="/logo1.svg"
           alt="FoTell"
           width={120}
           height={40}
-          className="object-contain mb-2"
+          className="object-contain mb-6 lg:hidden"
           priority
         />
-        <div className="mt-2 text-heading-lg text-foreground font-semibold">Create your account</div>
-        <div className="text-body-md text-accent-blue mt-1">Start with 5,000 KES free</div>
+        <h2 className="mt-2 heading-lg text-primary">Create an account</h2>
+        <p className="text-body-md text-accent-blue mt-2">Start with 5,000 KES free</p>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="full_name" className="block text-heading-md text-foreground mb-1">Full Name</label>
+        <label htmlFor="full_name" className="block text-body-sm font-medium text-text-primary mb-1">Full Name</label>
         <Input
           name="full_name"
           value={form.full_name}
@@ -101,7 +101,7 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="username" className="block text-heading-md text-foreground mb-1">Username</label>
+        <label htmlFor="username" className="block text-body-sm font-medium text-text-primary mb-1">Username</label>
         <Input
           name="username"
           value={form.username}
@@ -116,7 +116,7 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-heading-md text-foreground mb-1">Email</label>
+        <label htmlFor="email" className="block text-body-sm font-medium text-text-primary mb-1">Email address</label>
         <Input
           name="email"
           type="email"
@@ -132,7 +132,7 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-heading-md text-foreground mb-1">Password</label>
+        <label htmlFor="password" className="block text-body-sm font-medium text-text-primary mb-1">Password</label>
         <div className="relative">
           <Input
             name="password"
@@ -170,16 +170,16 @@ export function RegisterForm() {
         size="lg"
         type="submit"
         disabled={loading}
-        className="w-full mt-2"
+        className="w-full mt-4 h-12 text-base font-semibold shadow-lg hover:shadow-accent-blue/20 transition-all duration-300 hover:scale-[1.02]"
       >
         Create Account
       </Button>
 
-      <div className="text-center text-body-sm mt-4">
+      <div className="text-center text-body-sm mt-6 text-text-secondary">
         Already have an account?{" "}
         <a
           href="/auth/login"
-          className="text-accent-blue hover:underline"
+          className="text-accent-blue hover:text-accent-blue-hover font-medium hover:underline transition-colors"
         >
           Sign in →
         </a>
