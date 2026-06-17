@@ -15,9 +15,6 @@ export default function DemoPage() {
       topNavProps={{
         showSearch: true,
       }}
-      bottomNavProps={{
-        onTradePress: () => console.log('Trade pressed from demo'),
-      }}
     >
       <PageContainer maxWidth="xl" inAppShell>
         <div className="space-y-6">
