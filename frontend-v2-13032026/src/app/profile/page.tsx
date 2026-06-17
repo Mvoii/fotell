@@ -4,6 +4,7 @@ import React from 'react';
 import { useUser } from '@/hooks/useUser';
 import { ClientOnly } from '@/components/ui/ClientOnly';
 import { AppShell } from '@/components/layout/AppShell';
+import PageContainer from '@/components/layout/PageContainer';
 import { useLogout } from '@/hooks/useLogout';
 import { LogOut } from 'lucide-react';
 import { formatTimeAgo } from '@/lib/utils';
@@ -16,8 +17,8 @@ export default function ProfilePage() {
       isAuthenticated={!!user}
       topNavProps={{ showSearch: false }}
     >
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
-        <div className="mb-8">
+      <PageContainer maxWidth="md" showBreadcrumbs={true}>
+        <div className="mb-8 mt-2">
           <h1 className="heading-xl text-primary mb-1">Profile</h1>
           <p className="text-muted-foreground text-sm">
             Your account information and preferences
@@ -168,7 +169,7 @@ export default function ProfilePage() {
             </div>
           )}
         </ClientOnly>
-      </div>
+      </PageContainer>
     </AppShell>
   );
 }
