@@ -62,7 +62,7 @@ export default function AdminMarketsPage() {
   return (
     <AuthGuard requireAdmin={true}>
       <AppShell isAuthenticated={!!user}>
-        <PageContainer maxWidth="xl" inAppShell>
+        <PageContainer maxWidth="xl" inAppShell showBreadcrumbs={true}>
           <Button variant="ghost" onClick={() => router.push('/admin')} className="mb-4">
             ← Back to Admin Dashboard
           </Button>

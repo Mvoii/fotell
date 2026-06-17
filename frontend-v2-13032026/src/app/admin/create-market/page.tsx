@@ -24,7 +24,7 @@ export default function CreateMarketPage() {
   return (
     <AuthGuard requireAdmin={true}>
       <AppShell isAuthenticated={!!user}>
-        <PageContainer maxWidth="lg" inAppShell>
+        <PageContainer maxWidth="lg" inAppShell showBreadcrumbs={true}>
           <div className="mb-8">
             <button
               onClick={() => router.push('/admin')}
