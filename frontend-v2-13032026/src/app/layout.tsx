@@ -37,6 +37,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "FoTell — Prediction Markets",
   description: "Trade on the outcomes of real-world events with FoTell, Kenya's premier prediction market platform.",
+  icons: {
+    icon: "/logo2.svg",
+  },
 };
 
 export default function RootLayout({
