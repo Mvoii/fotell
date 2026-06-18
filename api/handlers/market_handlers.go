@@ -45,17 +45,19 @@ SECURITY:
 type MarketHandler struct {
 	marketRepo *repository.MarketRepository
 	registry   *amm.Registry
+	broker     *amm.Broker
 }
 
-func NewMarketHandler(marketRepo *repository.MarketRepository, registry *amm.Registry) *MarketHandler {
+func NewMarketHandler(marketRepo *repository.MarketRepository, registry *amm.Registry, broker *amm.Broker) *MarketHandler {
 	return &MarketHandler{
 		marketRepo: marketRepo,
 		registry:   registry,
+		broker:     broker,
 	}
 }
 
 //
-// piblic ends
+// public ends
 //
 /*
 ListMarket returns all markets with optional filtering
@@ -701,7 +703,7 @@ func (h *MarketHandler) ResolveMarket(w http.ResponseWriter, r *http.Request) {
 			ErrorJSON(w, 404, "Market not found", nil)
 			return
 		}
-		log.Printf("err_getamr_repo: %w", err)
+		log.Printf("err_getmar_repo: %w", err)
 		ErrorJSON(w, 500, "Failed to fetch market", nil)
 		return
 	}
@@ -748,4 +750,89 @@ func (h *MarketHandler) ResolveMarket(w http.ResponseWriter, r *http.Request) {
 		"outcome": req.Outcome,
 		"status":  "RESOLVED",
 	})
+}
+
+// GET /markets/{marketID}/prices/stream
+func (h *MarketHandler) StreamPrices(w http.ResponseWriter, r *http.Request) {
+	marketID := chi.URLParam(r, "marketID")
+	if marketID == "" {
+		http.Error(w, "Market ID required", http.StatusBadRequest)
+		return
+	}
+
+	// ensure the http server supports flushing (req for sse)
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported by server", http.StatusInternalServerError)
+		return
+	}
+
+	// set std sse headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connnection", "keep-alive")
+
+	// optional: config cors if global middleware doesn't cover this specific method behaviour
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("X-Accel-Buffering", "no") // tell nginx to leave this alone
+	w.Header().Set("Content-Encoding", "none") // bypassed chi compression middleware
+
+	rc := http.NewResponseController(w)
+	if err := rc.SetReadDeadline(time.Time{}); err != nil {
+		log.Printf("Warning: Could not clear write deadline: %v", err)
+	}
+
+	if !ok {
+		http.Error(w, "Streaming unsupported by server", http.StatusInternalServerError)
+		return
+	}
+
+	// send an initial conn ping
+	fmt.Fprint(w, ": connected\n\n")
+	flusher.Flush()
+
+	// sub to the broker
+	subChan := h.broker.Subscribe(marketID)
+	/* if !subChan {
+		log.Printf("Broker sub failed")
+		return
+	} */
+
+	// ensure we unsub when client disconnects
+	defer h.broker.Unsubscribe(marketID, subChan)
+
+	// keep alive ticker 10s to prevent load balancer and proxies from dropping idle conns
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+			case <-r.Context().Done():
+				// client closed the conn
+				log.Printf("client disconnected from stream: %s", marketID)
+				return
+
+			case <-ticker.C:
+				// send an empty cpmment to keep alive ping
+				fmt.Fprintf(w, ": keepalive\n\n")
+				flusher.Flush()
+
+			case priceUpdate, ok := <-subChan:
+				if !ok {
+					log.Printf("subscription chan closed for market: %s", marketID)
+					return
+				}
+			
+				// marshal and write real event data
+				// format the data as JSON
+				jsonData, err := json.Marshal(priceUpdate)
+				if err != nil {
+					continue
+				}
+
+				// SSE std fmt: "data: {json}\n\n"
+				fmt.Fprintf(w, "data: %s\n\n", string(jsonData))
+				flusher.Flush()
+		}
+	}
 }
