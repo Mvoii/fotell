@@ -709,3 +709,19 @@ func (m *Market) GetQuantities() ([]decimal.Decimal, error) {
 
 	return copyQuants, nil
 }
+
+/*
+SetQuantities restores teh amm engine state from persisted storage
+trhead safe: requires write lock
+*/
+func (m *Market) SetQuantities(quantities []decimal.Decimal) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if len(quantities) != 2 {
+		return fmt.Errorf("invalid quantities vector length: expected 2, got %d", len(quantities))
+	}
+
+	// Pass the state down to the internal engine
+	return m.engine.SetQuantities(quantities)
+}

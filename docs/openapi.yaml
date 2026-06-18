@@ -510,8 +510,52 @@ paths:
                       $ref: '#/components/schemas/Trade'
                   total:
                     type: integer
+  
+  /markets/{marketID}/prices/stream:
+    get:
+      tags:
+        - Markets
+      summary: Stream real-time prices (SSE)
+      description: |
+        Server-Sent Events (SSE) endpoint that streams real-time YES/NO price updates for a market.
+        
+        **Connection Details:**
+        - Holds a persistent HTTP connection.
+        - Receives periodic `: keepalive` pings to prevent socket drops.
+        
+        **Data Format:**
+        Pushes JSON payloads prefixed with `data: ` whenever a trade alters the AMM pricing curve.
+      operationId: streamPrices
+      parameters:
+        - $ref: '#/components/parameters/marketID'
+      responses:
+        '200':
+          description: SSE Stream connected successfully
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: Stream of Server-Sent Events
+                example: |
+                  : connected
 
-/markets/{marketID}/quote:
+                  data: {"market_id":"50281a59-ece1-404e-ba9c-63f48df2663e","yes_price":49.5,"no_price":50.5,"timestamp":"2026-06-18T14:00:14Z"}
+                  
+                  : keepalive
+        '400':
+          description: Invalid market ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Streaming not supported by server
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /markets/{marketID}/quote:
     get:
       tags:
         - Trading
