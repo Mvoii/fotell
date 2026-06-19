@@ -49,7 +49,6 @@ coverage/
 *.pem
 *.sh
 
-.github/
 .windsurf
 .gitignore
 frontend/
