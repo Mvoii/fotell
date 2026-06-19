@@ -56,3 +56,5 @@ frontend/
 frontend-v2*/
 docs/frontend/
 .gitignore
+.vercel
+.env*
