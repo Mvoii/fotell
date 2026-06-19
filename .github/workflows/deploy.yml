@@ -2,7 +2,6 @@ name: Consolidated Frontend & Backend Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-  # Map the GitHub secret so Next.js can read it during "vercel build"
   NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }} 
 on:
   push:
