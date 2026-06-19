@@ -11,8 +11,11 @@ on:
     branches: [main, master]
 
 jobs:
-  deploy:
+  # Job 1: Handles Vercel Frontend Build and Deployment
+  deploy-frontend:
     runs-on: ubuntu-latest
+    outputs:
+      deployment-status: ${{ job.status }}
     steps:
       - uses: actions/checkout@v4
 
@@ -27,3 +30,13 @@ jobs:
 
       - name: Deploy Project to Vercel
         run: vercel deploy --prebuilt ${{ github.event_name == 'push' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
+
+  # Job 2: Triggers Render Backend Deploy ONLY on successful production merges
+  deploy-backend:
+    needs: deploy-frontend
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
