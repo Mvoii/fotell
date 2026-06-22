@@ -43,7 +43,7 @@ SECURITY:
 */
 
 // MinLiquidityParam is the minimum liquidity_param_smallest_unit (cents).
-// b = param/100 (see OpenMarket). Below b=100 a KES 500 trade moves price >10%.
+// b = liquidity_param_smallest_unit (passed raw to the LSMR engine).
 // Tiers (cents): small 50k–200k, medium 500k–2M, large 5M+.
 const MinLiquidityParam int64 = 10_000
 
@@ -525,9 +525,11 @@ func (h *MarketHandler) OpenMarket(w http.ResponseWriter, r *http.Request) {
 
 	// ── Initialize AMM
 
-	// Convert liquidity param from cents to decimal
-	// liquidityParamDecimal := float64(market.LiquidityParam) / 100.0
-	liquidityParam := decimal.NewFromFloat(float64(market.LiquidityParam) / 100.0)
+	// Pass b as the raw stored value — no unit conversion needed.
+	// b must be in the same unit as share quantities and cost output.
+	// The KES↔cents conversion is handled at the trade layer (cost × 100).
+	// Dividing by 100 here was shrinking b 100×, causing large price swings.
+	liquidityParam := decimal.NewFromInt(market.LiquidityParam)
 
 	ammMarket, err := h.registry.CreateMarket(amm.CreateMarketParams{
 		ID:             marketID,
