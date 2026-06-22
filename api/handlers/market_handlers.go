@@ -43,7 +43,7 @@ SECURITY:
 */
 
 // MinLiquidityParam is the minimum liquidity_param_smallest_unit (cents).
-// b = liquidity_param_smallest_unit (passed raw to the LSMR engine).
+// b = param/100 (see OpenMarket). Below b=100 a KES 500 trade moves price >10%.
 // Tiers (cents): small 50k–200k, medium 500k–2M, large 5M+.
 const MinLiquidityParam int64 = 10_000
 

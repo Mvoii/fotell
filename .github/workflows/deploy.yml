@@ -2,7 +2,6 @@ name: Consolidated Frontend & Backend Deployment
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-  # Map the GitHub secret so Next.js can read it during "vercel build"
   NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }} 
 on:
   push:
@@ -11,7 +10,6 @@ on:
     branches: [main, master]
 
 jobs:
-  # Job 1: Handles Vercel Frontend Build and Deployment
   deploy-frontend:
     runs-on: ubuntu-latest
     outputs:
@@ -31,7 +29,6 @@ jobs:
       - name: Deploy Project to Vercel
         run: vercel deploy --prebuilt ${{ github.event_name == 'push' && '--prod' || '' }} --token=${{ secrets.VERCEL_TOKEN }}
 
-  # Job 2: Triggers Render Backend Deploy ONLY on successful production merges
   deploy-backend:
     needs: deploy-frontend
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')

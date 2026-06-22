@@ -98,7 +98,7 @@ func newMarket(params CreateMarketParams) (*Market, error) {
 		return nil, ErrClosesAtInPast
 	}
 
-	// b = LiquidityParam, passed raw from liquidity_param_smallest_unit (no /100).
+	// b = LiquidityParam (already converted: cents/100 by OpenMarket handler).
 	if params.LiquidityParam.LessThanOrEqual(decimal.Zero) {
 		return nil, ErrInvalidLiquidityParam
 	}

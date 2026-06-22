@@ -30,7 +30,7 @@ var (
 	ErrInvalidOutcomes = errors.New("market must have at least 2 outcomes")
 
 	// ErrInvalidLiquidity indicates the liquidity param is invalid (must be > 0).
-	// b = liquidity_param_smallest_unit passed raw (no /100). Minimum safe b = 10,000.
+	// b = liquidity_param_smallest_unit / 100; minimum safe b = 100 (param >= 10,000 cents).
 	ErrInvalidLiquidity = errors.New("liquidity parameter must be reater than 0")
 
 	// ErrInvalidQuantities indicates the quantities array doesn't match outcomes count
