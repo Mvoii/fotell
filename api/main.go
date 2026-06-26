@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -260,6 +261,20 @@ func getEnv(key, defaultValue string) string {
 
 // getAllowedOrigins returns CORS allowed origins based on environment
 func getAllowedOrigins(env string) []string {
+	if configuredOrigins := strings.TrimSpace(os.Getenv("CORS_ALLOWED_ORIGINS")); configuredOrigins != "" {
+		parts := strings.Split(configuredOrigins, ",")
+		origins := make([]string, 0, len(parts))
+		for _, part := range parts {
+			origin := strings.TrimSpace(part)
+			if origin != "" {
+				origins = append(origins, origin)
+			}
+		}
+		if len(origins) > 0 {
+			return origins
+		}
+	}
+
 	if env == "production" {
 		return []string{
 			"https://fotell.com",
@@ -268,10 +283,13 @@ func getAllowedOrigins(env string) []string {
 			"https://fotell-rho.vercel.app",
 		}
 	}
-	// Development: allow localhost
+	// Development: allow localhost and secure tunnel hosts.
 	return []string{
 		"http://localhost:3000",
 		"http://localhost:5173", // Vite default
 		"http://127.0.0.1:3000",
+		"https://*.devtunnels.ms",
+		"https://*.github.dev",
+		"https://*.app.github.dev",
 	}
 }
