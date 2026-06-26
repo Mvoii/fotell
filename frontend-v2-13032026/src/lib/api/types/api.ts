@@ -97,6 +97,48 @@ export interface PlaceTradeRequest {
   // NOTE: max_cost does NOT exist in the API
 }
 
+// GET /markets/{id}/quote → projected cost for a BUY
+// Endpoint: GET /api/v1/markets/{marketId}/quote?outcome=YES&shares=10.5
+export interface BuyQuoteResponse {
+  market_id: string;
+  outcome: Outcome;
+  shares: number;
+  projected_cost: number; // KES cents (integer)
+  projected_kes: number;  // KES float (= projected_cost / 100)
+}
+
+// GET /markets/{id}/sell-quote → projected proceeds for a SELL
+// Sprint 2 endpoint — backend not yet implemented.
+// Endpoint: GET /api/v1/markets/{marketId}/sell-quote?outcome=YES&shares=10.5
+export interface SellQuoteResponse {
+  market_id: string;
+  outcome: Outcome;
+  shares: number;
+  projected_proceeds: number; // KES cents (integer)
+  projected_kes: number;      // KES float (= projected_proceeds / 100)
+}
+
+// POST /markets/{id}/sell → sell order request body
+// Sprint 2 endpoint — backend not yet implemented.
+export interface PlaceSellRequest {
+  outcome: 'YES' | 'NO';
+  shares: number;
+  min_proceeds_kes: number; // slippage floor in KES (sell aborts if proceeds < this)
+}
+
+// POST /markets/{id}/sell → sell order result
+// Sprint 2 endpoint — mirrors TradeReceipt shape with proceeds instead of cost.
+export interface SellReceipt {
+  trade_id: string;
+  outcome: Outcome;
+  shares: number;
+  proceeds_paid: number;  // KES cents actually credited to balance
+  avg_price: number;      // cents per share (= proceeds_paid / shares)
+  position: Position;
+  balance_after: number;  // KES cents
+  timestamp: string;
+}
+
 export interface TradeReceipt {
   trade_id: string;
   outcome: 'YES' | 'NO';
@@ -133,6 +175,7 @@ export interface Trade {
 export interface PositionWithMarket extends Position {
   market?: Market;
 }
+
 
 // ── User ───────────────────────────────────────────────────────────────
 
