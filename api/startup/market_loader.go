@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/esiepe/fotell/amm"
 	"github.com/esiepe/fotell/api/repository"
@@ -72,7 +73,7 @@ func LoadActiveMarkets(ctx context.Context, marketRepo *repository.MarketReposit
 
 	// Load each market into AMM registry
 	for _, market := range markets {
-		if err := loadSingleMarket(registry, market); err != nil {
+		if err := loadSingleMarket(registry, marketRepo, market); err != nil {
 			log.Printf("WARN: Failed to load market %s (%s): %v",
 				market.ID, market.Question, err)
 			failCount++
@@ -114,7 +115,22 @@ func LoadActiveMarkets(ctx context.Context, marketRepo *repository.MarketReposit
 //   - Prices reset to 50/50 on restart
 //   - New trades will move prices correctly from that point
 //   - Users can still trade (system is functional, just prices reset)
-func loadSingleMarket(registry *amm.Registry, market *repository.Market) error {
+func loadSingleMarket(registry *amm.Registry, marketRepo *repository.MarketRepository, market *repository.Market) error {
+	// Check if market has already expired (closes_at in the past)
+	// These markets should be closed in DB, not loaded into AMM
+	if market.ClosesAt.Before(time.Now().UTC()) {
+		log.Printf("Market %s has expired (closes_at: %s), closing in database",
+			market.ID, market.ClosesAt.Format(time.RFC3339))
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if err := marketRepo.UpdateStatus(ctx, market.ID, "CLOSED"); err != nil {
+			return fmt.Errorf("failed to close expired market in database: %w", err)
+		}
+		return nil // Market handled (closed), skip loading
+	}
+
 	// Convert liquidity param from cents to KES decimal
 	// Database stores: 500000 cents
 	// AMM expects: 5000.00 KES

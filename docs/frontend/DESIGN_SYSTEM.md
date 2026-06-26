@@ -21,7 +21,7 @@
 |---|---|---|
 | `text-primary` | `#f0f2f5` | Headlines, primary body copy |
 | `text-primary` | `#8b92a5` | Labels, meta info, placeholders |
-| `text-muted` | `#4a5063` | Disabled states, low-emphasis |
+| `text-primary` | `#4a5063` | Disabled states, low-emphasis |
 | `text-inverse` | `#0d0f12` | Text on light/coloured backgrounds |
 
 ### Brand & Accent
