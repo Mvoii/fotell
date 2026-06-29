@@ -174,40 +174,70 @@ export function MarketOrderForm({
         <button
           type="button"
           onClick={() => handleOutcomeSelect('YES')}
-          className={`flex items-center justify-between p-3.5 rounded-xl border font-bold transition-all duration-200 cursor-pointer ${
+          className={`flex flex-col p-3.5 rounded-xl border font-bold transition-all duration-200 cursor-pointer ${
             outcome === 'YES'
               ? 'border-yes-strong bg-yes-dim ring-1.5 ring-yes-strong shadow-sm'
               : 'border-subtle bg-surface hover:border-yes-strong/40'
           }`}
         >
-          <span className={outcome === 'YES' ? 'text-yes-strong' : 'text-muted-foreground'}>
-            YES
-          </span>
-          <span className="font-mono text-sm font-bold text-primary">
-            {typeof currentPrices.yes_price === 'number'
-              ? formatPrice(currentPrices.yes_price)
-              : '--'}
-          </span>
+          <div className="flex items-center justify-between w-full">
+            <span className={outcome === 'YES' ? 'text-yes-strong' : 'text-muted-foreground'}>
+              YES
+            </span>
+            <span className="font-mono text-sm font-bold text-primary">
+              {typeof currentPrices.yes_price === 'number'
+                ? formatPrice(currentPrices.yes_price)
+                : '--'}
+            </span>
+          </div>
+          {(userPosition?.yes_shares ?? 0) > 0 && (
+            <div className="flex items-center justify-between w-full mt-1.5 text-[11px] font-medium font-mono tabular-nums tracking-tight">
+              <span className="text-muted-foreground">Hold: {userPosition?.yes_shares.toLocaleString()}</span>
+              <span className={
+                (((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0
+                  ? 'text-yes-strong'
+                  : 'text-no-strong'
+              }>
+                {(((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0 ? '+' : ''}
+                {formatKES((((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)))}
+              </span>
+            </div>
+          )}
         </button>
 
         {/* NO Button */}
         <button
           type="button"
           onClick={() => handleOutcomeSelect('NO')}
-          className={`flex items-center justify-between p-3.5 rounded-xl border font-bold transition-all duration-200 cursor-pointer ${
+          className={`flex flex-col p-3.5 rounded-xl border font-bold transition-all duration-200 cursor-pointer ${
             outcome === 'NO'
               ? 'border-no-strong bg-no-dim ring-1.5 ring-no-strong shadow-sm'
               : 'border-subtle bg-surface hover:border-no-strong/40'
           }`}
         >
-          <span className={outcome === 'NO' ? 'text-no-strong' : 'text-muted-foreground'}>
-            NO
-          </span>
-          <span className="font-mono text-sm font-bold text-primary">
-            {typeof currentPrices.no_price === 'number'
-              ? formatPrice(currentPrices.no_price)
-              : '--'}
-          </span>
+          <div className="flex items-center justify-between w-full">
+            <span className={outcome === 'NO' ? 'text-no-strong' : 'text-muted-foreground'}>
+              NO
+            </span>
+            <span className="font-mono text-sm font-bold text-primary">
+              {typeof currentPrices.no_price === 'number'
+                ? formatPrice(currentPrices.no_price)
+                : '--'}
+            </span>
+          </div>
+          {(userPosition?.no_shares ?? 0) > 0 && (
+            <div className="flex items-center justify-between w-full mt-1.5 text-[11px] font-medium font-mono tabular-nums tracking-tight">
+              <span className="text-muted-foreground">Hold: {userPosition?.no_shares.toLocaleString()}</span>
+              <span className={
+                (((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0
+                  ? 'text-yes-strong' // using yes-strong (green) for positive PnL even on NO button
+                  : 'text-no-strong'
+              }>
+                {(((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0 ? '+' : ''}
+                {formatKES((((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)))}
+              </span>
+            </div>
+          )}
         </button>
       </div>
 
