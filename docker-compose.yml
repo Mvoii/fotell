@@ -1,5 +1,7 @@
 version: '3.8'
+
 services:
+  # ── PostgreSQL database ──────────────────────────────────────────────────────
   db:
     image: postgres:15-alpine
     restart: always
@@ -11,6 +13,43 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Auto-run migrations on first start
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fotell"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ── Go API backend ───────────────────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: "8080"
+      ENV: "development"
+      DATABASE_URL: "postgresql://postgres:password@db:5432/fotell?sslmode=disable"
+      JWT_SECRET: "5hwyDjVLfwmitpbm65ZzJhfJuZknFZ5pIkYDIH+A5mCcZvSGGFnzx0pdNlsf6B82"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # ── Next.js frontend ─────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend-v2-13032026
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8080
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
 
 volumes:
   postgres_data:
