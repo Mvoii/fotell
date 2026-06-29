@@ -191,16 +191,22 @@ export function MarketOrderForm({
             </span>
           </div>
           {(userPosition?.yes_shares ?? 0) > 0 && (
-            <div className="flex items-center justify-between w-full mt-1.5 text-[11px] font-medium font-mono tabular-nums tracking-tight">
-              <span className="text-muted-foreground">Hold: {userPosition?.yes_shares.toLocaleString()}</span>
-              <span className={
-                (((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0
-                  ? 'text-yes-strong'
-                  : 'text-no-strong'
-              }>
-                {(((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0 ? '+' : ''}
-                {formatKES((((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)))}
-              </span>
+            <div className="flex flex-col w-full mt-2 gap-0.5 text-[11px] font-medium font-mono tabular-nums tracking-tight">
+              <div className="flex justify-between w-full">
+                <span className="text-muted-foreground">Hold:</span>
+                <span className="text-muted-foreground">{userPosition?.yes_shares.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between w-full">
+                <span className="text-muted-foreground">P&L:</span>
+                <span className={
+                  (((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0
+                    ? 'text-yes-strong'
+                    : 'text-no-strong'
+                }>
+                  {(((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0 ? '+' : ''}
+                  {formatKES((((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)))}
+                </span>
+              </div>
             </div>
           )}
         </button>
@@ -226,16 +232,22 @@ export function MarketOrderForm({
             </span>
           </div>
           {(userPosition?.no_shares ?? 0) > 0 && (
-            <div className="flex items-center justify-between w-full mt-1.5 text-[11px] font-medium font-mono tabular-nums tracking-tight">
-              <span className="text-muted-foreground">Hold: {userPosition?.no_shares.toLocaleString()}</span>
-              <span className={
-                (((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0
-                  ? 'text-yes-strong' // using yes-strong (green) for positive PnL even on NO button
-                  : 'text-no-strong'
-              }>
-                {(((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0 ? '+' : ''}
-                {formatKES((((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)))}
-              </span>
+            <div className="flex flex-col w-full mt-2 gap-0.5 text-[11px] font-medium font-mono tabular-nums tracking-tight">
+              <div className="flex justify-between w-full">
+                <span className="text-muted-foreground">Hold:</span>
+                <span className="text-muted-foreground">{userPosition?.no_shares.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between w-full">
+                <span className="text-muted-foreground">P&L:</span>
+                <span className={
+                  (((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0
+                    ? 'text-yes-strong'
+                    : 'text-no-strong'
+                }>
+                  {(((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0 ? '+' : ''}
+                  {formatKES((((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)))}
+                </span>
+              </div>
             </div>
           )}
         </button>
