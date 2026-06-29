@@ -144,6 +144,22 @@ export function MarketOrderForm({
     }
   }, [tradeHook.error]);
 
+  // Track previous prices for delta indicators
+  const prevYesRef = React.useRef(currentPrices.yes_price);
+  const prevNoRef = React.useRef(currentPrices.no_price);
+
+  React.useEffect(() => {
+    prevYesRef.current = currentPrices.yes_price;
+    prevNoRef.current = currentPrices.no_price;
+  }, [currentPrices.yes_price, currentPrices.no_price]);
+
+  const renderDelta = (current: number | string | undefined | null, prev: number | string | undefined | null) => {
+    if (typeof current !== 'number' || typeof prev !== 'number') return null;
+    if (current > prev) return <span className="text-[#00C853] text-xs" title="Price increased">▲</span>;
+    if (current < prev) return <span className="text-[#FF1744] text-xs" title="Price decreased">▼</span>;
+    return null;
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -192,10 +208,11 @@ export function MarketOrderForm({
           }`}>
             YES
           </span>
-          <span className={`text-2xl font-bold tabular-nums leading-none ${
+          <span className={`text-2xl font-bold tabular-nums leading-none flex items-center justify-center gap-1 ${
             outcome === 'YES' ? 'text-yes-strong' : 'text-primary/50'
           }`}>
             {typeof currentPrices.yes_price === 'number' ? formatPrice(currentPrices.yes_price) : '--'}
+            {renderDelta(currentPrices.yes_price, prevYesRef.current)}
           </span>
         </button>
 
@@ -214,10 +231,11 @@ export function MarketOrderForm({
           }`}>
             NO
           </span>
-          <span className={`text-2xl font-bold tabular-nums leading-none ${
+          <span className={`text-2xl font-bold tabular-nums leading-none flex items-center justify-center gap-1 ${
             outcome === 'NO' ? 'text-no-strong' : 'text-primary/50'
           }`}>
             {typeof currentPrices.no_price === 'number' ? formatPrice(currentPrices.no_price) : '--'}
+            {renderDelta(currentPrices.no_price, prevNoRef.current)}
           </span>
         </button>
       </div>
