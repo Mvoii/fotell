@@ -5,6 +5,7 @@ import { MarketDetailsCard } from '@/components/markets/MarketDetailsCard';
 import { MarketTradesList } from '@/components/markets/MarketTradesList';
 import { CommentsSection } from '@/components/markets/CommentsSection';
 import { TradePanel } from '@/components/trade/TradePanel';
+import { UserHoldingsPanel } from '@/components/markets/UserHoldingsPanel';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { useBalance, usePositions, useUser } from '@/hooks/useUser';
@@ -194,7 +195,7 @@ export default function MarketDetailsPage() {
 
             {/* Trading panel only for OPEN markets */}
             {showTradePanel && (
-              <div id="trade-panel" className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
+              <div id="trade-panel" className="lg:col-span-1 flex flex-col gap-4 lg:sticky lg:top-24 h-fit">
                 <TradePanel
                   market={market}
                   currentPrices={{ yes_price: market.yes_price ?? 0, no_price: market.no_price ?? 0 }}
@@ -202,6 +203,41 @@ export default function MarketDetailsPage() {
                   userPosition={userPosition}
                   defaultOutcome={defaultOutcome}
                 />
+                {/* Position display — renders per outcome leg the user holds */}
+                {userPosition && userPosition.yes_shares > 0 && (
+                  <UserHoldingsPanel
+                    market={market}
+                    position={userPosition}
+                    outcome="YES"
+                  />
+                )}
+                {userPosition && userPosition.no_shares > 0 && (
+                  <UserHoldingsPanel
+                    market={market}
+                    position={userPosition}
+                    outcome="NO"
+                  />
+                )}
+              </div>
+            )}
+
+            {/* For CLOSED/RESOLVED markets, show holdings in its own column if user has a position */}
+            {!showTradePanel && userPosition && (userPosition.yes_shares > 0 || userPosition.no_shares > 0) && (
+              <div className="lg:col-span-1 flex flex-col gap-4">
+                {userPosition.yes_shares > 0 && (
+                  <UserHoldingsPanel
+                    market={market}
+                    position={userPosition}
+                    outcome="YES"
+                  />
+                )}
+                {userPosition.no_shares > 0 && (
+                  <UserHoldingsPanel
+                    market={market}
+                    position={userPosition}
+                    outcome="NO"
+                  />
+                )}
               </div>
             )}
           </div>
