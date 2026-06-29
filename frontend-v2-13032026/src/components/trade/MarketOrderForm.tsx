@@ -5,6 +5,13 @@ import { formatPrice, formatKES, estimateCostKES, resolutionPayoutKES } from '@/
 // Maximum trade amount in KES per trade
 const MAX_TRADE_AMOUNT_KES = 5000;
 
+/** Format a number as compact KES: KES 40K, KES 1.2M, etc. */
+function formatCompactKES(value: number): string {
+  if (value >= 1_000_000) return `KES ${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (value >= 1_000)     return `KES ${(value / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  return `KES ${value}`;
+}
+
 export function MarketOrderForm({
   market,
   currentPrices,
@@ -223,17 +230,17 @@ export function MarketOrderForm({
         const isGain = pnl >= 0;
         if (shares <= 0) return null;
         return (
-          <div className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-subtle border border-subtle-border text-xs font-mono tabular-nums">
-            <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-between px-4 py-2 bg-subtle border border-subtle-border rounded-lg text-xs font-mono tabular-nums overflow-hidden">
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
               <span className={outcome === 'YES' ? 'text-yes-strong font-semibold' : 'text-no-strong font-semibold'}>
                 {outcome}
               </span>
-              <span className="text-muted-foreground">·</span>
-              <span className="text-primary/80">{shares.toLocaleString()} shares</span>
+              <span className="text-muted-foreground/50">·</span>
+              <span className="text-primary/90">{shares.toLocaleString()} <span className="text-muted-foreground text-[10px]">qty</span></span>
             </div>
-            <span className={`font-semibold ${isGain ? 'text-yes-strong' : 'text-no-strong'}`}>
-              {isGain ? '+' : ''}{formatKES(pnl)}
-            </span>
+            <div className={`font-semibold whitespace-nowrap pl-2 ${isGain ? 'text-yes-strong' : 'text-no-strong'}`}>
+              {isGain ? '+' : '-'}{formatCompactKES(Math.abs(pnl))}
+            </div>
           </div>
         );
       })()}
