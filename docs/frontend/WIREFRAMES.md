@@ -385,10 +385,18 @@ orders in either BUY or SELL modes, for both YES and NO outcomes.
 │                                                                  │
 │  OUTCOME SELECTION (Side-by-side cards, active has accent fill)  │
 │  ┌──────────────────────────────┐ ┌──────────────────────────┐  │
-│  │ YES ●                  62.5¢ │ │ NO  ○                  37.5¢ │  │
-│  │ (You hold: 100 shares)       │ │ (You hold: 0 shares)     │  │
+│  │ YES                          │ │ NO                        │  │
+│  │ 62.5¢  ← 2xl bold, colored  │ │ 37.5¢  ← 2xl bold, muted  │  │
 │  └──────────────────────────────┘ └──────────────────────────┘  │
-│  ↑ Green-themed accent fill       ↑ Red-themed accent fill       │
+│  ↑ Selected: 2px accent border + tinted bg                       │
+│  ↑ Unselected: subtle border + light grey bg (clearly inactive)  │
+│                                                                  │
+│  POSITION STRIP (conditional — only shown when user holds shares)│
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │  YES · 100 shares                        +KES 4,993.00     │  │
+│  └────────────────────────────────────────────────────────────┘  │
+│  ↑ Compact single-row chip: outcome label · share count · P&L    │
+│    P&L colored green (yes-strong) or red (no-strong)             │
 │                                                                  │
 │  INPUT BOX (Dual-mode: tap unit to toggle between KES & Shares)  │
 │  ┌────────────────────────────────────────────────────────────┐  │
