@@ -174,34 +174,37 @@ export function MarketOrderForm({
         <button
           type="button"
           onClick={() => handleOutcomeSelect('YES')}
-          className={`flex flex-col p-3.5 rounded-xl border font-bold transition-all duration-200 cursor-pointer ${
+          className={`flex flex-col items-start gap-1 px-4 py-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
             outcome === 'YES'
-              ? 'border-yes-strong bg-yes-dim ring-1.5 ring-yes-strong shadow-sm'
-              : 'border-subtle bg-surface hover:border-yes-strong/40'
+              ? 'border-yes-strong bg-yes-dim shadow-md'
+              : 'border-subtle bg-subtle/40 hover:border-yes-strong/50 hover:bg-subtle/80'
           }`}
         >
-          <div className="flex items-center justify-between w-full">
-            <span className={outcome === 'YES' ? 'text-yes-strong' : 'text-muted-foreground'}>
-              YES
-            </span>
-            <span className="font-mono text-sm font-bold text-primary">
-              {typeof currentPrices.yes_price === 'number'
-                ? formatPrice(currentPrices.yes_price)
-                : '--'}
-            </span>
-          </div>
+          {/* Label */}
+          <span className={`text-xs font-semibold tracking-widest uppercase ${outcome === 'YES' ? 'text-yes-strong' : 'text-muted-foreground'}`}>
+            YES
+          </span>
+          {/* Price — dominant */}
+          <span className={`text-2xl font-bold tabular-nums leading-none ${outcome === 'YES' ? 'text-yes-strong' : 'text-primary/60'}`}>
+            {typeof currentPrices.yes_price === 'number' ? formatPrice(currentPrices.yes_price) : '--'}
+          </span>
+          {/* Probability hint */}
+          <span className="text-[10px] text-muted-foreground/70 tabular-nums">
+            {typeof currentPrices.yes_price === 'number' ? `${currentPrices.yes_price}% prob.` : ''}
+          </span>
+          {/* Holdings — only when user has a position */}
           {(userPosition?.yes_shares ?? 0) > 0 && (
-            <div className="flex flex-col w-full mt-2 gap-0.5 text-[11px] font-medium font-mono tabular-nums tracking-tight">
-              <div className="flex justify-between w-full">
-                <span className="text-muted-foreground">Hold:</span>
-                <span className="text-muted-foreground">{userPosition?.yes_shares.toLocaleString()}</span>
+            <div className="w-full mt-1.5 pt-2 border-t border-subtle flex flex-col gap-0.5 text-[10.5px] font-mono tabular-nums">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground/70">Hold</span>
+                <span className="text-primary/80">{userPosition!.yes_shares.toLocaleString()} sh</span>
               </div>
-              <div className="flex justify-between w-full">
-                <span className="text-muted-foreground">P&L:</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground/70">P&L</span>
                 <span className={
                   (((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0
-                    ? 'text-yes-strong'
-                    : 'text-no-strong'
+                    ? 'text-yes-strong font-semibold'
+                    : 'text-no-strong font-semibold'
                 }>
                   {(((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0 ? '+' : ''}
                   {formatKES((((userPosition?.yes_shares ?? 0) * (currentPrices.yes_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)))}
@@ -215,34 +218,37 @@ export function MarketOrderForm({
         <button
           type="button"
           onClick={() => handleOutcomeSelect('NO')}
-          className={`flex flex-col p-3.5 rounded-xl border font-bold transition-all duration-200 cursor-pointer ${
+          className={`flex flex-col items-start gap-1 px-4 py-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
             outcome === 'NO'
-              ? 'border-no-strong bg-no-dim ring-1.5 ring-no-strong shadow-sm'
-              : 'border-subtle bg-surface hover:border-no-strong/40'
+              ? 'border-no-strong bg-no-dim shadow-md'
+              : 'border-subtle bg-subtle/40 hover:border-no-strong/50 hover:bg-subtle/80'
           }`}
         >
-          <div className="flex items-center justify-between w-full">
-            <span className={outcome === 'NO' ? 'text-no-strong' : 'text-muted-foreground'}>
-              NO
-            </span>
-            <span className="font-mono text-sm font-bold text-primary">
-              {typeof currentPrices.no_price === 'number'
-                ? formatPrice(currentPrices.no_price)
-                : '--'}
-            </span>
-          </div>
+          {/* Label */}
+          <span className={`text-xs font-semibold tracking-widest uppercase ${outcome === 'NO' ? 'text-no-strong' : 'text-muted-foreground'}`}>
+            NO
+          </span>
+          {/* Price — dominant */}
+          <span className={`text-2xl font-bold tabular-nums leading-none ${outcome === 'NO' ? 'text-no-strong' : 'text-primary/60'}`}>
+            {typeof currentPrices.no_price === 'number' ? formatPrice(currentPrices.no_price) : '--'}
+          </span>
+          {/* Probability hint */}
+          <span className="text-[10px] text-muted-foreground/70 tabular-nums">
+            {typeof currentPrices.no_price === 'number' ? `${currentPrices.no_price}% prob.` : ''}
+          </span>
+          {/* Holdings — only when user has a position */}
           {(userPosition?.no_shares ?? 0) > 0 && (
-            <div className="flex flex-col w-full mt-2 gap-0.5 text-[11px] font-medium font-mono tabular-nums tracking-tight">
-              <div className="flex justify-between w-full">
-                <span className="text-muted-foreground">Hold:</span>
-                <span className="text-muted-foreground">{userPosition?.no_shares.toLocaleString()}</span>
+            <div className="w-full mt-1.5 pt-2 border-t border-subtle flex flex-col gap-0.5 text-[10.5px] font-mono tabular-nums">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground/70">Hold</span>
+                <span className="text-primary/80">{userPosition!.no_shares.toLocaleString()} sh</span>
               </div>
-              <div className="flex justify-between w-full">
-                <span className="text-muted-foreground">P&L:</span>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">P&L</span>
                 <span className={
                   (((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0
-                    ? 'text-yes-strong'
-                    : 'text-no-strong'
+                    ? 'text-yes-strong font-semibold'
+                    : 'text-no-strong font-semibold'
                 }>
                   {(((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)) >= 0 ? '+' : ''}
                   {formatKES((((userPosition?.no_shares ?? 0) * (currentPrices.no_price ?? 50) * 100) - (userPosition?.cost_basis ?? 0)))}
