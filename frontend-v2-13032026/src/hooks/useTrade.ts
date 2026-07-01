@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tradingService } from '@/lib/api/trading.service';
-import type { PlaceTradeRequest, TradeReceipt, ApiError, Trade, SellReceipt, PlaceSellRequest } from '@/lib/api/types/api';
+import type { PlaceTradeRequest, TradeReceipt, ApiError, Trade, PlaceSellRequest, SellReceipt, SellQuoteResponse } from '@/lib/api/types/api';
 import { queryKeys } from '@/lib/queryKeys';
 
 /**
@@ -8,11 +8,11 @@ import { queryKeys } from '@/lib/queryKeys';
  * Go's shopspring/decimal serializes as JSON strings (e.g. "10" not 10).
  */
 function normalizeTrade<T extends Partial<Trade>>(t: T): T {
-  return {
-    ...t,
-    ...(t.shares != null && { shares: Number(t.shares) }),
-    ...(t.cost_paid != null && { cost_paid: Number(t.cost_paid) }),
-  };
+	return {
+		...t,
+		...(t.shares != null && { shares: Number(t.shares) }),
+		...(t.cost_paid != null && { cost_paid: Number(t.cost_paid) }),
+	};
 }
 
 /**
@@ -70,9 +70,6 @@ export function useTrade(marketId: string) {
 	};
 }
 
-/**
- * useSell hook for market sell actions.
- */
 export function useSell(marketId: string) {
 	const queryClient = useQueryClient();
 	const mutation = useMutation<SellReceipt, ApiError, PlaceSellRequest>({
@@ -99,7 +96,7 @@ export function useSell(marketId: string) {
 			return { previous };
 		},
 		onSuccess: () => {
-			// Invalidate queries similar to buy
+			// Invalidate queries to refresh data
 			queryClient.invalidateQueries({ queryKey: queryKeys.user.balance() });
 			queryClient.invalidateQueries({ queryKey: queryKeys.markets.position(marketId) });
 			queryClient.invalidateQueries({ queryKey: queryKeys.markets.details(marketId) });
@@ -117,11 +114,11 @@ export function useSell(marketId: string) {
 }
 
 export function useSellQuote(marketId: string, outcome: 'YES' | 'NO', shares: number) {
-	return useQuery({
+	return useQuery<SellQuoteResponse, ApiError>({
 		queryKey: ['sellQuote', marketId, outcome, shares],
 		queryFn: async () => {
-			const { data } = await tradingService.getSellQuote(marketId, outcome, shares);
-			return data;
+			const res = await tradingService.getSellQuote(marketId, outcome, shares);
+			return res.data;
 		},
 		enabled: !!marketId && shares > 0,
 		staleTime: 5000,
