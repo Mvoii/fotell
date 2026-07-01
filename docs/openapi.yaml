@@ -304,7 +304,7 @@ paths:
       tags:
         - User
       summary: Get user trade history
-      description: List all trades made by the user
+      description: List all trades made by the user. Formatted with financial outcomes.
       operationId: getMyTrades
       security:
         - bearerAuth: []
@@ -333,10 +333,16 @@ paths:
                   trades:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Trade'
+                      $ref: '#/components/schemas/TradeResponse'
                   total:
                     type: integer
                     example: 42
+                  limit:
+                    type: integer
+                    example: 50
+                  offset:
+                    type: integer
+                    example: 0
 
   # ============================================================================
   # MARKETS (PUBLIC)
@@ -607,31 +613,18 @@ paths:
     post:
       tags:
         - Trading
-      summary: Place a trade
+      summary: Place a trade (Buy or Sell)
       description: |
-        Buy shares on YES or NO outcome. You may provide either `budget` (to spend a fixed amount) 
-        OR `shares` (to buy a specific amount). Providing both will result in an error.
+        Execute a buy or sell order on a specific outcome.
         
-        **Requirements:**
-        - Market must be OPEN
-        - User must have sufficient balance
-        - Shares must be positive
+        **Action: BUY**
+        - Provide either `shares` OR `budget_cents`.
+        - Deducts `budget_cents` from balance and adds shares to position.
         
-        **Pricing:**
-        - Cost is calculated by LSMR automated market maker
-        - Price moves based on supply/demand
-        - Your balance is the maximum cost (slippage protection)
-        
-        **Atomicity:**
-        - Trade executes atomically (all or nothing)
-        - Balance debited, shares added, position updated in single transaction
-        
-        **Example:**
-        - Buy 10 YES shares
-        - AMM calculates cost: 501 cents (5.01 KES)
-        - Balance debited: 501 cents
-        - Position updated: +10 YES shares
-        - Prices adjust after trade
+        **Action: SELL**
+        - Must provide exact `shares` to sell. (`budget_cents` is ignored).
+        - User must own `>= shares` of the specified outcome.
+        - Deducts shares from position and adds KES payout to balance.
       operationId: placeTrade
       security:
         - bearerAuth: []
@@ -643,23 +636,28 @@ paths:
           application/json:
             schema:
               type: object
-              required: [outcome]
+              required: 
+                - action
+                - outcome
               properties:
+                action:
+                  type: string
+                  enum: [BUY, SELL]
+                  description: Trade direction
+                  example: BUY
                 outcome:
                   type: string
                   enum: [YES, NO]
-                  description: Which outcome to buy
                   example: YES
                 shares:
                   type: number
                   format: double
-                  minimum: 1
-                  description: Number of shares to buy (optional)
+                  description: Number of shares to buy/sell
                   example: 10.0
                 budget_cents:
                   type: integer
                   format: int64
-                  description: Amount to spend in cents (optional)
+                  description: Budget (only valid for BUY action)
                   example: 50000
       responses:
         '201':
@@ -669,56 +667,28 @@ paths:
               schema:
                 type: object
                 properties:
-                  trade_id:
-                    type: string
-                    format: uuid
-                    example: abc123-def456-789012
-                  outcome:
-                    type: string
-                    enum: [YES, NO]
-                    example: YES
-                  shares:
-                    type: number
-                    format: double
-                    example: 10.0
-                  cost_paid:
-                    type: integer
-                    format: int64
-                    description: Actual cost in cents
-                    example: 501
+                  trade:
+                    $ref: '#/components/schemas/TradeResponse'
                   avg_price:
                     type: number
                     format: double
-                    description: Average price per share in cents
-                    example: 50.1
                   position:
                     $ref: '#/components/schemas/Position'
                   balance_after:
                     type: integer
                     format: int64
-                    description: Balance after trade in cents
-                    example: 499499
-                  timestamp:
-                    type: string
-                    format: date-time
-                    example: 2026-03-08T15:30:00Z
         '400':
-          description: Invalid request
+          description: Invalid request parameters
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized / Missing authentication token
+        '404':
+          description: Market not found
         '409':
-          description: Insufficient balance
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-              example:
-                error: insufficient balance
-                details:
-                  error_code: INSUFFICIENT_BALANCE
-                  hint: trade cost exceeds available balance
+          description: Insufficient balance or invalid market status
 
   # ============================================================================
   # ADMIN ENDPOINTS
@@ -1444,21 +1414,52 @@ components:
     # TRADING SCHEMAS
     # ==========================================================================
     
-    Trade:
+    TradeRequest:
       type: object
+      required:
+        - action
+        - outcome
+        - shares
       properties:
-        id:
+        action:
+          type: string
+          enum: [BUY, SELL]
+          example: BUY
+          description: The trading action to perform.
+        outcome:
+          type: string
+          enum: [YES, NO]
+          example: YES
+          description: The prediction outcome target.
+        shares:
+          type: number
+          minimum: 1.0
+          example: 10.5
+          description: Number of outcome shares to trade.
+
+    TradeResponse:
+      type: object
+      required:
+        - trade_id
+        - market_id
+        - action
+        - outcome
+        - shares
+        - financials
+        - timestamp
+      properties:
+        trade_id:
           type: string
           format: uuid
-          example: abc123-def456-789012
-        user_id:
-          type: string
-          format: uuid
-          example: 02104dfb-cc72-44f8-8c8d-d57ae4450493
+          example: "8f4da3b8-6b12-40f4-8aef-34351582236a"
         market_id:
           type: string
           format: uuid
-          example: f6ca8e7b-38bc-4c4d-ab42-0ec1ca8e877d
+          example: "a7b07384-d113-4c4e-a555-e400122247bb"
+        action:
+          type: string
+          enum: [BUY, SELL]
+          example: BUY
         outcome:
           type: string
           enum: [YES, NO]
@@ -1466,59 +1467,126 @@ components:
         shares:
           type: number
           format: double
-          description: Number of shares bought
-          example: 10.0
-        cost_paid:
-          type: integer
-          format: int64
-          description: Cost in cents
-          example: 501
-        created_at:
+          example: 10.5
+        financials:
+          $ref: '#/components/schemas/Financials'
+        timestamp:
           type: string
           format: date-time
-          example: 2026-03-08T15:30:00Z
+          example: "2026-07-01T18:00:00Z"
+        balance_after:
+          type: integer
+          format: int64
+          example: 490000
+          description: The remaining user balance in cents (100 cents = 1 KES) after trade execution.
+        position:
+          $ref: '#/components/schemas/Position'
+
+    Financials:
+      type: object
+      required:
+        - amount_cents
+        - type
+      properties:
+        amount_cents:
+          type: integer
+          format: int64
+          example: 1250
+          description: Cost paid (DEBIT) or payout received (CREDIT) in cents.
+        type:
+          type: string
+          enum: [CREDIT, DEBIT]
+          example: DEBIT
+        realized_pnl_cents:
+          type: integer
+          format: int64
+          nullable: true
+          example: 150
+          description: Realized profit or loss in cents. Non-null only for SELL actions or settlements.
 
     Position:
       type: object
-      description: User's holdings in a market
+      required:
+        - user_id
+        - market_id
+        - yes_shares
+        - no_shares
+        - cost_basis
       properties:
         user_id:
           type: string
           format: uuid
-          example: 02104dfb-cc72-44f8-8c8d-d57ae4450493
         market_id:
           type: string
           format: uuid
-          example: f6ca8e7b-38bc-4c4d-ab42-0ec1ca8e877d
         yes_shares:
           type: number
-          format: double
-          description: Number of YES shares owned
-          example: 10.0
+          example: 10.5
+          description: Aggregate volume of YES shares owned.
         no_shares:
           type: number
-          format: double
-          description: Number of NO shares owned
-          example: 5.0
+          example: 0.0
+          description: Aggregate volume of NO shares owned.
         cost_basis:
           type: integer
           format: int64
-          description: Total amount spent in cents
-          example: 750
+          example: 1250
+          description: Total net capital invested in this market position in cents.
         realized_pnl:
           type: integer
           format: int64
           nullable: true
-          description: Profit/loss after settlement (null until resolved)
-          example: 250
+          example: null
+          description: PnL realized after completing sales or after settlement.
         created_at:
           type: string
           format: date-time
-          example: 2026-03-08T15:30:00Z
         updated_at:
           type: string
           format: date-time
-          example: 2026-03-08T15:35:00Z
+
+
+    Trade:
+      type: object
+      required:
+        - id
+        - user_id
+        - market_id
+        - action
+        - outcome
+        - shares
+        - cost_paid
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        market_id:
+          type: string
+          format: uuid
+        action:
+          type: string
+          enum: [BUY, SELL]
+          example: BUY
+        outcome:
+          type: string
+          enum: [YES, NO]
+          example: YES
+        shares:
+          type: number
+          example: 10.5
+        cost_paid:
+          type: integer
+          format: int64
+          example: 1250
+          description: Net cost in cents.
+        created_at:
+          type: string
+          format: date-time
+  
     # -----------------------------------------------------------------------
     # Comments
     # -----------------------------------------------------------------------

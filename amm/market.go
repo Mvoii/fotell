@@ -725,3 +725,78 @@ func (m *Market) SetQuantities(quantities []decimal.Decimal) error {
 	// Pass the state down to the internal engine
 	return m.engine.SetQuantities(quantities)
 }
+
+/*
+Sell executes a sale of owned shares back to the amm
+*/
+func (m *Market) Sell(userID string, outcome BinaryOutcome, shareAmount decimal.Decimal) (*TradeReceipt, error) {
+	if userID == "" {
+		return nil, ErrInvalidUserID
+	}
+
+	if shareAmount.LessThan(MinShareAmount) {
+		return nil, fmt.Errorf("%w: min is %s shares", ErrInvalidShareAmount, MinShareAmount)
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.status != StatusOpen {
+		return nil, fmt.Errorf("%w: status is %s", ErrMarketNotOpen, m.status)
+	}
+
+	pricesBefore, err := m.engine.CalculatePrices()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read pre trade prices: %w", err)
+	}
+
+	payout, pricesAfter, err := m.engine.ExecuteSell(outcome.ToOutcomeIndex(), shareAmount)
+	if err != nil {
+		return nil, fmt.Errorf("engine sale failed: %w", err)
+	}
+
+	tradeID, err := generateID()
+	if err != nil {
+		// manual rollback
+		_, _, _ = m.engine.ExecutePurchase(outcome.ToOutcomeIndex(), shareAmount)
+		return nil, fmt.Errorf("trade id gen failed: %w", err)
+	}
+
+	now := time.Now().UTC()
+	yesAfter, noAfter := pricesAfter[BuyYES.ToOutcomeIndex()], pricesAfter[BuyNO.ToOutcomeIndex()]
+
+	// append to immutable trade ledger
+	record := Trade{
+		ID: tradeID,
+		MarketID: m.id,
+		UserID: userID,
+		Outcome: outcome,
+		SharesBought: shareAmount,
+		CostPaid: payout,
+		YesPriceBefore: pricesBefore[BuyYES.ToOutcomeIndex()],
+		YesPriceAfter: yesAfter,
+		NoPriceBefore: pricesBefore[BuyNO.ToOutcomeIndex()],
+		NoPriceAfter: noAfter,
+		Timestamp: now,
+	}
+
+	m.trades = append(m.trades, record)
+
+	// Note: We skip checking m.positions here because the DB is the source of truth
+	// and we handle the strict position validation in the handler transaction.
+	
+	// Update market-level volume tracker (we count cash-outs as volume too)
+	m.totalVolume = m.totalVolume.Add(payout)
+
+	return &TradeReceipt{
+		TradeID:       tradeID,
+		MarketID:      m.id,
+		UserID:        userID,
+		Outcome:       outcome,
+		SharesBought:  shareAmount,
+		CostPaid:      payout,
+		YesPriceAfter: yesAfter,
+		NoPriceAfter:  noAfter,
+		Timestamp:     now,
+	}, nil
+}

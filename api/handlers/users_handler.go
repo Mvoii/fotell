@@ -180,8 +180,13 @@ func (h *UserHandler) GetMyTrades(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	formattedTrades := make([]TradeResponse, len(trades))
+	for i, t := range trades {
+		formattedTrades[i] = formatTradeResponse(t)
+	}
+
 	JSON(w, 200, map[string]interface{}{
-		"trades": trades,
+		"trades": formattedTrades,
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,
