@@ -1,6 +1,7 @@
 import React from 'react';
 import type { MarketOrderFormProps } from '@/lib/api/types/api';
 import { formatPrice, formatKES, estimateCostKES, resolutionPayoutKES } from '@/lib/formatters';
+import { useSellQuote } from '@/hooks/useTrade';
 
 // Maximum trade amount in KES per trade
 const MAX_TRADE_AMOUNT_KES = 5000;
@@ -18,11 +19,11 @@ export function MarketOrderForm({
   userBalance,
   userPosition,
   onSubmit,
+  onSellSubmit,
   tradeHook,
+  sellHook,
   defaultOutcome = 'YES',
 }: MarketOrderFormProps) {
-  void market; // referenced via MarketOrderFormProps but not used directly in JSX yet
-
   // ── State
   const [side, setSide] = React.useState<'BUY' | 'SELL'>('BUY');
   const [outcome, setOutcome] = React.useState<'YES' | 'NO'>(defaultOutcome);
@@ -78,6 +79,13 @@ export function MarketOrderForm({
     setErrorMsg(null);
   };
 
+  // Fetch sell quote when side is SELL and we have shares
+  const { data: sellQuote, isFetching: isFetchingQuote } = useSellQuote(
+    market.id,
+    outcome,
+    side === 'SELL' && sharesCount > 0 ? sharesCount : 0
+  );
+
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg(null);
     const value = e.target.value;
@@ -110,13 +118,26 @@ export function MarketOrderForm({
     e.preventDefault();
     setErrorMsg(null);
 
-    if (side === 'SELL') {
-      setErrorMsg('Selling is not supported by API. Please hold shares until resolution.');
+    if (sharesCount < 1) {
+      setErrorMsg('Shares must be at least 1');
       return;
     }
 
-    if (sharesCount < 1) {
-      setErrorMsg('Shares must be at least 1');
+    if (side === 'SELL') {
+      if (!onSellSubmit) {
+        setErrorMsg('Selling is not configured.');
+        return;
+      }
+      if (sharesCount > heldShares) {
+        setErrorMsg('Insufficient shares to sell.');
+        return;
+      }
+      
+      onSellSubmit({
+        outcome,
+        shares: sharesCount,
+        min_proceeds_kes: 0, // Can be improved with slippage logic based on sellQuote
+      });
       return;
     }
 
@@ -138,11 +159,12 @@ export function MarketOrderForm({
 
   // Sync API errors into local error state
   React.useEffect(() => {
-    if (tradeHook.error) {
-      const timer = setTimeout(() => setErrorMsg(tradeHook.error!.error), 0);
+    const error = tradeHook.error || sellHook?.error;
+    if (error) {
+      const timer = setTimeout(() => setErrorMsg(error.error), 0);
       return () => clearTimeout(timer);
     }
-  }, [tradeHook.error]);
+  }, [tradeHook.error, sellHook?.error]);
 
   // Track previous prices for delta indicators
   const prevYesRef = React.useRef(currentPrices.yes_price);
@@ -248,13 +270,13 @@ export function MarketOrderForm({
         const isGain = pnl >= 0;
         if (shares <= 0) return null;
         return (
-          <div className="flex items-center justify-between px-4 py-2 bg-subtle border border-subtle-border rounded-lg text-xs font-mono tabular-nums overflow-hidden">
+          <div className={`flex items-center justify-between px-4 py-2 border rounded-lg text-xs font-mono tabular-nums overflow-hidden ${side === 'SELL' ? 'bg-accent-blue/10 border-accent-blue/30' : 'bg-subtle border-subtle-border'}`}>
             <div className="flex items-center gap-1.5 whitespace-nowrap">
               <span className={outcome === 'YES' ? 'text-yes-strong font-semibold' : 'text-no-strong font-semibold'}>
                 {outcome}
               </span>
               <span className="text-muted-foreground/50">·</span>
-              <span className="text-primary/90">{shares.toLocaleString()} <span className="text-muted-foreground text-[10px]">qty</span></span>
+              <span className="text-primary/90">{shares.toLocaleString()} <span className="text-muted-foreground text-[10px]">owned</span></span>
             </div>
             <div className={`font-semibold whitespace-nowrap pl-2 ${isGain ? 'text-yes-strong' : 'text-no-strong'}`}>
               {isGain ? '+' : '-'}{formatCompactKES(Math.abs(pnl))}
@@ -265,30 +287,32 @@ export function MarketOrderForm({
 
 
       {/* ── KES / Shares Mode Toggle */}
-      <div className="flex bg-subtle p-1 rounded-lg w-full">
-        <button
-          type="button"
-          onClick={() => handleInputModeSelect('SHARES')}
-          className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${
-            inputMode === 'SHARES'
-              ? 'bg-surface text-primary border border-subtle-border shadow-sm'
-              : 'text-muted-foreground hover:text-primary'
-          }`}
-        >
-          Shares
-        </button>
-        <button
-          type="button"
-          onClick={() => handleInputModeSelect('KES')}
-          className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${
-            inputMode === 'KES'
-              ? 'bg-surface text-primary border border-subtle-border shadow-sm'
-              : 'text-muted-foreground hover:text-primary'
-          }`}
-        >
-          KES
-        </button>
-      </div>
+      {side === 'BUY' ? (
+        <div className="flex bg-subtle p-1 rounded-lg w-full">
+          <button
+            type="button"
+            onClick={() => handleInputModeSelect('SHARES')}
+            className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${
+              inputMode === 'SHARES'
+                ? 'bg-surface text-primary border border-subtle-border shadow-sm'
+                : 'text-muted-foreground hover:text-primary'
+            }`}
+          >
+            Shares
+          </button>
+          <button
+            type="button"
+            onClick={() => handleInputModeSelect('KES')}
+            className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${
+              inputMode === 'KES'
+                ? 'bg-surface text-primary border border-subtle-border shadow-sm'
+                : 'text-muted-foreground hover:text-primary'
+            }`}
+          >
+            KES
+          </button>
+        </div>
+      ) : null}
 
       {/* ── Input Box */}
       <div
@@ -339,49 +363,73 @@ export function MarketOrderForm({
           <span className="text-primary font-semibold">{currentPrice.toFixed(1)}% chance</span>
         </div>
 
-        {/* Payout row */}
-        <div className="flex justify-between items-center">
-          <span className="text-muted-foreground text-sm flex items-center gap-1">
-            Payout if {outcome}
-            <svg className="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
-            </svg>
-          </span>
-          <span className={`text-xl font-bold font-mono ${
-            outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
-          } ${isOverLimit ? 'opacity-40' : ''}`}>
-            {formatKES(maxPayout)}
-          </span>
-        </div>
+        {side === 'BUY' ? (
+          <>
+            {/* Payout row */}
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground text-sm flex items-center gap-1">
+                Payout if {outcome}
+                <svg className="w-3.5 h-3.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
+                </svg>
+              </span>
+              <span className={`text-xl font-bold font-mono ${
+                outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
+              } ${isOverLimit ? 'opacity-40' : ''}`}>
+                {formatKES(maxPayout)}
+              </span>
+            </div>
 
-        {/* Contextual hint */}
-        {sharesCount > 0 && (
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {inputMode === 'KES' ? (
-              <>
-                KES <span className="font-semibold text-primary">{(parseFloat(amountInput) || 0).toFixed(2)}</span>
-                {' → ~'}
-                <span className="font-semibold text-primary">{sharesCount} shares</span>
-                {' at '}
-                <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>
-                {'. Payout if right: '}
-                <span className={`font-semibold ${
-                  outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
-                }`}>{formatKES(maxPayout)}</span>.
-              </>
-            ) : (
-              <>
-                You&apos;re buying{' '}
-                <span className="font-semibold text-primary">{sharesCount} contracts</span>{' '}
-                at{' '}
-                <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>{' '}
-                each. If you&apos;re right, payout is{' '}
-                <span className={`font-semibold ${
-                  outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
-                }`}>{formatKES(maxPayout)}</span>.
-              </>
+            {/* Contextual hint */}
+            {sharesCount > 0 && (
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                {inputMode === 'KES' ? (
+                  <>
+                    KES <span className="font-semibold text-primary">{(parseFloat(amountInput) || 0).toFixed(2)}</span>
+                    {' → ~'}
+                    <span className="font-semibold text-primary">{sharesCount} shares</span>
+                    {' at '}
+                    <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>
+                    {'. Payout if right: '}
+                    <span className={`font-semibold ${
+                      outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
+                    }`}>{formatKES(maxPayout)}</span>.
+                  </>
+                ) : (
+                  <>
+                    You&apos;re buying{' '}
+                    <span className="font-semibold text-primary">{sharesCount} contracts</span>{' '}
+                    at{' '}
+                    <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>{' '}
+                    each. If you&apos;re right, payout is{' '}
+                    <span className={`font-semibold ${
+                      outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
+                    }`}>{formatKES(maxPayout)}</span>.
+                  </>
+                )}
+              </p>
             )}
-          </p>
+          </>
+        ) : (
+          /* SELL Mode Info */
+          <>
+            {sharesCount > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-muted-foreground text-sm flex items-center gap-1">
+                  Est. Proceeds
+                </span>
+                <span className="text-xl font-bold font-mono text-accent-blue flex items-center gap-2">
+                  {isFetchingQuote ? (
+                    <svg className="animate-spin h-5 w-5 text-accent-blue opacity-50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                  ) : null}
+                  {sellQuote ? formatKES(sellQuote.projected_kes) : formatKES(0)}
+                </span>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -403,17 +451,21 @@ export function MarketOrderForm({
       {/* ── Submit Button */}
       <button
         type="submit"
-        disabled={sharesCount < 1 || isOverLimit || side === 'SELL'}
+        disabled={sharesCount < 1 || (side === 'BUY' && isOverLimit) || (side === 'SELL' && sharesCount > heldShares) || (side === 'SELL' && isFetchingQuote)}
         className={`w-full py-3.5 rounded-lg font-bold text-sm shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer ${
           side === 'SELL'
-            ? 'bg-accent-blue text-white'
+            ? 'bg-accent-blue text-white hover:bg-accent-blue/90 active:scale-[0.99]'
             : outcome === 'YES'
             ? 'bg-yes-strong text-black hover:bg-yes-strong/95 active:scale-[0.99]'
             : 'bg-no-strong text-white hover:bg-no-strong/95 active:scale-[0.99]'
         }`}
       >
         {side === 'SELL'
-          ? 'Selling is not supported by API'
+          ? sharesCount > heldShares 
+            ? 'Insufficient shares'
+            : isFetchingQuote
+            ? 'Calculating...'
+            : `Sell ${outcome} — ~${sellQuote ? formatKES(sellQuote.projected_kes) : formatKES(0)}`
           : isOverLimit
           ? `Limit exceeded (max KES ${MAX_TRADE_AMOUNT_KES})`
           : inputMode === 'KES'

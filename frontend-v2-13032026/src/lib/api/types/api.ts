@@ -248,7 +248,9 @@ export interface MarketOrderFormProps {
   userBalance: number | null;
   userPosition: Position | null;
   onSubmit: (params: PlaceTradeRequest) => void;
+  onSellSubmit?: (params: PlaceSellRequest) => void;
   tradeHook: ReturnType<typeof import('@/hooks/useTrade').useTrade>;
+  sellHook?: ReturnType<typeof import('@/hooks/useTrade').useSell>;
   defaultOutcome?: 'YES' | 'NO';
 }
 

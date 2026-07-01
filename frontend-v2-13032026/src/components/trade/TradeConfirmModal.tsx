@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Market, PlaceTradeRequest, TradeReceipt, ApiError } from '@/lib/api/types/api';
+import type { Market, PlaceTradeRequest, PlaceSellRequest, TradeReceipt, SellReceipt, ApiError } from '@/lib/api/types/api';
 import { formatKES, formatPrice } from '@/lib/formatters';
 import { TradeReceiptCard } from './TradeReceiptCard';
 import { ModalPortal } from '@/components/ui/ModalPortal';
@@ -10,11 +10,12 @@ interface TradeConfirmModalProps {
   market: Market;
   /** Live prices from the market details query — used instead of market.yes_price / no_price which can be stale. */
   currentPrices: { yes_price: number; no_price: number };
-  tradeParams: PlaceTradeRequest | null;
-  estimatedCost: number; // in KES
+  tradeType?: 'BUY' | 'SELL';
+  tradeParams: PlaceTradeRequest | PlaceSellRequest | null;
+  estimatedAmount: number; // in KES (cost for buy, proceeds for sell)
   isPending: boolean;
   error: ApiError | null;
-  receipt: TradeReceipt | null;
+  receipt: TradeReceipt | SellReceipt | null;
   onConfirm: () => void;
 }
 
@@ -23,8 +24,9 @@ export function TradeConfirmModal({
   onClose,
   market,
   currentPrices,
+  tradeType = 'BUY',
   tradeParams,
-  estimatedCost,
+  estimatedAmount,
   isPending,
   error,
   receipt,
@@ -54,7 +56,7 @@ export function TradeConfirmModal({
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
       <div className="bg-surface border border-subtle rounded-lg shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-300">
         <div className="p-4 border-b border-subtle flex items-center justify-between">
-          <h2 className="heading-lg text-primary">Confirm Trade</h2>
+          <h2 className="heading-lg text-primary">{tradeType === 'SELL' ? 'Confirm Sell' : 'Confirm Trade'}</h2>
           <button
             onClick={onClose}
             className="text-muted-foreground hover:text-primary transition-colors"
@@ -76,7 +78,11 @@ export function TradeConfirmModal({
             <div>
               <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Side</p>
               <div className="flex items-center gap-2">
-                <div className={`w-3 h-3 rounded-full ${outcome === 'YES' ? 'bg-yes-strong' : 'bg-no-strong'}`} />
+                {tradeType === 'SELL' ? (
+                  <span className="font-bold text-lg text-accent-blue">SELL</span>
+                ) : (
+                  <div className={`w-3 h-3 rounded-full ${outcome === 'YES' ? 'bg-yes-strong' : 'bg-no-strong'}`} />
+                )}
                 <span className={`font-bold text-lg ${outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'}`}>
                   {outcome}
                 </span>
@@ -98,8 +104,8 @@ export function TradeConfirmModal({
               </span>
             </div>
             <div className="flex justify-between items-center text-lg font-bold">
-              <span className="text-primary">Total Est. Cost</span>
-              <span className="text-primary">{formatKES(estimatedCost)}</span>
+              <span className="text-primary">{tradeType === 'SELL' ? 'Total Est. Proceeds' : 'Total Est. Cost'}</span>
+              <span className={tradeType === 'SELL' ? 'text-accent-blue' : 'text-primary'}>{formatKES(estimatedAmount)}</span>
             </div>
           </div>
 
@@ -129,7 +135,7 @@ export function TradeConfirmModal({
                 Processing...
               </>
             ) : (
-              `Confirm Purchase`
+              tradeType === 'SELL' ? 'Confirm Sell' : 'Confirm Purchase'
             )}
           </button>
           <button
