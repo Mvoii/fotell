@@ -5,6 +5,13 @@ import { formatPrice, formatKES, estimateCostKES, resolutionPayoutKES } from '@/
 // Maximum trade amount in KES per trade
 const MAX_TRADE_AMOUNT_KES = 5000;
 
+/** Format a number as compact KES: KES 40K, KES 1.2M, etc. */
+function formatCompactKES(value: number): string {
+  if (value >= 1_000_000) return `KES ${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
+  if (value >= 1_000)     return `KES ${(value / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  return `KES ${value}`;
+}
+
 export function MarketOrderForm({
   market,
   currentPrices,
@@ -137,6 +144,22 @@ export function MarketOrderForm({
     }
   }, [tradeHook.error]);
 
+  // Track previous prices for delta indicators
+  const prevYesRef = React.useRef(currentPrices.yes_price);
+  const prevNoRef = React.useRef(currentPrices.no_price);
+
+  React.useEffect(() => {
+    prevYesRef.current = currentPrices.yes_price;
+    prevNoRef.current = currentPrices.no_price;
+  }, [currentPrices.yes_price, currentPrices.no_price]);
+
+  const renderDelta = (current: number | string | undefined | null, prev: number | string | undefined | null) => {
+    if (typeof current !== 'number' || typeof prev !== 'number') return null;
+    if (current > prev) return <span className="text-[#00C853] text-xs" title="Price increased">▲</span>;
+    if (current < prev) return <span className="text-[#FF1744] text-xs" title="Price decreased">▼</span>;
+    return null;
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
@@ -170,46 +193,76 @@ export function MarketOrderForm({
 
       {/* ── YES / NO Selector Buttons */}
       <div className="grid grid-cols-2 gap-3">
-        {/* YES Button */}
+        {/* YES */}
         <button
           type="button"
           onClick={() => handleOutcomeSelect('YES')}
-          className={`flex items-center justify-between p-3.5 rounded-xl border font-bold transition-all duration-200 cursor-pointer ${
+          className={`flex flex-col gap-1.5 px-4 py-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
             outcome === 'YES'
-              ? 'border-yes-strong bg-yes-dim ring-1.5 ring-yes-strong shadow-sm'
-              : 'border-subtle bg-surface hover:border-yes-strong/40'
+              ? 'border-yes-strong bg-yes-dim shadow-sm'
+              : 'border-subtle bg-subtle/40 hover:border-yes-strong/40'
           }`}
         >
-          <span className={outcome === 'YES' ? 'text-yes-strong' : 'text-muted-foreground'}>
+          <span className={`text-[11px] font-semibold tracking-widest uppercase ${
+            outcome === 'YES' ? 'text-yes-strong' : 'text-muted-foreground/60'
+          }`}>
             YES
           </span>
-          <span className="font-mono text-sm font-bold text-primary">
-            {typeof currentPrices.yes_price === 'number'
-              ? formatPrice(currentPrices.yes_price)
-              : '--'}
+          <span className={`text-2xl font-bold tabular-nums leading-none flex items-center justify-center gap-1 ${
+            outcome === 'YES' ? 'text-yes-strong' : 'text-primary/50'
+          }`}>
+            {typeof currentPrices.yes_price === 'number' ? formatPrice(currentPrices.yes_price) : '--'}
+            {renderDelta(currentPrices.yes_price, prevYesRef.current)}
           </span>
         </button>
 
-        {/* NO Button */}
+        {/* NO */}
         <button
           type="button"
           onClick={() => handleOutcomeSelect('NO')}
-          className={`flex items-center justify-between p-3.5 rounded-xl border font-bold transition-all duration-200 cursor-pointer ${
+          className={`flex flex-col gap-1.5 px-4 py-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
             outcome === 'NO'
-              ? 'border-no-strong bg-no-dim ring-1.5 ring-no-strong shadow-sm'
-              : 'border-subtle bg-surface hover:border-no-strong/40'
+              ? 'border-no-strong bg-no-dim shadow-sm'
+              : 'border-subtle bg-subtle/40 hover:border-no-strong/40'
           }`}
         >
-          <span className={outcome === 'NO' ? 'text-no-strong' : 'text-muted-foreground'}>
+          <span className={`text-[11px] font-semibold tracking-widest uppercase ${
+            outcome === 'NO' ? 'text-no-strong' : 'text-muted-foreground/60'
+          }`}>
             NO
           </span>
-          <span className="font-mono text-sm font-bold text-primary">
-            {typeof currentPrices.no_price === 'number'
-              ? formatPrice(currentPrices.no_price)
-              : '--'}
+          <span className={`text-2xl font-bold tabular-nums leading-none flex items-center justify-center gap-1 ${
+            outcome === 'NO' ? 'text-no-strong' : 'text-primary/50'
+          }`}>
+            {typeof currentPrices.no_price === 'number' ? formatPrice(currentPrices.no_price) : '--'}
+            {renderDelta(currentPrices.no_price, prevNoRef.current)}
           </span>
         </button>
       </div>
+
+      {/* ── Position Strip — only when the user holds shares */}
+      {userPosition && (userPosition.yes_shares > 0 || userPosition.no_shares > 0) && (() => {
+        const shares = outcome === 'YES' ? userPosition.yes_shares : userPosition.no_shares;
+        const price  = outcome === 'YES' ? (currentPrices.yes_price ?? 50) : (currentPrices.no_price ?? 50);
+        const pnl    = (shares * price * 100) - (userPosition.cost_basis ?? 0);
+        const isGain = pnl >= 0;
+        if (shares <= 0) return null;
+        return (
+          <div className="flex items-center justify-between px-4 py-2 bg-subtle border border-subtle-border rounded-lg text-xs font-mono tabular-nums overflow-hidden">
+            <div className="flex items-center gap-1.5 whitespace-nowrap">
+              <span className={outcome === 'YES' ? 'text-yes-strong font-semibold' : 'text-no-strong font-semibold'}>
+                {outcome}
+              </span>
+              <span className="text-muted-foreground/50">·</span>
+              <span className="text-primary/90">{shares.toLocaleString()} <span className="text-muted-foreground text-[10px]">qty</span></span>
+            </div>
+            <div className={`font-semibold whitespace-nowrap pl-2 ${isGain ? 'text-yes-strong' : 'text-no-strong'}`}>
+              {isGain ? '+' : '-'}{formatCompactKES(Math.abs(pnl))}
+            </div>
+          </div>
+        );
+      })()}
+
 
       {/* ── KES / Shares Mode Toggle */}
       <div className="flex bg-subtle p-1 rounded-lg w-full">

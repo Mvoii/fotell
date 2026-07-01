@@ -42,6 +42,11 @@ SECURITY:
  - sql injection prevention via param queries
 */
 
+// MinLiquidityParam is the minimum liquidity_param_smallest_unit (cents).
+// b = param/100 (see OpenMarket). Below b=100 a KES 500 trade moves price >10%.
+// Tiers (cents): small 50k–200k, medium 500k–2M, large 5M+.
+const MinLiquidityParam int64 = 10_000
+
 type MarketHandler struct {
 	marketRepo *repository.MarketRepository
 	registry   *amm.Registry
@@ -400,11 +405,13 @@ func (h *MarketHandler) CreateMarket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Liquidity parameter validation
-	if req.LiquidityParam <= 0 {
-		ErrorJSON(w, 400, "Liquidity parameter must be positive", map[string]interface{}{
-			"error_code": "INVALID_LIQUIDITY",
+	// Issue #71: enforce minimum b = param/100 >= 100.
+	if req.LiquidityParam < MinLiquidityParam {
+		ErrorJSON(w, 400, "Liquidity parameter too low", map[string]interface{}{
+			"error_code": "LIQUIDITY_TOO_LOW",
 			"field":      "liquidity_param",
+			"minimum":    MinLiquidityParam,
+			"hint":       "liquidity_param in cents; b = param/100. Tiers: small 50k–200k, medium 500k–2M, large 5M+",
 		})
 		return
 	}
@@ -518,9 +525,11 @@ func (h *MarketHandler) OpenMarket(w http.ResponseWriter, r *http.Request) {
 
 	// ── Initialize AMM
 
-	// Convert liquidity param from cents to decimal
-	// liquidityParamDecimal := float64(market.LiquidityParam) / 100.0
-	liquidityParam := decimal.NewFromFloat(float64(market.LiquidityParam) / 100.0)
+	// Pass b as the raw stored value — no unit conversion needed.
+	// b must be in the same unit as share quantities and cost output.
+	// The KES↔cents conversion is handled at the trade layer (cost × 100).
+	// Dividing by 100 here was shrinking b 100×, causing large price swings.
+	liquidityParam := decimal.NewFromInt(market.LiquidityParam)
 
 	ammMarket, err := h.registry.CreateMarket(amm.CreateMarketParams{
 		ID:             marketID,

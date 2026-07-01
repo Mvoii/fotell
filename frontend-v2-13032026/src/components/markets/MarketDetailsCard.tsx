@@ -38,8 +38,25 @@ const STATUS_DOT: Record<string, string> = {
 export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetailsCardProps) {
   const yesPrice  = prices?.yes_price  ?? market.yes_price;
   const noPrice   = prices?.no_price   ?? market.no_price;
-  const yesLabel  = Number.isFinite(yesPrice) ? `${Math.round(yesPrice as number)}%` : '--';
-  const noLabel   = Number.isFinite(noPrice)  ? `${Math.round(noPrice  as number)}%` : '--';
+  
+  // Track previous prices for delta indicators
+  const prevYesRef = React.useRef(yesPrice);
+  const prevNoRef = React.useRef(noPrice);
+  
+  React.useEffect(() => {
+    prevYesRef.current = yesPrice;
+    prevNoRef.current = noPrice;
+  }, [yesPrice, noPrice]);
+
+  const renderDelta = (current: number | string | undefined | null, prev: number | string | undefined | null) => {
+    if (typeof current !== 'number' || typeof prev !== 'number') return null;
+    if (current > prev) return <span className="text-[#00C853] text-xs ml-1" title="Price increased">▲</span>;
+    if (current < prev) return <span className="text-[#FF1744] text-xs ml-1" title="Price decreased">▼</span>;
+    return null;
+  };
+
+  const yesLabel  = Number.isFinite(yesPrice) ? `${Number(yesPrice).toFixed(1)}%` : '--';
+  const noLabel   = Number.isFinite(noPrice)  ? `${Number(noPrice).toFixed(1)}%` : '--';
 
   const isResolved = market.status === 'RESOLVED';
   const dotColor  = STATUS_DOT[market.status] ?? 'bg-[#8B92A5]';
@@ -113,16 +130,18 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
             {/* Percentage labels above bar */}
             <div className="flex items-end justify-between mb-2">
               <div className="flex flex-col items-start">
-                <span className="text-2xl font-extrabold font-mono leading-none text-yes-strong">
+                <span className="text-2xl font-extrabold font-mono leading-none text-yes-strong flex items-center">
                   {yesLabel}
+                  {renderDelta(yesPrice, prevYesRef.current)}
                 </span>
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                   Yes
                 </span>
               </div>
               <div className="flex flex-col items-end">
-                <span className="text-2xl font-extrabold font-mono leading-none text-no-strong">
+                <span className="text-2xl font-extrabold font-mono leading-none text-no-strong flex items-center">
                   {noLabel}
+                  {renderDelta(noPrice, prevNoRef.current)}
                 </span>
                 <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mt-0.5">
                   No
@@ -146,8 +165,9 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
           >
             <span className="text-sm font-semibold text-yes-strong">Yes</span>
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-sm font-bold font-mono text-yes-strong px-2.5 py-0.5 rounded-full bg-[rgba(0,200,83,0.15)] border border-[rgba(0,200,83,0.3)]">
+              <span className="text-sm font-bold font-mono text-yes-strong px-2.5 py-0.5 rounded-full bg-[rgba(0,200,83,0.15)] border border-[rgba(0,200,83,0.3)] flex items-center">
                 {yesLabel}
+                {renderDelta(yesPrice, prevYesRef.current)}
               </span>
             </div>
           </div>
@@ -159,8 +179,9 @@ export function MarketDetailsCard({ market, prices, tradesTotal }: MarketDetails
           >
             <span className="text-sm font-semibold text-no-strong">No</span>
             <div className="flex items-center gap-2 ml-auto">
-              <span className="text-sm font-bold font-mono text-no-strong px-2.5 py-0.5 rounded-full bg-[rgba(255,23,68,0.1)] border border-[rgba(255,23,68,0.25)]">
+              <span className="text-sm font-bold font-mono text-no-strong px-2.5 py-0.5 rounded-full bg-[rgba(255,23,68,0.1)] border border-[rgba(255,23,68,0.25)] flex items-center">
                 {noLabel}
+                {renderDelta(noPrice, prevNoRef.current)}
               </span>
             </div>
           </div>

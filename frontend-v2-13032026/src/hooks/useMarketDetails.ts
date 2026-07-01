@@ -40,6 +40,7 @@ export function useMarketDetails(id: string) {
     // show "Failed to load market details."
     enabled: !!id && marketQuery.data?.status === 'OPEN',
     retry: false,
+    refetchInterval: 20000, // periodic state broadcast sync
   });
 
   // ── Stale-price mitigation ────────────────────────────────────────────
