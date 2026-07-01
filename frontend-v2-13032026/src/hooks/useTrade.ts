@@ -79,7 +79,7 @@ export function useSell(marketId: string) {
 			return {
 				...receipt,
 				shares: Number(receipt.shares),
-				proceeds_paid: Number(receipt.proceeds_paid),
+				proceeds_paid: Number((receipt as any).trade?.financials?.amount_cents || receipt.proceeds_paid || 0),
 				avg_price: Number(receipt.avg_price),
 				balance_after: Number(receipt.balance_after),
 				position: receipt.position ? {
@@ -113,17 +113,7 @@ export function useSell(marketId: string) {
 	};
 }
 
-export function useSellQuote(marketId: string, outcome: 'YES' | 'NO', shares: number) {
-	return useQuery<SellQuoteResponse, ApiError>({
-		queryKey: ['sellQuote', marketId, outcome, shares],
-		queryFn: async () => {
-			const res = await tradingService.getSellQuote(marketId, outcome, shares);
-			return res.data;
-		},
-		enabled: !!marketId && shares > 0,
-		staleTime: 5000,
-	});
-}
+
 
 export function useMarketTrades(marketId: string, limit?: number, offset?: number) {
 	return useQuery({
