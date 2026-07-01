@@ -251,7 +251,10 @@ export function MarketOrderForm({
             {typeof currentPrices.no_price === 'number' ? formatPrice(currentPrices.no_price) : '--'}
             {renderDelta(currentPrices.no_price, prevNoRef.current)}
           </span>
-          {/* ── Position Strip — only when the user holds shares */}
+        </button>
+      </div>
+
+      {/* ── Position Strip — only when the user holds shares */}
       {userPosition && (userPosition.yes_shares > 0 || userPosition.no_shares > 0) && (() => {
         const shares = outcome === 'YES' ? userPosition.yes_shares : userPosition.no_shares;
         const price = outcome === 'YES' ? (currentPrices.yes_price ?? 50) : (currentPrices.no_price ?? 50);
@@ -259,13 +262,13 @@ export function MarketOrderForm({
         const isGain = pnl >= 0;
         if (shares <= 0) return null;
         return (
-          <div className={`flex items-center justify-between px-4 py-2 border rounded-lg text-xs font-mono tabular-nums overflow-hidden ${side === 'SELL' ? 'bg-accent-blue/10 border-accent-blue/30' : 'bg-subtle border-subtle-border'}`}>
+          <div className="flex items-center justify-between px-4 py-2 bg-subtle border border-subtle-border rounded-lg text-xs font-mono tabular-nums overflow-hidden">
             <div className="flex items-center gap-1.5 whitespace-nowrap">
               <span className={outcome === 'YES' ? 'text-yes-strong font-semibold' : 'text-no-strong font-semibold'}>
                 {outcome}
               </span>
               <span className="text-muted-foreground/50">·</span>
-              <span className="text-primary/90">{shares.toLocaleString()} <span className="text-muted-foreground text-[10px]">owned</span></span>
+              <span className="text-primary/90">{shares.toLocaleString()} <span className="text-muted-foreground text-[10px]">qty</span></span>
             </div>
             <div className={`font-semibold whitespace-nowrap pl-2 ${isGain ? 'text-yes-strong' : 'text-no-strong'}`}>
               {isGain ? '+' : '-'}{formatCompactKES(Math.abs(pnl))}
@@ -273,8 +276,6 @@ export function MarketOrderForm({
           </div>
         );
       })()}
-        </button>
-      </div>
 
       {/* ── KES / Shares Mode Toggle */}
       {side === 'BUY' ? (
