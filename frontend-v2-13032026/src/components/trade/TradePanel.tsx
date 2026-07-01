@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { TradePanelProps, PlaceTradeRequest, PlaceSellRequest } from '@/lib/api/types/api';
 import { MarketOrderForm } from './MarketOrderForm';
-import { useTrade, useSell, useSellQuote } from '@/hooks/useTrade';
+import { useTrade, useSell } from '@/hooks/useTrade';
 import { TradeConfirmModal } from './TradeConfirmModal';
 import { estimateCostKES } from '@/lib/formatters';
 
@@ -53,22 +53,14 @@ export function TradePanel({
     if (sellHook.data || sellHook.error) sellHook.reset();
   };
 
-  // Pre-fetch sell quote for modal display if we're in SELL mode
   const isSell = tradeType === 'SELL';
-  const sellOutcome = pendingSellParams?.outcome ?? 'YES';
-  const sellShares = pendingSellParams?.shares ?? 0;
-  const { data: sellQuote } = useSellQuote(
-    market.id,
-    sellOutcome,
-    isSell && isConfirmModalOpen && sellShares > 0 ? sellShares : 0
-  );
 
-  // Calculate estimated cost or proceeds for the modal (in KES)
+  // Calculate estimated cost for the modal (in KES)
   const currentPrice = tradeType === 'BUY' && pendingBuyParams
     ? (pendingBuyParams.outcome === 'YES' ? currentPrices.yes_price : currentPrices.no_price)
     : 0;
   const estimatedAmount = isSell
-    ? (sellQuote?.projected_kes ?? 0)
+    ? 0 // Proceeds calculated at execution
     : (pendingBuyParams ? estimateCostKES(pendingBuyParams.shares, currentPrice) : 0);
 
   return (
