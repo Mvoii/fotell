@@ -11,12 +11,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/Mvoii/fotell/amm"
-	"github.com/Mvoii/fotell/api/handlers"
-	"github.com/Mvoii/fotell/api/middleware"
-	"github.com/Mvoii/fotell/api/repository"
-	"github.com/Mvoii/fotell/api/startup"
-	"github.com/Mvoii/fotell/api/workers"
+	"github.com/esiepe/fotell/amm"
+	"github.com/esiepe/fotell/api/handlers"
+	"github.com/esiepe/fotell/api/middleware"
+	"github.com/esiepe/fotell/api/repository"
+	"github.com/esiepe/fotell/api/startup"
+	"github.com/esiepe/fotell/api/workers"
 	"github.com/joho/godotenv"
 
 	"github.com/go-chi/chi/v5"
@@ -77,6 +77,9 @@ func main() {
 		log.Fatalf("CRITICAL: Failed to load active markets: %v", err)
 	}
 
+	log.Println("broker init")
+	broker := amm.NewBroker(cfg.DatabaseURL)
+
 	// settlement minions
 	settlementMinion := workers.NewSettlementMinon(db)
 
@@ -89,7 +92,7 @@ func main() {
 
 	// Initialize handlers (HTTP request handlers)
 	authHandler := handlers.NewAuthHandler(userRepo, refreshTokenRepo, cfg.JWTSecret)
-	marketHandler := handlers.NewMarketHandler(marketRepo, registry)
+	marketHandler := handlers.NewMarketHandler(marketRepo, registry, broker)
 	tradeHandler := handlers.NewTradeHandler(tradeRepo, balanceRepo, marketRepo, positionRepo, registry)
 	userHandler := handlers.NewUserHandler(userRepo, balanceRepo, positionRepo, tradeRepo)
 	commentHandler := handlers.NewCommentHandler(commentRepo, marketRepo)
@@ -102,108 +105,113 @@ func main() {
 	r.Use(chimiddleware.RealIP)                    // Get real client IP (behind proxy)
 	r.Use(chimiddleware.Logger)                    // Log every request
 	r.Use(chimiddleware.Recoverer)                 // Recover from panics
-	r.Use(chimiddleware.Timeout(60 * time.Second)) // Request timeout
 
-	// CORS configuration
-	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   getAllowedOrigins(cfg.Environment),
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		ExposedHeaders:   []string{"Link", "X-RateLimit-*"},
-		AllowCredentials: true,
-		MaxAge:           300, // 5 minutes
-	}))
+	r.Get("/api/v1/markets/{marketID}/prices/stream", marketHandler.StreamPrices)
 
-	// Global rate limiting (100 req/min per IP)
-	r.Use(httprate.LimitByIP(100, 1*time.Minute))
+	r.Group(func(sub chi.Router) {
+		sub.Use(chimiddleware.Timeout(60 * time.Second)) // Request timeout
 
-	// Security headers
-	r.Use(middleware.SecurityHeaders)
+		// CORS configuration
+		sub.Use(cors.Handler(cors.Options{
+			AllowedOrigins:   getAllowedOrigins(cfg.Environment),
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
+			ExposedHeaders:   []string{"Link", "X-RateLimit-*"},
+			AllowCredentials: true,
+			MaxAge:           300, // 5 minutes
+		}))
 
-	// Public routes (no authentication required)
-	r.Route("/api/v1", func(r chi.Router) {
+		// Global rate limiting (100 req/min per IP)
+		sub.Use(httprate.LimitByIP(100, 1*time.Minute))
 
-		// Health check
-		r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(200)
-			json.NewEncoder(w).Encode(map[string]string{
-				"status": "healthy",
-				"time":   time.Now().UTC().Format(time.RFC3339),
-			})
-		})
+		// Security headers
+		sub.Use(middleware.SecurityHeaders)
 
-		// Authentication
-		r.Post("/auth/register", authHandler.Register)
-		r.Post("/auth/login", authHandler.Login)
-		r.Post("/auth/refresh", authHandler.RefreshToken)
-		r.Post("/auth/logout", authHandler.Logout)
-
-		// Public market data (read-only)
-		r.Get("/markets", marketHandler.ListMarkets)
-		r.Get("/markets/{marketID}", marketHandler.GetMarket)
-		r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
-		r.Get("/markets/{marketID}/trades", tradeHandler.ListMarketTrades)
-		r.Get("/markets/{marketID}/quote", tradeHandler.GetQuote)
-
-		// public comments routes
-		r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
-		r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
-
-		// ── Protected routes (authentication required)
-		r.Group(func(r chi.Router) {
-			// JWT authentication middleware
-			r.Use(middleware.AuthMiddleware(cfg.JWTSecret))
-
-			// Stricter rate limiting for authenticated users (200 req/min)
-			r.Use(httprate.LimitByIP(200, 1*time.Minute))
-
-			// User routes
-			r.Get("/users/me", userHandler.GetMe)
-			r.Get("/users/me/balance", userHandler.GetBalance)
-			r.Get("/users/me/positions", userHandler.GetPositions)
-			r.Get("/users/me/trades", userHandler.GetMyTrades)
-
-			// Trading
-			r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
-
-			// comments
-			r.Post("/markets/{marketID}/comments", commentHandler.CreateComment)
-			r.Post("/comments/{commentID}/replies", commentHandler.CreateReply)
-
-			r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
-			r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
-			r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
-			r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
-
-			r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
-			r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
-
-			// ── Admin routes (admin role required)
-			r.Group(func(r chi.Router) {
-				r.Use(middleware.RequireAdmin)
-
-				// Market management
-				r.Post("/admin/markets", marketHandler.CreateMarket)
-				r.Post("/admin/markets/{marketID}/open", marketHandler.OpenMarket)
-				r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
-				r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
-
-				r.Get("/admin/settlement/status", func(w http.ResponseWriter, r *http.Request) {
-					status, err := settlementMinion.GetSettlementStatus(r.Context())
-					if err != nil {
-						handlers.ErrorJSON(w, 500, "Failed to get settlement status", nil)
-						return
-					}
-					handlers.JSON(w, 200, map[string]interface{}{
-						"settlements": status,
-					})
+		// Public routes (no authentication required)
+		sub.Route("/api/v1", func(r chi.Router) {
+			// Health check
+			r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(200)
+				json.NewEncoder(w).Encode(map[string]string{
+					"status": "healthy",
+					"time":   time.Now().UTC().Format(time.RFC3339),
 				})
+			})
 
-				// User management
-				r.Get("/admin/users", userHandler.ListUsers)
-				r.Get("/admin/users/{userID}", userHandler.GetUser)
-				r.Post("/admin/users/{userID}/deactivate", userHandler.DeactivateUser)
+			// Authentication
+			r.Post("/auth/register", authHandler.Register)
+			r.Post("/auth/login", authHandler.Login)
+			r.Post("/auth/refresh", authHandler.RefreshToken)
+			r.Post("/auth/logout", authHandler.Logout)
+
+			// Public market data (read-only)
+			r.Get("/markets", marketHandler.ListMarkets)
+			r.Get("/markets/{marketID}", marketHandler.GetMarket)
+			r.Get("/markets/{marketID}/prices", marketHandler.GetPrices)
+			r.Get("/markets/{marketID}/trades", tradeHandler.ListMarketTrades)
+			r.Get("/markets/{marketID}/quote", tradeHandler.GetQuote)
+			//r.Get("/markets/{marketID}/prices/stream", marketHandler.StreamPrices)
+
+			// public comments routes
+			r.Get("/markets/{marketID}/comments", commentHandler.ListMarketComments)
+			r.Get("/comments/{commentID}/replies", commentHandler.ListCommentReplies)
+
+			// Protected routes (authentication required)
+			r.Group(func(r chi.Router) {
+				// JWT authentication middleware
+				r.Use(middleware.AuthMiddleware(cfg.JWTSecret))
+
+				// Stricter rate limiting for authenticated users (200 req/min)
+				r.Use(httprate.LimitByIP(200, 1*time.Minute))
+
+				// User routes
+				r.Get("/users/me", userHandler.GetMe)
+				r.Get("/users/me/balance", userHandler.GetBalance)
+				r.Get("/users/me/positions", userHandler.GetPositions)
+				r.Get("/users/me/trades", userHandler.GetMyTrades)
+
+				// Trading
+				r.Post("/markets/{marketID}/trades", tradeHandler.PlaceTrade)
+
+				// comments
+				r.Post("/markets/{marketID}/comments", commentHandler.CreateComment)
+				r.Post("/comments/{commentID}/replies", commentHandler.CreateReply)
+
+				r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
+				r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
+				r.Patch("/comments/{commentID}", commentHandler.UpdateComment)
+				r.Delete("/comments/{commentID}", commentHandler.DeleteComment)
+
+				r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
+				r.Post("/comments/{commentID}/vote", commentHandler.VoteComment)
+
+				// ── Admin routes (admin role required)
+				r.Group(func(r chi.Router) {
+					r.Use(middleware.RequireAdmin)
+
+					// Market management
+					r.Post("/admin/markets", marketHandler.CreateMarket)
+					r.Post("/admin/markets/{marketID}/open", marketHandler.OpenMarket)
+					r.Post("/admin/markets/{marketID}/close", marketHandler.CloseMarket)
+					r.Post("/admin/markets/{marketID}/resolve", marketHandler.ResolveMarket)
+
+					r.Get("/admin/settlement/status", func(w http.ResponseWriter, r *http.Request) {
+						status, err := settlementMinion.GetSettlementStatus(r.Context())
+						if err != nil {
+							handlers.ErrorJSON(w, 500, "Failed to get settlement status", nil)
+							return
+						}
+						handlers.JSON(w, 200, map[string]interface{}{
+							"settlements": status,
+						})
+					})
+
+					// User management
+					r.Get("/admin/users", userHandler.ListUsers)
+					r.Get("/admin/users/{userID}", userHandler.GetUser)
+					r.Post("/admin/users/{userID}/deactivate", userHandler.DeactivateUser)
+				})
 			})
 		})
 	})
@@ -213,7 +221,7 @@ func main() {
 		Addr:         ":" + cfg.Port,
 		Handler:      r,
 		ReadTimeout:  15 * time.Second,
-		WriteTimeout: 15 * time.Second,
+		// WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
 	}
 

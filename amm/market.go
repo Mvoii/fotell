@@ -11,7 +11,7 @@ import (
 
 	"github.com/shopspring/decimal"
 
-	"github.com/Mvoii/fotell/engine"
+	"github.com/esiepe/fotell/engine"
 )
 
 /*
@@ -98,6 +98,7 @@ func newMarket(params CreateMarketParams) (*Market, error) {
 		return nil, ErrClosesAtInPast
 	}
 
+	// b = LiquidityParam (already converted: cents/100 by OpenMarket handler).
 	if params.LiquidityParam.LessThanOrEqual(decimal.Zero) {
 		return nil, ErrInvalidLiquidityParam
 	}
@@ -708,4 +709,95 @@ func (m *Market) GetQuantities() ([]decimal.Decimal, error) {
 	copy(copyQuants, quantities)
 
 	return copyQuants, nil
+}
+
+/*
+SetQuantities restores teh amm engine state from persisted storage
+trhead safe: requires write lock
+*/
+func (m *Market) SetQuantities(quantities []decimal.Decimal) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if len(quantities) != 2 {
+		return fmt.Errorf("invalid quantities vector length: expected 2, got %d", len(quantities))
+	}
+
+	// Pass the state down to the internal engine
+	return m.engine.SetQuantities(quantities)
+}
+
+/*
+Sell executes a sale of owned shares back to the amm
+*/
+func (m *Market) Sell(userID string, outcome BinaryOutcome, shareAmount decimal.Decimal) (*TradeReceipt, error) {
+	if userID == "" {
+		return nil, ErrInvalidUserID
+	}
+
+	if shareAmount.LessThan(MinShareAmount) {
+		return nil, fmt.Errorf("%w: min is %s shares", ErrInvalidShareAmount, MinShareAmount)
+	}
+
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	if m.status != StatusOpen {
+		return nil, fmt.Errorf("%w: status is %s", ErrMarketNotOpen, m.status)
+	}
+
+	pricesBefore, err := m.engine.CalculatePrices()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read pre trade prices: %w", err)
+	}
+
+	payout, pricesAfter, err := m.engine.ExecuteSell(outcome.ToOutcomeIndex(), shareAmount)
+	if err != nil {
+		return nil, fmt.Errorf("engine sale failed: %w", err)
+	}
+
+	tradeID, err := generateID()
+	if err != nil {
+		// manual rollback
+		_, _, _ = m.engine.ExecutePurchase(outcome.ToOutcomeIndex(), shareAmount)
+		return nil, fmt.Errorf("trade id gen failed: %w", err)
+	}
+
+	now := time.Now().UTC()
+	yesAfter, noAfter := pricesAfter[BuyYES.ToOutcomeIndex()], pricesAfter[BuyNO.ToOutcomeIndex()]
+
+	// append to immutable trade ledger
+	record := Trade{
+		ID: tradeID,
+		MarketID: m.id,
+		UserID: userID,
+		Outcome: outcome,
+		SharesBought: shareAmount,
+		CostPaid: payout,
+		YesPriceBefore: pricesBefore[BuyYES.ToOutcomeIndex()],
+		YesPriceAfter: yesAfter,
+		NoPriceBefore: pricesBefore[BuyNO.ToOutcomeIndex()],
+		NoPriceAfter: noAfter,
+		Timestamp: now,
+	}
+
+	m.trades = append(m.trades, record)
+
+	// Note: We skip checking m.positions here because the DB is the source of truth
+	// and we handle the strict position validation in the handler transaction.
+	
+	// Update market-level volume tracker (we count cash-outs as volume too)
+	m.totalVolume = m.totalVolume.Add(payout)
+
+	return &TradeReceipt{
+		TradeID:       tradeID,
+		MarketID:      m.id,
+		UserID:        userID,
+		Outcome:       outcome,
+		SharesBought:  shareAmount,
+		CostPaid:      payout,
+		YesPriceAfter: yesAfter,
+		NoPriceAfter:  noAfter,
+		Timestamp:     now,
+	}, nil
 }

@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/Mvoii/fotell/amm"
-	"github.com/Mvoii/fotell/api/middleware"
-	"github.com/Mvoii/fotell/api/repository"
+	"github.com/esiepe/fotell/amm"
+	"github.com/esiepe/fotell/api/middleware"
+	"github.com/esiepe/fotell/api/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/shopspring/decimal"
 )
@@ -42,20 +42,27 @@ SECURITY:
  - sql injection prevention via param queries
 */
 
+// MinLiquidityParam is the minimum liquidity_param_smallest_unit (cents).
+// b = param/100 (see OpenMarket). Below b=100 a KES 500 trade moves price >10%.
+// Tiers (cents): small 50k–200k, medium 500k–2M, large 5M+.
+const MinLiquidityParam int64 = 10_000
+
 type MarketHandler struct {
 	marketRepo *repository.MarketRepository
 	registry   *amm.Registry
+	broker     *amm.Broker
 }
 
-func NewMarketHandler(marketRepo *repository.MarketRepository, registry *amm.Registry) *MarketHandler {
+func NewMarketHandler(marketRepo *repository.MarketRepository, registry *amm.Registry, broker *amm.Broker) *MarketHandler {
 	return &MarketHandler{
 		marketRepo: marketRepo,
 		registry:   registry,
+		broker:     broker,
 	}
 }
 
 //
-// piblic ends
+// public ends
 //
 /*
 ListMarket returns all markets with optional filtering
@@ -398,11 +405,13 @@ func (h *MarketHandler) CreateMarket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Liquidity parameter validation
-	if req.LiquidityParam <= 0 {
-		ErrorJSON(w, 400, "Liquidity parameter must be positive", map[string]interface{}{
-			"error_code": "INVALID_LIQUIDITY",
+	// Issue #71: enforce minimum b = param/100 >= 100.
+	if req.LiquidityParam < MinLiquidityParam {
+		ErrorJSON(w, 400, "Liquidity parameter too low", map[string]interface{}{
+			"error_code": "LIQUIDITY_TOO_LOW",
 			"field":      "liquidity_param",
+			"minimum":    MinLiquidityParam,
+			"hint":       "liquidity_param in cents; b = param/100. Tiers: small 50k–200k, medium 500k–2M, large 5M+",
 		})
 		return
 	}
@@ -516,9 +525,11 @@ func (h *MarketHandler) OpenMarket(w http.ResponseWriter, r *http.Request) {
 
 	// ── Initialize AMM
 
-	// Convert liquidity param from cents to decimal
-	// liquidityParamDecimal := float64(market.LiquidityParam) / 100.0
-	liquidityParam := decimal.NewFromFloat(float64(market.LiquidityParam) / 100.0)
+	// Pass b as the raw stored value — no unit conversion needed.
+	// b must be in the same unit as share quantities and cost output.
+	// The KES↔cents conversion is handled at the trade layer (cost × 100).
+	// Dividing by 100 here was shrinking b 100×, causing large price swings.
+	liquidityParam := decimal.NewFromInt(market.LiquidityParam)
 
 	ammMarket, err := h.registry.CreateMarket(amm.CreateMarketParams{
 		ID:             marketID,
@@ -701,7 +712,7 @@ func (h *MarketHandler) ResolveMarket(w http.ResponseWriter, r *http.Request) {
 			ErrorJSON(w, 404, "Market not found", nil)
 			return
 		}
-		log.Printf("err_getamr_repo: %w", err)
+		log.Printf("err_getmar_repo: %w", err)
 		ErrorJSON(w, 500, "Failed to fetch market", nil)
 		return
 	}
@@ -748,4 +759,89 @@ func (h *MarketHandler) ResolveMarket(w http.ResponseWriter, r *http.Request) {
 		"outcome": req.Outcome,
 		"status":  "RESOLVED",
 	})
+}
+
+// GET /markets/{marketID}/prices/stream
+func (h *MarketHandler) StreamPrices(w http.ResponseWriter, r *http.Request) {
+	marketID := chi.URLParam(r, "marketID")
+	if marketID == "" {
+		http.Error(w, "Market ID required", http.StatusBadRequest)
+		return
+	}
+
+	// ensure the http server supports flushing (req for sse)
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming unsupported by server", http.StatusInternalServerError)
+		return
+	}
+
+	// set std sse headers
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connnection", "keep-alive")
+
+	// optional: config cors if global middleware doesn't cover this specific method behaviour
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("X-Accel-Buffering", "no") // tell nginx to leave this alone
+	w.Header().Set("Content-Encoding", "none") // bypassed chi compression middleware
+
+	rc := http.NewResponseController(w)
+	if err := rc.SetReadDeadline(time.Time{}); err != nil {
+		log.Printf("Warning: Could not clear write deadline: %v", err)
+	}
+
+	if !ok {
+		http.Error(w, "Streaming unsupported by server", http.StatusInternalServerError)
+		return
+	}
+
+	// send an initial conn ping
+	fmt.Fprint(w, ": connected\n\n")
+	flusher.Flush()
+
+	// sub to the broker
+	subChan := h.broker.Subscribe(marketID)
+	/* if !subChan {
+		log.Printf("Broker sub failed")
+		return
+	} */
+
+	// ensure we unsub when client disconnects
+	defer h.broker.Unsubscribe(marketID, subChan)
+
+	// keep alive ticker 10s to prevent load balancer and proxies from dropping idle conns
+	ticker := time.NewTicker(10 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+			case <-r.Context().Done():
+				// client closed the conn
+				log.Printf("client disconnected from stream: %s", marketID)
+				return
+
+			case <-ticker.C:
+				// send an empty cpmment to keep alive ping
+				fmt.Fprintf(w, ": keepalive\n\n")
+				flusher.Flush()
+
+			case priceUpdate, ok := <-subChan:
+				if !ok {
+					log.Printf("subscription chan closed for market: %s", marketID)
+					return
+				}
+			
+				// marshal and write real event data
+				// format the data as JSON
+				jsonData, err := json.Marshal(priceUpdate)
+				if err != nil {
+					continue
+				}
+
+				// SSE std fmt: "data: {json}\n\n"
+				fmt.Fprintf(w, "data: %s\n\n", string(jsonData))
+				flusher.Flush()
+		}
+	}
 }

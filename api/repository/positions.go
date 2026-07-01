@@ -45,11 +45,12 @@ type Position struct {
 }
 
 type UpsertPositionParams struct {
-	UserID   string
-	MarketID string
-	Outcome  string          // YES or NO
-	Shares   decimal.Decimal // shares to add
-	Cost     int64           // cost in cents
+	UserID      string
+	MarketID    string
+	Outcome     string          // YES or NO
+	Shares      decimal.Decimal // shares to add
+	Cost        int64           // cost in cents
+	RealizedPnL int64           // amount to add to running tally
 }
 
 type PositionRepository struct {
@@ -409,4 +410,88 @@ func (r *PositionRepository) SettleTx(ctx context.Context, tx *sql.Tx, userID, m
 	}
 
 	return payout, pnl, nil
+}
+
+func (r *PositionRepository) GetByUserAndMarketTx(ctx context.Context, tx *sql.Tx, userID, marketID string) (*Position, error) {
+	query := `
+		SELECT user_id, market_id, yes_shares_smallest_unit, no_shares_smallest_unit, total_cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
+		FROM positions
+		WHERE user_id = $1 AND market_id = $2
+		FOR UPDATE
+	`
+	var pos Position
+	var yes, no float64
+	err := tx.QueryRowContext(ctx, query, userID, marketID).Scan(
+		&pos.UserID, &pos.MarketID, &yes, &no, &pos.CostBasis, &pos.RealizedPnL, &pos.CreatedAt, &pos.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, ErrNotFound
+		}
+
+		return nil, err
+	}
+	pos.YesShares, pos.NoShares = decimal.NewFromFloat(yes), decimal.NewFromFloat(no)
+	return &pos, nil
+}
+
+/*
+DecreasePositionTx reduces an existing position safely without triggering INSERT constraints.
+*/
+func (r *PositionRepository) DecreasePositionTx(ctx context.Context, tx *sql.Tx, params UpsertPositionParams) (*Position, error) {
+	sharesFloat, _ := params.Shares.Float64() // Expected to be positive
+
+	var query string
+	if params.Outcome == "YES" {
+		query = `
+			UPDATE positions SET
+				yes_shares_smallest_unit = yes_shares_smallest_unit - $1,
+				total_cost_basis_smallest_unit = total_cost_basis_smallest_unit - $2,
+				realized_pnl_smallest_unit = COALESCE(realized_pnl_smallest_unit, 0) + $3,
+				updated_at = NOW()
+			WHERE user_id = $4 AND market_id = $5
+			RETURNING user_id, market_id, yes_shares_smallest_unit, no_shares_smallest_unit, total_cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
+		`
+	} else {
+		query = `
+			UPDATE positions SET
+				no_shares_smallest_unit = no_shares_smallest_unit - $1,
+				total_cost_basis_smallest_unit = total_cost_basis_smallest_unit - $2,
+				realized_pnl_smallest_unit = COALESCE(realized_pnl_smallest_unit, 0) + $3,
+				updated_at = NOW()
+			WHERE user_id = $4 AND market_id = $5
+			RETURNING user_id, market_id, yes_shares_smallest_unit, no_shares_smallest_unit, total_cost_basis_smallest_unit, realized_pnl_smallest_unit, created_at, updated_at
+		`
+	}
+
+	var position Position
+	var yesSharesFloat, noSharesFloat float64
+
+	err := tx.QueryRowContext(
+		ctx,
+		query,
+		sharesFloat,        // $1: shares to subtract
+		params.Cost,        // $2: cost basis to subtract
+		params.RealizedPnL, // $3: PnL to add
+		params.UserID,      // $4: UUID for WHERE clause
+		params.MarketID,    // $5: UUID for WHERE clause
+	).Scan(
+		&position.UserID,
+		&position.MarketID,
+		&yesSharesFloat,
+		&noSharesFloat,
+		&position.CostBasis,
+		&position.RealizedPnL,
+		&position.CreatedAt,
+		&position.UpdatedAt,
+	)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrease position: %w", err)
+	}
+
+	position.YesShares = decimal.NewFromFloat(yesSharesFloat)
+	position.NoShares = decimal.NewFromFloat(noSharesFloat)
+
+	return &position, nil
 }

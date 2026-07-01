@@ -3,11 +3,12 @@ package startup
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 
-	"github.com/Mvoii/fotell/amm"
-	"github.com/Mvoii/fotell/api/repository"
+	"github.com/esiepe/fotell/amm"
+	"github.com/esiepe/fotell/api/repository"
 	"github.com/shopspring/decimal"
 )
 
@@ -150,6 +151,27 @@ func loadSingleMarket(registry *amm.Registry, market *repository.Market) error {
 	//     quantities := parseQuantitiesJSON(*market.QuantitiesState)
 	//     ammMarket.SetQuantities(quantities)  // ← Method doesn't exist yet
 	// }
+
+	if market.QuantitiesState != nil && *market.QuantitiesState != "" {
+		// define an anon struct that matches ddb json
+		var state struct {
+			Quantities []decimal.Decimal `json:"quantities"`
+		}
+
+		// parse json
+		if err := json.Unmarshal([]byte(*market.QuantitiesState), &state); err != nil {
+			log.Printf("WARN: Failed to parse quantities_state for market %s: %v", market.ID, err)
+		} else {
+			// Inject the historical quantities into the AMM engine
+			if err := ammMarket.SetQuantities(state.Quantities); err != nil {
+				log.Printf("WARN: Failed to set quantities for market %s: %v", market.ID, err)
+			} else {
+				log.Printf("Restored AMM state for market %s: %v", market.ID, state.Quantities)
+			}
+		}
+	} else {
+		log.Printf("i Market %s has no prior state. Defaulting to 50/50.", market.ID)
+	}
 
 	return nil
 }
