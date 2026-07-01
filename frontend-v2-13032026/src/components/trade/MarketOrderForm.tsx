@@ -1,7 +1,7 @@
 import React from 'react';
 import type { MarketOrderFormProps } from '@/lib/api/types/api';
 import { formatPrice, formatKES, estimateCostKES, resolutionPayoutKES } from '@/lib/formatters';
-import { useSellQuote } from '@/hooks/useTrade';
+
 
 // Maximum trade amount in KES per trade
 const MAX_TRADE_AMOUNT_KES = 5000;
@@ -79,12 +79,7 @@ export function MarketOrderForm({
     setErrorMsg(null);
   };
 
-  // Fetch sell quote when side is SELL and we have shares
-  const { data: sellQuote, isFetching: isFetchingQuote } = useSellQuote(
-    market.id,
-    outcome,
-    side === 'SELL' && sharesCount > 0 ? sharesCount : 0
-  );
+  // Quote for sells is disabled per user request
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setErrorMsg(null);
@@ -400,18 +395,12 @@ export function MarketOrderForm({
           /* SELL Mode Info */
           <>
             {sharesCount > 0 && (
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center px-1">
                 <span className="text-muted-foreground text-sm flex items-center gap-1">
-                  Est. Proceeds
+                  Proceeds
                 </span>
-                <span className="text-xl font-bold font-mono text-accent-blue flex items-center gap-2">
-                  {isFetchingQuote ? (
-                    <svg className="animate-spin h-5 w-5 text-accent-blue opacity-50" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                  ) : null}
-                  {sellQuote ? formatKES(sellQuote.projected_kes) : formatKES(0)}
+                <span className="text-sm font-medium text-muted-foreground/80">
+                  Calculated at execution
                 </span>
               </div>
             )}
@@ -437,7 +426,7 @@ export function MarketOrderForm({
       {/* ── Submit Button */}
       <button
         type="submit"
-        disabled={sharesCount < 1 || (side === 'BUY' && isOverLimit) || (side === 'SELL' && sharesCount > heldShares) || (side === 'SELL' && isFetchingQuote)}
+        disabled={sharesCount < 1 || (side === 'BUY' && isOverLimit) || (side === 'SELL' && sharesCount > heldShares)}
         className={`w-full py-3.5 rounded-lg font-bold text-sm shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center cursor-pointer ${
           side === 'SELL'
             ? 'bg-accent-blue text-white hover:bg-accent-blue/90 active:scale-[0.99]'
@@ -449,9 +438,7 @@ export function MarketOrderForm({
         {side === 'SELL'
           ? sharesCount > heldShares 
             ? 'Insufficient shares'
-            : isFetchingQuote
-            ? 'Calculating...'
-            : `Sell ${outcome} — ~${sellQuote ? formatKES(sellQuote.projected_kes) : formatKES(0)}`
+            : `Sell ${outcome} — Calculate at execution`
           : isOverLimit
           ? `Limit exceeded (max KES ${MAX_TRADE_AMOUNT_KES})`
           : inputMode === 'KES'

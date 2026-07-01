@@ -32,39 +32,20 @@ export const tradingService = {
   placeTrade: (marketId: string, data: PlaceTradeRequest) =>
     apiRequest<TradeReceipt>(`/markets/${marketId}/trades`, {
       method: 'POST',
-      body: data,
+      body: { action: 'BUY', ...data },
     }),
 
-  // ── Sell (Sprint 2 — backend endpoints pending) ──────────────────────────
-
-  /**
-   * Fetches a projected proceeds quote for selling shares WITHOUT executing.
-   *
-   * Endpoint: GET /api/v1/markets/{marketId}/sell-quote?outcome=YES&shares=10.5
-   *
-   * NOTE: The backend route has not yet been implemented. This method will throw
-   * an ApiRequestError with status 404 until the backend ships the route.
-   * Call sites should handle the error gracefully (e.g. disable the sell button
-   * and show a "Sell not yet available" notice).
-   */
-  getSellQuote: (marketId: string, outcome: 'YES' | 'NO', shares: number) =>
-    apiRequest<SellQuoteResponse>(`/markets/${marketId}/sell-quote`, {
-      method: 'GET',
-      params: { outcome, shares },
-    }),
+  // ── Sell ─────────────────────────────────────────────────────────────────
 
   /**
    * Executes a market sell order, liquidating shares back into KES.
    *
-   * Endpoint: POST /api/v1/markets/{marketId}/sell
-   *
-   * NOTE: The backend route has not yet been implemented. This method will throw
-   * an ApiRequestError with status 404/501 until the backend ships the route.
+   * Endpoint: POST /api/v1/markets/{marketId}/trades
    */
   placeSellOrder: (marketId: string, data: PlaceSellRequest) =>
-    apiRequest<SellReceipt>(`/markets/${marketId}/sell`, {
+    apiRequest<SellReceipt>(`/markets/${marketId}/trades`, {
       method: 'POST',
-      body: data,
+      body: { action: 'SELL', ...data },
     }),
 
   // ── Trade history ────────────────────────────────────────────────────────
