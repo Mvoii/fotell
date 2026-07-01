@@ -25,19 +25,23 @@ export function useTrade(marketId: string) {
 		mutationFn: async (data) => {
 			const response = await tradingService.placeTrade(marketId, data);
 			const receipt = response.data;
+			const tradeData = (receipt as any).trade || {};
 			// Normalize decimal.Decimal strings in receipt
 			return {
 				...receipt,
-				shares: Number(receipt.shares),
-				cost_paid: Number(receipt.cost_paid),
-				avg_price: Number(receipt.avg_price),
-				balance_after: Number(receipt.balance_after),
-				position: receipt.position ? {
-					...receipt.position,
-					yes_shares: Number(receipt.position.yes_shares),
-					no_shares: Number(receipt.position.no_shares),
-					cost_basis: Number(receipt.position.cost_basis),
-				} : receipt.position,
+				trade_id: tradeData.trade_id || (receipt as any).trade_id,
+				outcome: tradeData.outcome || (receipt as any).outcome,
+				shares: Number(tradeData.shares ?? (receipt as any).shares ?? 0),
+				cost_paid: Number(tradeData.financials?.amount_cents ?? (receipt as any).cost_paid ?? 0),
+				avg_price: Number((receipt as any).avg_price),
+				balance_after: Number((receipt as any).balance_after),
+				timestamp: tradeData.timestamp || (receipt as any).timestamp || new Date().toISOString(),
+				position: (receipt as any).position ? {
+					...(receipt as any).position,
+					yes_shares: Number((receipt as any).position.yes_shares),
+					no_shares: Number((receipt as any).position.no_shares),
+					cost_basis: Number((receipt as any).position.cost_basis),
+				} : (receipt as any).position,
 			};
 		},
 		onMutate: async () => {
@@ -76,18 +80,22 @@ export function useSell(marketId: string) {
 		mutationFn: async (data) => {
 			const response = await tradingService.placeSellOrder(marketId, data);
 			const receipt = response.data;
+			const tradeData = (receipt as any).trade || {};
 			return {
 				...receipt,
-				shares: Number(receipt.shares),
-				proceeds_paid: Number((receipt as any).trade?.financials?.amount_cents || receipt.proceeds_paid || 0),
-				avg_price: Number(receipt.avg_price),
-				balance_after: Number(receipt.balance_after),
-				position: receipt.position ? {
-					...receipt.position,
-					yes_shares: Number(receipt.position.yes_shares),
-					no_shares: Number(receipt.position.no_shares),
-					cost_basis: Number(receipt.position.cost_basis),
-				} : receipt.position,
+				trade_id: tradeData.trade_id || (receipt as any).trade_id,
+				outcome: tradeData.outcome || (receipt as any).outcome,
+				shares: Number(tradeData.shares ?? (receipt as any).shares ?? 0),
+				proceeds_paid: Number(tradeData.financials?.amount_cents ?? (receipt as any).proceeds_paid ?? 0),
+				avg_price: Number((receipt as any).avg_price),
+				balance_after: Number((receipt as any).balance_after),
+				timestamp: tradeData.timestamp || (receipt as any).timestamp || new Date().toISOString(),
+				position: (receipt as any).position ? {
+					...(receipt as any).position,
+					yes_shares: Number((receipt as any).position.yes_shares),
+					no_shares: Number((receipt as any).position.no_shares),
+					cost_basis: Number((receipt as any).position.cost_basis),
+				} : (receipt as any).position,
 			};
 		},
 		onMutate: async () => {
