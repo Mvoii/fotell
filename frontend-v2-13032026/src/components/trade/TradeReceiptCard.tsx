@@ -30,7 +30,7 @@ export function TradeReceiptCard({ receipt, onClose }: TradeReceiptCardProps) {
         </div>
 
         <div className="flex justify-between items-center py-2 border-b border-subtle border-dashed">
-          <span className="text-muted-foreground text-sm">Shares Purchased</span>
+          <span className="text-muted-foreground text-sm">{isSell ? 'Shares Sold' : 'Shares Purchased'}</span>
           <span className="text-primary font-mono font-bold">{receipt.shares}</span>
         </div>
 

@@ -9,7 +9,7 @@ const MAX_TRADE_AMOUNT_KES = 5000;
 /** Format a number as compact KES: KES 40K, KES 1.2M, etc. */
 function formatCompactKES(value: number): string {
   if (value >= 1_000_000) return `KES ${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
-  if (value >= 1_000)     return `KES ${(value / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
+  if (value >= 1_000) return `KES ${(value / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
   return `KES ${value}`;
 }
 
@@ -192,22 +192,20 @@ export function MarketOrderForm({
         <button
           type="button"
           onClick={() => handleSideSelect('BUY')}
-          className={`flex-1 py-2 text-center text-sm font-bold rounded-md transition-all cursor-pointer ${
-            side === 'BUY'
+          className={`flex-1 py-2 text-center text-sm font-bold rounded-md transition-all cursor-pointer ${side === 'BUY'
               ? 'bg-surface text-primary border border-subtle-border shadow-sm'
               : 'text-muted-foreground hover:text-primary'
-          }`}
+            }`}
         >
           BUY
         </button>
         <button
           type="button"
           onClick={() => handleSideSelect('SELL')}
-          className={`flex-1 py-2 text-center text-sm font-bold rounded-md transition-all cursor-pointer ${
-            side === 'SELL'
+          className={`flex-1 py-2 text-center text-sm font-bold rounded-md transition-all cursor-pointer ${side === 'SELL'
               ? 'bg-surface text-primary border border-subtle-border shadow-sm'
               : 'text-muted-foreground hover:text-primary'
-          }`}
+            }`}
         >
           SELL
         </button>
@@ -219,20 +217,17 @@ export function MarketOrderForm({
         <button
           type="button"
           onClick={() => handleOutcomeSelect('YES')}
-          className={`flex flex-col gap-1.5 px-4 py-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-            outcome === 'YES'
+          className={`flex flex-col gap-1.5 px-4 py-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${outcome === 'YES'
               ? 'border-yes-strong bg-yes-dim shadow-sm'
               : 'border-subtle bg-subtle/40 hover:border-yes-strong/40'
-          }`}
+            }`}
         >
-          <span className={`text-[11px] font-semibold tracking-widest uppercase ${
-            outcome === 'YES' ? 'text-yes-strong' : 'text-muted-foreground/60'
-          }`}>
+          <span className={`text-[11px] font-semibold tracking-widest uppercase ${outcome === 'YES' ? 'text-yes-strong' : 'text-muted-foreground/60'
+            }`}>
             YES
           </span>
-          <span className={`text-2xl font-bold tabular-nums leading-none flex items-center justify-center gap-1 ${
-            outcome === 'YES' ? 'text-yes-strong' : 'text-primary/50'
-          }`}>
+          <span className={`text-2xl font-bold tabular-nums leading-none flex items-center justify-center gap-1 ${outcome === 'YES' ? 'text-yes-strong' : 'text-primary/50'
+            }`}>
             {typeof currentPrices.yes_price === 'number' ? formatPrice(currentPrices.yes_price) : '--'}
             {renderDelta(currentPrices.yes_price, prevYesRef.current)}
           </span>
@@ -242,31 +237,25 @@ export function MarketOrderForm({
         <button
           type="button"
           onClick={() => handleOutcomeSelect('NO')}
-          className={`flex flex-col gap-1.5 px-4 py-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${
-            outcome === 'NO'
+          className={`flex flex-col gap-1.5 px-4 py-4 rounded-xl border-2 transition-all duration-200 cursor-pointer ${outcome === 'NO'
               ? 'border-no-strong bg-no-dim shadow-sm'
               : 'border-subtle bg-subtle/40 hover:border-no-strong/40'
-          }`}
+            }`}
         >
-          <span className={`text-[11px] font-semibold tracking-widest uppercase ${
-            outcome === 'NO' ? 'text-no-strong' : 'text-muted-foreground/60'
-          }`}>
+          <span className={`text-[11px] font-semibold tracking-widest uppercase ${outcome === 'NO' ? 'text-no-strong' : 'text-muted-foreground/60'
+            }`}>
             NO
           </span>
-          <span className={`text-2xl font-bold tabular-nums leading-none flex items-center justify-center gap-1 ${
-            outcome === 'NO' ? 'text-no-strong' : 'text-primary/50'
-          }`}>
+          <span className={`text-2xl font-bold tabular-nums leading-none flex items-center justify-center gap-1 ${outcome === 'NO' ? 'text-no-strong' : 'text-primary/50'
+            }`}>
             {typeof currentPrices.no_price === 'number' ? formatPrice(currentPrices.no_price) : '--'}
             {renderDelta(currentPrices.no_price, prevNoRef.current)}
           </span>
-        </button>
-      </div>
-
-      {/* ── Position Strip — only when the user holds shares */}
+          {/* ── Position Strip — only when the user holds shares */}
       {userPosition && (userPosition.yes_shares > 0 || userPosition.no_shares > 0) && (() => {
         const shares = outcome === 'YES' ? userPosition.yes_shares : userPosition.no_shares;
-        const price  = outcome === 'YES' ? (currentPrices.yes_price ?? 50) : (currentPrices.no_price ?? 50);
-        const pnl    = (shares * price * 100) - (userPosition.cost_basis ?? 0);
+        const price = outcome === 'YES' ? (currentPrices.yes_price ?? 50) : (currentPrices.no_price ?? 50);
+        const pnl = (shares * price * 100) - (userPosition.cost_basis ?? 0);
         const isGain = pnl >= 0;
         if (shares <= 0) return null;
         return (
@@ -284,7 +273,8 @@ export function MarketOrderForm({
           </div>
         );
       })()}
-
+        </button>
+      </div>
 
       {/* ── KES / Shares Mode Toggle */}
       {side === 'BUY' ? (
@@ -292,22 +282,20 @@ export function MarketOrderForm({
           <button
             type="button"
             onClick={() => handleInputModeSelect('SHARES')}
-            className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${
-              inputMode === 'SHARES'
+            className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${inputMode === 'SHARES'
                 ? 'bg-surface text-primary border border-subtle-border shadow-sm'
                 : 'text-muted-foreground hover:text-primary'
-            }`}
+              }`}
           >
             Shares
           </button>
           <button
             type="button"
             onClick={() => handleInputModeSelect('KES')}
-            className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${
-              inputMode === 'KES'
+            className={`flex-1 py-1.5 text-center text-xs font-bold rounded-md transition-all cursor-pointer ${inputMode === 'KES'
                 ? 'bg-surface text-primary border border-subtle-border shadow-sm'
                 : 'text-muted-foreground hover:text-primary'
-            }`}
+              }`}
           >
             KES
           </button>
@@ -373,9 +361,8 @@ export function MarketOrderForm({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 15l7-7 7 7" />
                 </svg>
               </span>
-              <span className={`text-xl font-bold font-mono ${
-                outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
-              } ${isOverLimit ? 'opacity-40' : ''}`}>
+              <span className={`text-xl font-bold font-mono ${outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
+                } ${isOverLimit ? 'opacity-40' : ''}`}>
                 {formatKES(maxPayout)}
               </span>
             </div>
@@ -391,9 +378,8 @@ export function MarketOrderForm({
                     {' at '}
                     <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>
                     {'. Payout if right: '}
-                    <span className={`font-semibold ${
-                      outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
-                    }`}>{formatKES(maxPayout)}</span>.
+                    <span className={`font-semibold ${outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
+                      }`}>{formatKES(maxPayout)}</span>.
                   </>
                 ) : (
                   <>
@@ -402,9 +388,8 @@ export function MarketOrderForm({
                     at{' '}
                     <span className="font-semibold text-primary">{formatPrice(currentPrice)}</span>{' '}
                     each. If you&apos;re right, payout is{' '}
-                    <span className={`font-semibold ${
-                      outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
-                    }`}>{formatKES(maxPayout)}</span>.
+                    <span className={`font-semibold ${outcome === 'YES' ? 'text-yes-strong' : 'text-no-strong'
+                      }`}>{formatKES(maxPayout)}</span>.
                   </>
                 )}
               </p>
