@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import type { TradePanelProps, PlaceTradeRequest } from '@/lib/api/types/api';
+import type { TradePanelProps, PlaceTradeRequest, PlaceSellRequest } from '@/lib/api/types/api';
 import { MarketOrderForm } from './MarketOrderForm';
-import { useTrade } from '@/hooks/useTrade';
+import { useTrade, useSell, useSellQuote } from '@/hooks/useTrade';
 import { TradeConfirmModal } from './TradeConfirmModal';
 import { estimateCostKES } from '@/lib/formatters';
 
@@ -19,34 +19,57 @@ export function TradePanel({
   void defaultOutcome; // passed through to MarketOrderForm
 
   const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
-  const [pendingParams, setPendingParams] = useState<PlaceTradeRequest | null>(null);
+  const [tradeType, setTradeType] = useState<'BUY' | 'SELL'>('BUY');
+  const [pendingBuyParams, setPendingBuyParams] = useState<PlaceTradeRequest | null>(null);
+  const [pendingSellParams, setPendingSellParams] = useState<PlaceSellRequest | null>(null);
 
   const tradeHook = useTrade(market.id);
+  const sellHook = useSell(market.id);
 
   const handleMarketOrderSubmit = (params: PlaceTradeRequest) => {
-    setPendingParams(params);
+    setPendingBuyParams(params);
+    setTradeType('BUY');
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleSellSubmit = (params: PlaceSellRequest) => {
+    setPendingSellParams(params);
+    setTradeType('SELL');
     setIsConfirmModalOpen(true);
   };
 
   const handleConfirmTrade = () => {
-    if (pendingParams) {
-      tradeHook.placeTrade(pendingParams);
+    if (tradeType === 'BUY' && pendingBuyParams) {
+      tradeHook.placeTrade(pendingBuyParams);
+    } else if (tradeType === 'SELL' && pendingSellParams) {
+      sellHook.placeSell(pendingSellParams);
     }
   };
 
   const handleCloseModal = () => {
     setIsConfirmModalOpen(false);
     // Reset receipt/error when closing
-    if (tradeHook.data || tradeHook.error) {
-      tradeHook.reset();
-    }
+    if (tradeHook.data || tradeHook.error) tradeHook.reset();
+    if (sellHook.data || sellHook.error) sellHook.reset();
   };
 
-  // Calculate estimated cost for the modal (in KES)
-  const currentPrice = pendingParams 
-    ? (pendingParams.outcome === 'YES' ? currentPrices.yes_price : currentPrices.no_price)
+  // Pre-fetch sell quote for modal display if we're in SELL mode
+  const isSell = tradeType === 'SELL';
+  const sellOutcome = pendingSellParams?.outcome ?? 'YES';
+  const sellShares = pendingSellParams?.shares ?? 0;
+  const { data: sellQuote } = useSellQuote(
+    market.id,
+    sellOutcome,
+    isSell && isConfirmModalOpen && sellShares > 0 ? sellShares : 0
+  );
+
+  // Calculate estimated cost or proceeds for the modal (in KES)
+  const currentPrice = tradeType === 'BUY' && pendingBuyParams
+    ? (pendingBuyParams.outcome === 'YES' ? currentPrices.yes_price : currentPrices.no_price)
     : 0;
-  const estimatedCostKES = pendingParams ? estimateCostKES(pendingParams.shares, currentPrice) : 0;
+  const estimatedAmount = isSell
+    ? (sellQuote?.projected_kes ?? 0)
+    : (pendingBuyParams ? estimateCostKES(pendingBuyParams.shares, currentPrice) : 0);
 
   return (
     <div className="bg-surface border border-subtle rounded-lg p-4 shadow-md w-full">
@@ -56,7 +79,9 @@ export function TradePanel({
         userBalance={userBalance}
         userPosition={userPosition}
         onSubmit={handleMarketOrderSubmit}
+        onSellSubmit={handleSellSubmit}
         tradeHook={tradeHook}
+        sellHook={sellHook}
         defaultOutcome={defaultOutcome}
       />
 
@@ -65,11 +90,12 @@ export function TradePanel({
         onClose={handleCloseModal}
         market={market}
         currentPrices={currentPrices}
-        tradeParams={pendingParams}
-        estimatedCost={estimatedCostKES}
-        isPending={tradeHook.isPending}
-        error={tradeHook.error}
-        receipt={tradeHook.data || null}
+        tradeType={tradeType}
+        tradeParams={isSell ? pendingSellParams : pendingBuyParams}
+        estimatedAmount={estimatedAmount}
+        isPending={isSell ? sellHook.isPending : tradeHook.isPending}
+        error={isSell ? sellHook.error : tradeHook.error}
+        receipt={(isSell ? sellHook.data : tradeHook.data) || null}
         onConfirm={handleConfirmTrade}
       />
     </div>

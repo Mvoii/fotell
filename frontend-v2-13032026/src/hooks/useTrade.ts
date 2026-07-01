@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tradingService } from '@/lib/api/trading.service';
-import type { PlaceTradeRequest, TradeReceipt, ApiError, Trade } from '@/lib/api/types/api';
+import type { PlaceTradeRequest, TradeReceipt, ApiError, Trade, SellReceipt, PlaceSellRequest } from '@/lib/api/types/api';
 import { queryKeys } from '@/lib/queryKeys';
 
 /**
@@ -68,6 +68,64 @@ export function useTrade(marketId: string) {
 		placeTrade: mutation.mutate,
 		placeTradeAsync: mutation.mutateAsync,
 	};
+}
+
+/**
+ * useSell hook for market sell actions.
+ */
+export function useSell(marketId: string) {
+	const queryClient = useQueryClient();
+	const mutation = useMutation<SellReceipt, ApiError, PlaceSellRequest>({
+		mutationFn: async (data) => {
+			const response = await tradingService.placeSellOrder(marketId, data);
+			const receipt = response.data;
+			return {
+				...receipt,
+				shares: Number(receipt.shares),
+				proceeds_paid: Number(receipt.proceeds_paid),
+				avg_price: Number(receipt.avg_price),
+				balance_after: Number(receipt.balance_after),
+				position: receipt.position ? {
+					...receipt.position,
+					yes_shares: Number(receipt.position.yes_shares),
+					no_shares: Number(receipt.position.no_shares),
+					cost_basis: Number(receipt.position.cost_basis),
+				} : receipt.position,
+			};
+		},
+		onMutate: async () => {
+			await queryClient.cancelQueries({ queryKey: queryKeys.user.balance() });
+			const previous = queryClient.getQueryData(queryKeys.user.balance());
+			return { previous };
+		},
+		onSuccess: () => {
+			// Invalidate queries similar to buy
+			queryClient.invalidateQueries({ queryKey: queryKeys.user.balance() });
+			queryClient.invalidateQueries({ queryKey: queryKeys.markets.position(marketId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.markets.details(marketId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.markets.prices(marketId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.trades.byMarket(marketId) });
+			queryClient.invalidateQueries({ queryKey: queryKeys.trades.byUser() });
+		},
+	});
+
+	return {
+		...mutation,
+		placeSell: mutation.mutate,
+		placeSellAsync: mutation.mutateAsync,
+	};
+}
+
+export function useSellQuote(marketId: string, outcome: 'YES' | 'NO', shares: number) {
+	return useQuery({
+		queryKey: ['sellQuote', marketId, outcome, shares],
+		queryFn: async () => {
+			const { data } = await tradingService.getSellQuote(marketId, outcome, shares);
+			return data;
+		},
+		enabled: !!marketId && shares > 0,
+		staleTime: 5000,
+	});
 }
 
 export function useMarketTrades(marketId: string, limit?: number, offset?: number) {

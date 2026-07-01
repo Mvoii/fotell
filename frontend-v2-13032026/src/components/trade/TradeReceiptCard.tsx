@@ -1,13 +1,14 @@
 import React from 'react';
-import type { TradeReceipt } from '@/lib/api/types/api';
+import type { TradeReceipt, SellReceipt } from '@/lib/api/types/api';
 import { formatCentsAsKES, formatPrice } from '@/lib/formatters';
 
 interface TradeReceiptCardProps {
-  receipt: TradeReceipt;
+  receipt: TradeReceipt | SellReceipt;
   onClose: () => void;
 }
 
 export function TradeReceiptCard({ receipt, onClose }: TradeReceiptCardProps) {
+  const isSell = 'proceeds_paid' in receipt;
   return (
     <div className="bg-surface rounded-lg overflow-hidden border border-success/30 animate-in fade-in zoom-in duration-300">
       <div className="bg-success/10 p-4 border-b border-success/20 flex items-center justify-center">
@@ -39,8 +40,8 @@ export function TradeReceiptCard({ receipt, onClose }: TradeReceiptCardProps) {
         </div>
 
         <div className="flex justify-between items-center py-2 border-b border-subtle border-dashed">
-          <span className="text-muted-foreground text-sm">Total Paid</span>
-          <span className="text-primary font-bold">{formatCentsAsKES(receipt.cost_paid)}</span>
+          <span className="text-muted-foreground text-sm">{isSell ? 'Total Proceeds' : 'Total Paid'}</span>
+          <span className="text-primary font-bold">{formatCentsAsKES(isSell ? (receipt as SellReceipt).proceeds_paid : (receipt as TradeReceipt).cost_paid)}</span>
         </div>
 
         <div className="bg-subtle/50 rounded-md p-3 flex justify-between items-center">
