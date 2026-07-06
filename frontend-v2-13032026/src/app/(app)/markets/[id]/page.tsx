@@ -4,6 +4,7 @@ import { useMarketDetails } from '@/hooks/useMarketDetails';
 import { MarketDetailsCard } from '@/components/markets/MarketDetailsCard';
 import { MarketTradesList } from '@/components/markets/MarketTradesList';
 import { CommentsSection } from '@/components/markets/CommentsSection';
+import { SettlementResultsPanel } from '@/components/markets/SettlementResultsPanel';
 import { TradePanel } from '@/components/trade/TradePanel';
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
@@ -166,6 +167,8 @@ export default function MarketDetailsPage() {
               )}
             </div>
           )}
+
+          <SettlementResultsPanel market={market} position={userPosition} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className={`flex flex-col gap-6 ${showTradePanel ? 'lg:col-span-2' : 'lg:col-span-3'}`}>
