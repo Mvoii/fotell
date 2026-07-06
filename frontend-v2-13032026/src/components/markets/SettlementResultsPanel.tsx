@@ -1,5 +1,8 @@
 import type { Market, Position } from '@/lib/api/types/api';
 import { formatCentsAsKES } from '@/lib/formatters';
+import { useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/lib/queryKeys';
 
 interface SettlementResultsPanelProps {
   market: Market;
@@ -17,6 +20,17 @@ export function SettlementResultsPanel({ market, position }: SettlementResultsPa
   }
 
   const isSettled = position.realized_pnl !== null;
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!isSettled) {
+      const intervalId = setInterval(() => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.positions() });
+        queryClient.invalidateQueries({ queryKey: queryKeys.user.balance() });
+      }, 3000);
+      return () => clearInterval(intervalId);
+    }
+  }, [isSettled, queryClient]);
 
   if (!isSettled) {
     return (

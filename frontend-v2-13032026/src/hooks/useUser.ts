@@ -50,7 +50,7 @@ export function useBalance(options?: { enabled?: boolean }) {
   });
 }
 
-export function usePositions(options?: { enabled?: boolean }) {
+export function usePositions(options?: { enabled?: boolean; refetchInterval?: number | false }) {
   const { access_token } = getTokens();
   const enabled = (options?.enabled ?? true) && !!access_token;
 
@@ -82,6 +82,7 @@ export function usePositions(options?: { enabled?: boolean }) {
       }
       return failureCount < 3;
     },
+    refetchInterval: options?.refetchInterval,
   });
 }
 
