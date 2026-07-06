@@ -49,4 +49,10 @@ coverage/
 *.pem
 *.sh
 
-.github/
+.windsurf
+.gitignore
+frontend/
+docs/frontend/
+.gitignore
+.vercel
+.env*

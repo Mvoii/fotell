@@ -5,11 +5,17 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* ── Shadcn / base token mappings ───────────────────────────────────── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+
+  /* ── Font stack ─────────────────────────────────────────────────────── */
+  /* Inter  → body / dense data labels                                     */
+  /* Sora   → headings, large price displays, brand wordmark               */
+  /* JetBrains Mono → tickers, numbers, order books, probability %s        */
+  --font-sans:    var(--font-inter),    ui-sans-serif,  system-ui, sans-serif;
+  --font-heading: var(--font-sora),     var(--font-inter), ui-sans-serif, sans-serif;
+  --font-mono:    var(--font-jetbrains-mono), ui-monospace, 'Fira Code', monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -46,75 +52,249 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* ── FoTell Custom Design Tokens ─────────────────────────────────────── */
+
+  /* Surface depth layers: base → surface → elevated → subtle */
+  --color-base:           var(--ft-base);
+  --color-surface:        var(--ft-surface);
+  --color-elevated:       var(--ft-elevated);
+  --color-subtle:         var(--ft-subtle);
+
+  /* Border & divider */
+  --color-subtle-border:  var(--ft-subtle-border);
+
+  /* Interactive text states */
+  --color-primary-hover:  var(--ft-primary-hover);
+  --color-active:         var(--ft-active);
+
+  /* YES / buy / bullish */
+  --color-yes-strong:     var(--ft-yes-strong);
+  --color-yes-dim:        var(--ft-yes-dim);
+
+  /* NO / sell / bearish */
+  --color-no-strong:      var(--ft-no-strong);
+  --color-no-dim:         var(--ft-no-dim);
+
+  /* Accent / CTA */
+  --color-accent-blue:        var(--ft-accent-blue);
+  --color-accent-blue-hover:  var(--ft-accent-blue-hover);
+  --color-accent-blue-dim:    var(--ft-accent-blue-dim);
+
+  /* Status colours */
+  --color-success:        var(--ft-yes-strong);   /* alias to yes-strong */
+  --color-error:          var(--ft-no-strong);    /* alias to no-strong  */
+  --color-warning:        var(--ft-warning);
+  --color-warning-bg:     var(--ft-warning-bg);
+
+  /* ── Typography scale ────────────────────────────────────────────────── */
+  --text-heading-lg:  1.5rem;
+  --text-heading-md:  1.25rem;
+  --text-heading-sm:  1.0625rem;
+  --text-body-md:     1rem;
+  --text-body-sm:     0.875rem;
+  --text-label:       0.75rem;   /* 12 px — stat labels, badges */
+
+  /* ── Text colour hierarchy (three-tier contrast) ─────────────────────── */
+  /* Primary   → high-contrast off-white — primary numbers, headlines       */
+  /* Secondary → mid-grey — supporting labels, metadata                    */
+  /* Tertiary  → low-contrast muted grey — timestamps, page counters        */
+  --color-text-primary:   var(--ft-text-primary);
+  --color-text-secondary: var(--ft-text-secondary);
+  --color-text-tertiary:  var(--ft-text-tertiary);
 }
 
+/* ────────────────────────────────────────────────────────────────────────
+   :root — Dark-first palette (Polymarket / Kalshi inspired)
+   The app renders dark UI by default; no .dark wrapper required on body.
+   ──────────────────────────────────────────────────────────────────────── */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* ── Shadcn base variables ───────────────────────────────────────────── */
+  --background:              oklch(0.09 0.008 240);   /* #0A0E17  near-black charcoal  */
+  /* Off-white body text — avoids pure-white eye-strain over long sessions.  */
+  /* Equivalent to #E5E7EB (Tailwind gray-200).                               */
+  --foreground:              oklch(0.92 0.004 250);   /* #E5E7EB  off-white            */
+  --card:                    oklch(0.13 0.008 240);   /* #111827  deep navy card       */
+  --card-foreground:         oklch(0.92 0.004 250);
+  --popover:                 oklch(0.13 0.008 240);
+  --popover-foreground:      oklch(0.92 0.004 250);
+  /* primary = highest-contrast text (headlines, prices) — still off-white  */
+  --primary:                 oklch(0.93 0.004 250);   /* #ECEFF1  near-white           */
+  --primary-foreground:      oklch(0.09 0.008 240);
+  --secondary:               oklch(0.17 0.008 240);   /* #1a2130  elevated surface     */
+  --secondary-foreground:    oklch(0.92 0.004 250);
+  --muted:                   oklch(0.17 0.008 240);
+  --muted-foreground:        oklch(0.55 0.02 250);    /* #6B7280  mid-grey labels      */
+  --accent:                  oklch(0.17 0.008 240);
+  --accent-foreground:       oklch(0.92 0.004 250);
+  --destructive:             oklch(0.65 0.24 22);     /* warm red                      */
+  --border:                  oklch(0.25 0.01 240 / 60%);
+  --input:                   oklch(0.17 0.008 240);
+  --ring:                    oklch(0.65 0.18 250 / 50%);
+  --radius:                  0.625rem;
+
+  /* Chart colours — mapped to the semantic palette */
+  --chart-1:  oklch(0.78 0.18 158);   /* YES green  */
+  --chart-2:  oklch(0.65 0.22 22);    /* NO red     */
+  --chart-3:  oklch(0.65 0.18 250);   /* accent blue*/
+  --chart-4:  oklch(0.78 0.16 70);    /* amber      */
+  --chart-5:  oklch(0.58 0.02 250);   /* muted grey */
+
+  /* Sidebar */
+  --sidebar:                     oklch(0.11 0.008 240);
+  --sidebar-foreground:          oklch(0.96 0 0);
+  --sidebar-primary:             oklch(0.65 0.18 250);
+  --sidebar-primary-foreground:  oklch(0.96 0 0);
+  --sidebar-accent:              oklch(0.17 0.008 240);
+  --sidebar-accent-foreground:   oklch(0.96 0 0);
+  --sidebar-border:              oklch(0.25 0.01 240 / 40%);
+  --sidebar-ring:                oklch(0.65 0.18 250 / 50%);
+
+  /* ── FoTell Custom Tokens ──────────────────────────────────────────────
+     Naming: --ft-{role}
+     Layered depth: base (darkest) → surface → elevated → subtle
+     ──────────────────────────────────────────────────────────────────── */
+
+  /* Surface depth layers */
+  --ft-base:              oklch(0.09 0.008 240);      /* page / app background        */
+  --ft-surface:           oklch(0.13 0.008 240);      /* cards, panels                */
+  --ft-elevated:          oklch(0.17 0.008 240);      /* modals, dropdowns            */
+  --ft-subtle:            oklch(0.15 0.008 240);      /* section backgrounds          */
+  --ft-subtle-border:     oklch(0.25 0.01 240 / 70%); /* dividers, subtle borders    */
+
+  /* Interactive text states */
+  --ft-primary-hover:     oklch(0.96 0.004 250);      /* hover on primary text        */
+  --ft-active:            oklch(0.65 0.18 250);       /* active nav, selected state   */
+
+  /* ── Three-tier text contrast hierarchy ────────────────────────────────
+     Primary   → #ECEFF1 — high-contrast for prices, headlines, key data
+     Secondary → #9CA3AF — mid-grey for labels, metadata, timestamps
+     Tertiary  → #6B7280 — low-contrast for page counters, minor annotations
+     ──────────────────────────────────────────────────────────────────── */
+  --ft-text-primary:      oklch(0.93 0.004 250);      /* #ECEFF1  off-white           */
+  --ft-text-secondary:    oklch(0.65 0.01 250);       /* #9CA3AF  cool mid-grey       */
+  --ft-text-tertiary:     oklch(0.52 0.01 250);       /* #6B7280  muted grey          */
+
+  /* YES / buy — vibrant teal-green, semi-bold weight ensures visibility    */
+  --ft-yes-strong:        oklch(0.80 0.20 158);       /* slightly brighter green      */
+  --ft-yes-dim:           oklch(0.80 0.20 158 / 12%);
+
+  /* NO / sell — warm red, enough saturation to pop on dark backgrounds    */
+  --ft-no-strong:         oklch(0.68 0.24 22);        /* cleaner, more vivid red      */
+  --ft-no-dim:            oklch(0.68 0.24 22 / 12%);
+
+  /* Accent / CTA — electric blue (#3B82F6) */
+  --ft-accent-blue:       oklch(0.65 0.18 250);
+  --ft-accent-blue-hover: oklch(0.70 0.18 250);
+  --ft-accent-blue-dim:   oklch(0.65 0.18 250 / 12%);
+
+  /* Status */
+  --ft-warning:           oklch(0.80 0.17 70);        /* amber                        */
+  --ft-warning-bg:        oklch(0.80 0.17 70 / 12%);
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+/* html.dark kept for shadcn component compatibility — mirrors :root */
+html.dark {
+  --background:              oklch(0.09 0.008 240);
+  --foreground:              oklch(0.92 0.004 250);
+  --card:                    oklch(0.13 0.008 240);
+  --card-foreground:         oklch(0.92 0.004 250);
+  --popover:                 oklch(0.13 0.008 240);
+  --popover-foreground:      oklch(0.92 0.004 250);
+  --primary:                 oklch(0.93 0.004 250);
+  --primary-foreground:      oklch(0.09 0.008 240);
+  --secondary:               oklch(0.17 0.008 240);
+  --secondary-foreground:    oklch(0.92 0.004 250);
+  --muted:                   oklch(0.17 0.008 240);
+  --muted-foreground:        oklch(0.55 0.02 250);
+  --accent:                  oklch(0.17 0.008 240);
+  --accent-foreground:       oklch(0.92 0.004 250);
+  --destructive:             oklch(0.65 0.24 22);
+  --border:                  oklch(0.25 0.01 240 / 60%);
+  --input:                   oklch(0.17 0.008 240);
+  --ring:                    oklch(0.65 0.18 250 / 50%);
+  --chart-1:  oklch(0.78 0.18 158);
+  --chart-2:  oklch(0.65 0.22 22);
+  --chart-3:  oklch(0.65 0.18 250);
+  --chart-4:  oklch(0.78 0.16 70);
+  --chart-5:  oklch(0.58 0.02 250);
+  --sidebar:                     oklch(0.11 0.008 240);
+  --sidebar-foreground:          oklch(0.96 0 0);
+  --sidebar-primary:             oklch(0.65 0.18 250);
+  --sidebar-primary-foreground:  oklch(0.96 0 0);
+  --sidebar-accent:              oklch(0.17 0.008 240);
+  --sidebar-accent-foreground:   oklch(0.96 0 0);
+  --sidebar-border:              oklch(0.25 0.01 240 / 40%);
+  --sidebar-ring:                oklch(0.65 0.18 250 / 50%);
+}
+
+/* ── Light theme ──────────────────────────────────────────────────────────
+   Applied via html.light class on <html> (default for new users).
+   Inverts the dark palette to a clean, high-contrast pearl-white UI.
+   ──────────────────────────────────────────────────────────────────────── */
+html.light {
+  --background:              oklch(0.98 0.004 250);   /* pearl white          */
+  --foreground:              oklch(0.12 0.008 240);   /* near-black           */
+  --card:                    oklch(1.00 0.000 0);     /* pure white card      */
+  --card-foreground:         oklch(0.12 0.008 240);
+  --popover:                 oklch(1.00 0.000 0);
+  --popover-foreground:      oklch(0.12 0.008 240);
+  --primary:                 oklch(0.12 0.008 240);   /* dark headings        */
+  --primary-foreground:      oklch(0.98 0.004 250);
+  --secondary:               oklch(0.93 0.006 250);   /* light surface        */
+  --secondary-foreground:    oklch(0.12 0.008 240);
+  --muted:                   oklch(0.93 0.006 250);
+  --muted-foreground:        oklch(0.45 0.02 250);    /* mid grey labels      */
+  --accent:                  oklch(0.93 0.006 250);
+  --accent-foreground:       oklch(0.12 0.008 240);
+  --destructive:             oklch(0.55 0.24 22);
+  --border:                  oklch(0.82 0.01 240 / 70%);
+  --input:                   oklch(0.95 0.005 250);
+  --ring:                    oklch(0.65 0.18 250 / 40%);
+
+  /* Charts */
+  --chart-1:  oklch(0.65 0.18 158);   /* YES green  */
+  --chart-2:  oklch(0.55 0.22 22);    /* NO red     */
+  --chart-3:  oklch(0.55 0.18 250);   /* accent blue*/
+  --chart-4:  oklch(0.65 0.16 70);    /* amber      */
+  --chart-5:  oklch(0.55 0.02 250);   /* muted grey */
+
+  /* Sidebar */
+  --sidebar:                     oklch(0.95 0.005 250);
+  --sidebar-foreground:          oklch(0.12 0.008 240);
+  --sidebar-primary:             oklch(0.55 0.18 250);
+  --sidebar-primary-foreground:  oklch(0.98 0.004 250);
+  --sidebar-accent:              oklch(0.90 0.006 250);
+  --sidebar-accent-foreground:   oklch(0.12 0.008 240);
+  --sidebar-border:              oklch(0.82 0.01 240 / 50%);
+  --sidebar-ring:                oklch(0.55 0.18 250 / 40%);
+
+  /* FoTell custom tokens — light variants */
+  --ft-base:              oklch(0.96 0.005 250);
+  --ft-surface:           oklch(0.99 0.003 250);
+  --ft-elevated:          oklch(1.00 0.000 0);
+  --ft-subtle:            oklch(0.94 0.005 250);
+  --ft-subtle-border:     oklch(0.82 0.01 240 / 80%);
+
+  --ft-primary-hover:     oklch(0.08 0.008 240);
+  --ft-active:            oklch(0.55 0.18 250);
+
+  --ft-text-primary:      oklch(0.12 0.008 240);
+  --ft-text-secondary:    oklch(0.38 0.015 250);
+  --ft-text-tertiary:     oklch(0.52 0.015 250);
+
+  --ft-yes-strong:        oklch(0.58 0.20 158);
+  --ft-yes-dim:           oklch(0.58 0.20 158 / 12%);
+
+  --ft-no-strong:         oklch(0.52 0.24 22);
+  --ft-no-dim:            oklch(0.52 0.24 22 / 12%);
+
+  --ft-accent-blue:       oklch(0.55 0.18 250);
+  --ft-accent-blue-hover: oklch(0.50 0.18 250);
+  --ft-accent-blue-dim:   oklch(0.55 0.18 250 / 12%);
+
+  --ft-warning:           oklch(0.65 0.17 70);
+  --ft-warning-bg:        oklch(0.65 0.17 70 / 12%);
 }
 
 @layer base {
@@ -123,8 +303,140 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Inter as the default body font for maximum legibility */
+    font-family: var(--font-sans);
+    /* Slightly increased letter-spacing improves readability in dark mode */
+    letter-spacing: 0.01em;
   }
   html {
     @apply font-sans;
+  }
+  /* Headings use Sora for a premium, geometric feel */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;  /* tighter tracking for large headings */
+  }
+  /* All code, prices, percentages, and numeric data use JetBrains Mono */
+  .font-mono, code, pre, [data-numeric] {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum" 1;  /* tabular nums for aligned columns */
+  }
+}
+
+@layer utilities {
+  /* Typography Utilities */
+  .heading-xl {
+    font-size: 2.25rem;
+    line-height: 1.2;
+    font-weight: 800;
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+  .heading-lg {
+    font-size: var(--text-heading-lg);
+    line-height: 1.3;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
+  .heading-md {
+    font-size: var(--text-heading-md);
+    line-height: 1.3;
+    font-weight: 700;
+    font-family: var(--font-heading);
+    letter-spacing: -0.01em;
+  }
+  .heading-sm {
+    font-size: var(--text-heading-sm);
+    line-height: 1.4;
+    font-weight: 600;
+    font-family: var(--font-heading);
+  }
+
+  /* App Shell utilities */
+  .has-bottom-nav {
+    padding-bottom: 3.5rem; /* 56px for bottom nav */
+  }
+
+  /* Responsive grid helpers */
+  .app-grid {
+    @apply grid;
+    @apply grid-cols-1;
+    @apply lg:grid-cols-[auto_1fr];
+    @apply min-h-screen;
+  }
+
+  .app-main {
+    @apply col-start-1;
+    @apply row-start-1;
+    @apply lg:col-start-2;
+    @apply transition-all duration-200;
+  }
+
+  .app-sidebar {
+    @apply col-start-1;
+    @apply row-start-1;
+    @apply hidden lg:block;
+    @apply transition-all duration-200;
+  }
+
+  /* Safe area insets for mobile devices */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Custom scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: oklch(0.25 0.01 240 / 70%);
+    border-radius: 3px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.58 0.02 250);
+  }
+
+  /* Auth UI Utilities */
+  .auth-bg-gradient {
+    background: oklch(0.09 0.008 240); /* Solid base color */
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .auth-bg-gradient::before {
+    content: "";
+    position: absolute;
+    inset: -20%;
+    background: radial-gradient(circle at 50% 40%, oklch(0.65 0.18 250 / 8%) 0%, transparent 50%);
+    animation: auth-breathe 8s ease-in-out infinite alternate;
+    pointer-events: none;
+  }
+
+  @keyframes auth-breathe {
+    0% { transform: scale(1) translate(0, 0); }
+    50% { transform: scale(1.1) translate(2%, 3%); }
+    100% { transform: scale(1) translate(-2%, -1%); }
+  }
+
+  .mask-radial-fade {
+    mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+    -webkit-mask-image: radial-gradient(circle at center, black 40%, transparent 80%);
+  }
+
+  .glass-panel {
+    background: oklch(0.13 0.008 240 / 70%);
+    backdrop-filter: blur(16px);
+    border: 1px solid oklch(0.25 0.01 240 / 40%);
   }
 }

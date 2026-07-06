@@ -29,7 +29,8 @@ var (
 	// ErrInvalidOutcomes indiacates the number of coutcomes is invalid (must be >= 2)
 	ErrInvalidOutcomes = errors.New("market must have at least 2 outcomes")
 
-	// ErrInvalidLiquidity indicates the liquidity param is invalid (must be > 0)
+	// ErrInvalidLiquidity indicates the liquidity param is invalid (must be > 0).
+	// b = liquidity_param_smallest_unit / 100; minimum safe b = 100 (param >= 10,000 cents).
 	ErrInvalidLiquidity = errors.New("liquidity parameter must be reater than 0")
 
 	// ErrInvalidQuantities indicates the quantities array doesn't match outcomes count
@@ -370,7 +371,7 @@ Returns:
 - quantities: copy of current quantities
 - prices: Current market prices
 
-method is read onlu adn safe to call concurrently (assumming no concurrent writes)
+method is read only and safe to call concurrently (assumming no concurrent writes)
 */
 func (e *LSMREngine) GetCurrentState() (numOutcomes int, liquidityParam decimal.Decimal, quantities []decimal.Decimal, prices []decimal.Decimal, err error) {
 	quantitiesCopy := make([]decimal.Decimal, e.numOutcomes)
@@ -413,4 +414,60 @@ func (e *LSMREngine) SetQuantities(quantities []decimal.Decimal) error {
 	copy(e.quantities, quantities)
 
 	return nil
+}
+
+/*
+CalculateSellPayout computes the payout for selling shares
+
+Cost = C(q_current) - Cq_new)
+*/
+func (e *LSMREngine) CalculateSellPayout(outcomeIndex int, amount decimal.Decimal) (decimal.Decimal, error) {
+	if outcomeIndex < 0 || outcomeIndex >= e.numOutcomes {
+		return zero(), ErrInvalidOutcomeIndex
+	}
+	if amount.LessThanOrEqual(zero()) {
+		return zero(), ErrInvalidPurchase
+	}
+
+	currentCost, err := e.CalculateCost(e.quantities)
+	if err != nil {
+		return zero(), fmt.Errorf("failed to calculate current cost: %w", err)
+	}
+
+	// Create new quantity state after sale
+	newQuantities := make([]decimal.Decimal, e.numOutcomes)
+	copy(newQuantities, e.quantities)
+	newQuantities[outcomeIndex] = newQuantities[outcomeIndex].Sub(amount)
+
+	newCost, err := e.CalculateCost(newQuantities)
+	if err != nil {
+		// If quantities drop below zero, CalculateCost will natively block it
+		return zero(), fmt.Errorf("failed to calculate new cost: %w", err)
+	}
+
+	payout := currentCost.Sub(newCost)
+
+	return payout.Round(DECIMAL_PLACES), nil
+}
+
+/*
+ExecuteSell updates engine state after a sale
+*/
+func (e *LSMREngine) ExecuteSell(outcomeIndex int, amount decimal.Decimal) (payout decimal.Decimal, newPrices []decimal.Decimal, err error) {
+	payout, err = e.CalculateSellPayout(outcomeIndex, amount)
+	if err != nil {
+		return zero(), nil, err
+	}
+
+	// update quant state
+	e.quantities[outcomeIndex] = e.quantities[outcomeIndex].Sub(amount)
+
+	prices, err := e.CalculatePrices()
+	if err != nil {
+		e.quantities[outcomeIndex] = e.quantities[outcomeIndex].Add(amount)
+
+		return zero(), nil, fmt.Errorf("failed to calculate new prices: %w", err)
+	}
+
+	return payout, prices, nil
 }

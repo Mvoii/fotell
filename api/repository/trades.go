@@ -30,16 +30,19 @@ FINANCIAL SAFETY:
 */
 
 type Trade struct {
-	ID        string          `json:"id"`
-	UserID    string          `json:"user_id"`
-	MarketID  string          `json:"market_id"`
-	Outcome   string          `json:"outcome"` // YES or NO
-	Shares    decimal.Decimal `json:"shares"`
-	CostPaid  int64           `json:"cost_paid"` // in cents
-	CreatedAt time.Time       `json:"created_at"`
+	ID          string          `json:"id"`
+	UserID      string          `json:"user_id"`
+	MarketID    string          `json:"market_id"`
+	Outcome     string          `json:"outcome"` // YES or NO
+	Shares      decimal.Decimal `json:"shares"`
+	CostPaid    int64           `json:"cost_paid"`              // in cents
+	RealizedPnL *int64          `json:"realized_pnl,omitempty"` // when new
+	CreatedAt   time.Time       `json:"created_at"`
+	Action      string          `json:"action"`
 }
 
 type CreateTradeParams struct {
+	Action         string
 	UserID         string
 	MarketID       string
 	Outcome        string
@@ -49,6 +52,7 @@ type CreateTradeParams struct {
 	YesPriceAfter  decimal.Decimal
 	NoPriceBefore  decimal.Decimal
 	NoPriceAfter   decimal.Decimal
+	RealizedPnL    *int64 // new
 }
 
 type TradeRepository struct {
@@ -97,14 +101,20 @@ For atomic trades, use CreateTx instead
 func (r *TradeRepository) Create(ctx context.Context, params CreateTradeParams) (*Trade, error) {
 	query := `
 		INSERT INTO trades (
-			user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit,
-			yes_price_before, yes_price_after, no_price_before, no_price_after
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+			action, user_id, market_id, outcome, shares_amount, shares_bought_smallest_unit, cost_paid_smallest_unit,
+			yes_price_before, yes_price_after, no_price_before, no_price_after, realized_pnl_smallest_unit
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING id, action, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, realized_pnl_smalllest_unit, created_at
 	`
 
 	var trade Trade
 	sharesFloat, _ := params.Shares.Float64()
+
+	sharesSmallestUnit := params.Shares.Mul(decimal.NewFromInt(1000000)).IntPart()
+	if sharesSmallestUnit <= 0 {
+		sharesSmallestUnit = 1
+	}
+
 	yesPriceBefore, _ := params.YesPriceBefore.Float64()
 	yesPriceAfter, _ := params.YesPriceAfter.Float64()
 	noPriceBefore, _ := params.NoPriceBefore.Float64()
@@ -113,22 +123,27 @@ func (r *TradeRepository) Create(ctx context.Context, params CreateTradeParams) 
 	err := r.db.QueryRowContext(
 		ctx,
 		query,
+		params.Action,
 		params.UserID,
 		params.MarketID,
 		params.Outcome,
 		sharesFloat,
+		sharesSmallestUnit,
 		params.CostPaid,
 		yesPriceBefore,
 		yesPriceAfter,
 		noPriceBefore,
 		noPriceAfter,
+		params.RealizedPnL,
 	).Scan(
 		&trade.ID,
+		&trade.Action,
 		&trade.UserID,
 		&trade.MarketID,
 		&trade.Outcome,
 		&trade.Shares,
 		&trade.CostPaid,
+		&trade.RealizedPnL,
 		&trade.CreatedAt,
 	)
 
@@ -159,14 +174,22 @@ USAGE:
 func (r *TradeRepository) CreateTx(ctx context.Context, tx *sql.Tx, params CreateTradeParams) (*Trade, error) {
 	query := `
 		INSERT INTO trades (
-			user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit,
-			yes_price_before, yes_price_after, no_price_before, no_price_after
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-		RETURNING id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+			action, user_id, market_id, outcome,
+			shares_amount, shares_bought_smallest_unit, cost_paid_smallest_unit,
+			yes_price_before, yes_price_after, no_price_before, no_price_after, realized_pnl_smallest_unit
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+		RETURNING id, action, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, realized_pnl_smallest_unit, created_at
 	`
 
 	var trade Trade
 	sharesFloat, _ := params.Shares.Float64()
+
+	// ensure we satisf =y legacy check (shares_bought_smallest_unit > 0)
+	sharesSmallestUnit := params.Shares.Mul(decimal.NewFromInt(100)).IntPart()
+	if sharesSmallestUnit <= 0 {
+		sharesSmallestUnit = 1
+	}
+
 	yesPriceBefore, _ := params.YesPriceBefore.Float64()
 	yesPriceAfter, _ := params.YesPriceAfter.Float64()
 	noPriceBefore, _ := params.NoPriceBefore.Float64()
@@ -175,22 +198,27 @@ func (r *TradeRepository) CreateTx(ctx context.Context, tx *sql.Tx, params Creat
 	err := tx.QueryRowContext(
 		ctx,
 		query,
+		params.Action,
 		params.UserID,
 		params.MarketID,
 		params.Outcome,
 		sharesFloat,
+		sharesSmallestUnit,
 		params.CostPaid,
 		yesPriceBefore,
 		yesPriceAfter,
 		noPriceBefore,
 		noPriceAfter,
+		params.RealizedPnL,
 	).Scan(
 		&trade.ID,
+		&trade.Action,
 		&trade.UserID,
 		&trade.MarketID,
 		&trade.Outcome,
 		&trade.Shares,
 		&trade.CostPaid,
+		&trade.RealizedPnL,
 		&trade.CreatedAt,
 	)
 
@@ -215,7 +243,7 @@ RETURNS:
 */
 func (r *TradeRepository) GetByID(ctx context.Context, id string) (*Trade, error) {
 	query := `
-		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		SELECT id, action, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at, realized_pnl_smallest_unit
 		FROM trades
 		WHERE id = $1
 	`
@@ -225,11 +253,13 @@ func (r *TradeRepository) GetByID(ctx context.Context, id string) (*Trade, error
 
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&trade.ID,
+		&trade.Action,
 		&trade.UserID,
 		&trade.MarketID,
 		&trade.Outcome,
 		&sharesFloat,
 		&trade.CostPaid,
+		&trade.RealizedPnL,
 		&trade.CreatedAt,
 	)
 
@@ -254,7 +284,7 @@ USAGE:
 */
 func (r *TradeRepository) ListByUserAndMarket(ctx context.Context, userID, marketID string) ([]*Trade, error) {
 	query := `
-		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		SELECT id, action, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at, realized_pnl_smallest_unit
 		FROM trades
 		WHERE user_id = $1 AND market_id = $2
 		ORDER BY created_at DESC
@@ -274,11 +304,13 @@ func (r *TradeRepository) ListByUserAndMarket(ctx context.Context, userID, marke
 
 		err := rows.Scan(
 			&trade.ID,
+			&trade.Action,
 			&trade.UserID,
 			&trade.MarketID,
 			&trade.Outcome,
 			&sharesFloat,
 			&trade.CostPaid,
+			&trade.RealizedPnL,
 			&trade.CreatedAt,
 		)
 		if err != nil {
@@ -313,7 +345,7 @@ func (r *TradeRepository) ListByMarket(ctx context.Context, marketID string, lim
 
 	// Get trades
 	query := `
-		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		SELECT id, action, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, realized_pnl_smallest_unit, created_at
 		FROM trades
 		WHERE market_id = $1
 		ORDER BY created_at DESC
@@ -334,11 +366,13 @@ func (r *TradeRepository) ListByMarket(ctx context.Context, marketID string, lim
 
 		err := rows.Scan(
 			&trade.ID,
+			&trade.Action,
 			&trade.UserID,
 			&trade.MarketID,
 			&trade.Outcome,
 			&sharesFloat,
 			&trade.CostPaid,
+			&trade.RealizedPnL,
 			&trade.CreatedAt,
 		)
 		if err != nil {
@@ -367,8 +401,10 @@ func (r *TradeRepository) ListByUser(ctx context.Context, userID string, limit, 
 	}
 
 	// Get trades
+	//SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+	// To this: SELECT id, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, created_at
 	query := `
-		SELECT id, user_id, market_id, outcome, shares_bought_smallest_unit, cost_paid_smallest_unit, created_at
+		SELECT id, action, user_id, market_id, outcome, shares_amount, cost_paid_smallest_unit, realized_pnl_smallest_unit, created_at
 		FROM trades
 		WHERE user_id = $1
 		ORDER BY created_at DESC
@@ -389,11 +425,13 @@ func (r *TradeRepository) ListByUser(ctx context.Context, userID string, limit, 
 
 		err := rows.Scan(
 			&trade.ID,
+			&trade.Action,
 			&trade.UserID,
 			&trade.MarketID,
 			&trade.Outcome,
 			&sharesFloat,
 			&trade.CostPaid,
+			&trade.RealizedPnL,
 			&trade.CreatedAt,
 		)
 		if err != nil {

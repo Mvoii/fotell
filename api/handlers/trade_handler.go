@@ -10,12 +10,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
-	"github.com/Mvoii/fotell/amm"
-	"github.com/Mvoii/fotell/api/middleware"
-	"github.com/Mvoii/fotell/api/repository"
+	"github.com/esiepe/fotell/amm"
+	"github.com/esiepe/fotell/api/middleware"
+	"github.com/esiepe/fotell/api/repository"
 	"github.com/go-chi/chi/v5"
 	"github.com/shopspring/decimal"
 )
@@ -92,6 +93,7 @@ REQUEST:
 	{
 	  "outcome": "YES",     // or "NO"
 	  "shares": 10.5,       // number of shares to buy
+	  "budget_cents": 25000,
 	}
 
 RESPONSE (201):
@@ -133,7 +135,7 @@ ERROR CODES:
   - 500: Database or AMM error
 */
 func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
-	// ── Extract user ID from JWT
+	// Extract user ID from JWT
 	userID := middleware.GetUserID(r)
 	if userID == "" {
 		ErrorJSON(w, 401, "Authentication required", map[string]interface{}{
@@ -149,10 +151,18 @@ func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	/* 	ammMarket, err := h.registry.GetMarket(marketID)
+	   	if err != nil {
+	   		ErrorJSON(w, 404, "Market not found", nil)
+	   		return
+	   	}
+	*/
 	// Parse request body
 	var req struct {
-		Outcome string  `json:"outcome"`
-		Shares  float64 `json:"shares"`
+		Action      string  `json:"action"`
+		Outcome     string  `json:"outcome"`
+		Shares      float64 `json:"shares"`
+		BudgetCents int64   `json:"budget_cents"`
 		// MaxCost int64   `json:"max_cost"` // in cents
 	}
 
@@ -163,42 +173,13 @@ func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Input validation
-	// Validate outcome
-	if req.Outcome != "YES" && req.Outcome != "NO" {
-		ErrorJSON(w, 400, "Outcome must be YES or NO", map[string]interface{}{
-			"error_code":     "INVALID_OUTCOME",
-			"valid_outcomes": []string{"YES", "NO"},
-		})
+	if req.Action == "" {
+		req.Action = "BUY"
+	}
+	if req.Action != "BUY" && req.Action != "SELL" {
+		ErrorJSON(w, 400, "action must be buy or sell", nil)
 		return
 	}
-
-	// Validate shares (must be positive)
-	if req.Shares <= 0 {
-		ErrorJSON(w, 400, "Shares must be positive", map[string]interface{}{
-			"error_code": "INVALID_SHARES",
-			"field":      "shares",
-		})
-		return
-	}
-
-	// Validate shares (reasonable limit to prevent overflow)
-	if req.Shares > 1_000_000 {
-		ErrorJSON(w, 400, "Shares exceeds maximum (1,000,000)", map[string]interface{}{
-			"error_code": "SHARES_TOO_LARGE",
-			"max_shares": 1_000_000,
-		})
-		return
-	}
-
-	/* // Validate max_cost (must be positive)
-	if req.MaxCost <= 0 {
-		ErrorJSON(w, 400, "Max cost must be positive", map[string]interface{}{
-			"error_code": "INVALID_MAX_COST",
-			"field":      "max_cost",
-		})
-		return
-	} */
 
 	// Check market exists and is OPEN
 	market, err := h.marketRepo.GetByID(r.Context(), marketID)
@@ -213,7 +194,6 @@ func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
 		ErrorJSON(w, 500, "Failed to fetch market", nil)
 		return
 	}
-
 	// Market must be OPEN
 	if market.Status != "OPEN" {
 		ErrorJSON(w, 403, "Market not open for trading", map[string]interface{}{
@@ -233,6 +213,16 @@ func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Input validation
+	// Validate outcome
+	if req.Outcome != "YES" && req.Outcome != "NO" {
+		ErrorJSON(w, 400, "Outcome must be YES or NO", map[string]interface{}{
+			"error_code":     "INVALID_OUTCOME",
+			"valid_outcomes": []string{"YES", "NO"},
+		})
+		return
+	}
+
 	// Get AMM instance
 	ammMarket, err := h.registry.GetMarket(marketID)
 	if err != nil || ammMarket == nil {
@@ -244,177 +234,203 @@ func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	/* // Get quote from AMM
-	sharesDecimal := decimal.NewFromFloat(req.Shares)
+	var sharesToBuy decimal.Decimal
+	var maxCostCents int64
 
-	// quote, err := ammMarket.GetBuyQuote(req.Outcome, sharesDecimal)
-	// conv outcome to binary outcome type
-	/* 	var outcome amm.BinaryOutcome
-	   	if req.Outcome == "YES" {
-	   		outcome = amm.BuyYES
-	   	} else {
-	   		outcome = amm.BuyNO
-	   	}
-	*/
-	// calc cost using amm
-	//cost, err := ammMarket.CalculateCost(outcome, sharesDecimal)
-	// Get cost for buying shares (the AMM calculates this internally)
+	if req.BudgetCents > 0 {
+		budgetKES := decimal.NewFromInt(req.BudgetCents).Div(decimal.NewFromInt(100))
 
-	// We'll use a high maxCost for quote, then check against user's maxCost
-	/* cost, err := ammMarket.GetCostToBuy(req.Outcome, sharesDecimal)
-	if err != nil {
-		log.Printf("ERROR: Failed to get AMM quote: %v", err)
-		ErrorJSON(w, 500, "Failed to calculate trade cost", map[string]interface{}{
-			"error_code": "QUOTE_FAILED",
+		outcome := amm.BuyYES
+		if req.Outcome == "NO" {
+			outcome = amm.BuyNO
+		} else {
+			outcome = amm.BuyYES
+		}
+
+		shares, err := ammMarket.GetSharesForBudget(outcome, budgetKES)
+		if err != nil {
+			ErrorJSON(w, 400, "Could not calculate shares fr budget", nil)
+			return
+		}
+
+		// Check user balance
+		balance, err := h.balanceRepo.GetByUserID(r.Context(), userID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				ErrorJSON(w, 500, "Balance not found", map[string]interface{}{
+					"error_code": "BALANCE_MISSING",
+					"hint":       "cONtact support",
+				})
+				return
+			}
+			log.Printf("ERROR: Failed to fetch balance: %v", err)
+			ErrorJSON(w, 500, "Failed to fetch balance", nil)
+			return
+		}
+
+		sharesToBuy = shares
+		maxCostCents = req.BudgetCents // hard ceiling
+
+		trade, position, newBalance, err := h.executeTrade(r.Context(), executeTradeParams{
+			Action:           req.Action,
+			UserID:           userID,
+			MarketID:         marketID,
+			Outcome:          req.Outcome,
+			Shares:           sharesToBuy,
+			MaxCostCents:     maxCostCents,
+			UserBalanceCents: balance.BalanceSmallestUnit,
+			AMMMarket:        ammMarket,
 		})
-		return
-	}
 
-	prices, err := ammMarket.GetPrices()
+		if err != nil {
+			// Check for insufficient balance error
+			if strings.Contains(err.Error(), "exceeds max acceptable cost") || strings.Contains(err.Error(), "insufficient balance") {
+				ErrorJSON(w, 409, "Insufficient balance", map[string]interface{}{
+					"error_code": "INSUFFICIENT_BALANCE",
+					"hint":       "Reduce shares or add funds.",
+				})
+				return
+			}
 
-	if err != nil {
-		ErrorJSON(w, 500, "failed to get market prices", nil)
-		return
-	}
+			// Log error for debugging
+			log.Printf("ERROR: Trade execution failed for user %s market %s: %v", userID, marketID, err)
 
-	// est cost (actual by amm when buying)
-	var pricePerShare decimal.Decimal
-	if req.Outcome == "YES" {
-		pricePerShare = prices.YesPrice
+			// Return user-friendly error
+			ErrorJSON(w, 500, "Trade execution failed", map[string]interface{}{
+				"error_code": "TRADE_FAILED",
+				"hint":       "Your balance was not charged. 	Please try again.",
+			})
+			return
+		}
+
+		// CRITICAL: Add nil check before accessing trade
+		if trade == nil || position == nil {
+			log.Printf("ERROR: Trade or position is nil despite no error - this should never happen")
+			ErrorJSON(w, 500, "Trade execution failed", map[string]interface{}{
+				"error_code": "INTERNAL_ERROR",
+				"hint":       "Please try again.",
+			})
+			return
+		}
+
+		// avgPrice := float64(costCents) / Shares
+		sharesFloat, _ := sharesToBuy.Float64()
+		avgPrice := float64(trade.CostPaid) / sharesFloat
+
+		formattedTrade := formatTradeResponse(trade)
+
+		JSON(w, 201, map[string]interface{}{
+			"trade": formattedTrade,
+			//"trade_id":  trade.ID,
+			//"outcome":   req.Outcome,
+			//"shares":    sharesToBuy,
+			//"cost_paid": trade.CostPaid,
+			"avg_price": avgPrice,
+			"position": map[string]interface{}{
+				"yes_shares": position.YesShares,
+				"no_shares":  position.NoShares,
+				"cost_basis": position.CostBasis,
+			},
+			"balance_after": newBalance,
+			// "timestamp":     trade.CreatedAt,
+		})
+
+	} else if req.Shares > 0 {
+		if req.Shares > 1_000_000 {
+			ErrorJSON(w, 400, "Shares exceeds maximum (1,000,000)", map[string]interface{}{
+				"error_code": "SHARES_TOO_LARGE",
+				"max_shares": 1_000_000,
+			})
+			return
+		}
+
+		// Check user balance
+		balance, err := h.balanceRepo.GetByUserID(r.Context(), userID)
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				ErrorJSON(w, 500, "Balance not found", map[string]interface{}{
+					"error_code": "BALANCE_MISSING",
+					"hint":       "cONtact support",
+				})
+				return
+			}
+			log.Printf("ERROR: Failed to fetch balance: %v", err)
+			ErrorJSON(w, 500, "Failed to fetch balance", nil)
+			return
+		}
+
+		sharesToBuy := decimal.NewFromFloat(req.Shares)
+
+		trade, position, newBalance, err := h.executeTrade(r.Context(), executeTradeParams{
+			Action:           req.Action,
+			UserID:           userID,
+			MarketID:         marketID,
+			Outcome:          req.Outcome,
+			Shares:           sharesToBuy,
+			MaxCostCents:     balance.BalanceSmallestUnit,
+			UserBalanceCents: balance.BalanceSmallestUnit,
+			AMMMarket:        ammMarket,
+		})
+
+		if err != nil {
+			// Check for insufficient balance error
+			if strings.Contains(err.Error(), "exceeds max acceptable cost") || strings.Contains(err.Error(), "insufficient balance") {
+				ErrorJSON(w, 409, "Insufficient balance", map[string]interface{}{
+					"error_code": "INSUFFICIENT_BALANCE",
+					"hint":       "Reduce shares or add funds.",
+				})
+				return
+			}
+
+			// Log error for debugging
+			log.Printf("ERROR: Trade execution failed for user %s market %s: %v", userID, marketID, err)
+
+			// Return user-friendly error
+			ErrorJSON(w, 500, "Trade execution failed", map[string]interface{}{
+				"error_code": "TRADE_FAILED",
+				"hint":       "Your balance was not charged. 	Please try again.",
+			})
+			return
+		}
+
+		// CRITICAL: Add nil check before accessing trade
+		if trade == nil || position == nil {
+			log.Printf("ERROR: Trade or position is nil despite no error - this should never happen")
+			ErrorJSON(w, 500, "Trade execution failed", map[string]interface{}{
+				"error_code": "INTERNAL_ERROR",
+				"hint":       "Please try again.",
+			})
+			return
+		}
+
+		// avgPrice := float64(costCents) / Shares
+		avgPrice := float64(trade.CostPaid) / req.Shares
+		formattedTrade :=  formatTradeResponse(trade)
+
+		JSON(w, 201, map[string]interface{}{
+			"trade": formattedTrade,
+			// "trade_id":  trade.ID,
+			// "outcome":   req.Outcome,
+			// "shares":    req.Shares,
+			// "cost_paid": trade.CostPaid,
+			"avg_price": avgPrice,
+			"position": map[string]interface{}{
+				"yes_shares": position.YesShares,
+				"no_shares":  position.NoShares,
+				"cost_basis": position.CostBasis,
+			},
+			"balance_after": newBalance,
+			"timestamp":     trade.CreatedAt,
+		})
 	} else {
-		pricePerShare = prices.NoPrice
-	}
-
-	// Convert cost from decimal to cents
-	cost := pricePerShare.Mul(sharesDecimal).Div(decimal.NewFromInt(100))
-
-	costFloat, _ := cost.Float64()
-	costCents := int64(costFloat * 100) // Convert KES to cents
-
-	// ── Slippage protection
-	if costCents > req.MaxCost {
-		ErrorJSON(w, 422, "Trade cost exceeds maximum", map[string]interface{}{
-			"error_code":  "SLIPPAGE_EXCEEDED",
-			"actual_cost": costCents,
-			"max_cost":    req.MaxCost,
-			"hint":        "Price moved unfavorably. Increase max_cost or reduce shares.",
-		})
-		return
-	}
-	*/
-	// Check user balance
-	balance, err := h.balanceRepo.GetByUserID(r.Context(), userID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			ErrorJSON(w, 500, "Balance not found", map[string]interface{}{
-				"error_code": "BALANCE_MISSING",
-				"hint":       "cONtact support",
+		if req.Shares <= 0 {
+			ErrorJSON(w, 400, "Shares must be positive", map[string]interface{}{
+				"error_code": "INVALID_SHARES",
+				"field":      "shares",
 			})
 			return
 		}
-		log.Printf("ERROR: Failed to fetch balance: %v", err)
-		ErrorJSON(w, 500, "Failed to fetch balance", nil)
-		return
 	}
-
-	/* 	// Check sufficient funds
-	   	if balance.BalanceSmallestUnit < costCents {
-	   		ErrorJSON(w, 409, "Insufficient balance", map[string]interface{}{
-	   			"error_code": "INSUFFICIENT_BALANCE",
-	   			"required":   costCents,
-	   			"available":  balance.BalanceSmallestUnit,
-	   			"shortfall":  costCents - balance.BalanceSmallestUnit,
-	   		})
-	   		return
-	   	}
-
-	   	// ── Execute trade (ATOMIC)
-	   	ctx := r.Context() */
-
-	// exec trade atomicaly
-	sharesDecimal := decimal.NewFromFloat(req.Shares)
-
-	/* trade, position, newBalance, err := h.executeTrade(ctx, req.Outcome, executeTradeParams{
-		UserID:   userID,
-		MarketID: marketID,
-		Outcome:  req.Outcome,
-		Shares:   sharesDecimal,
-		// CostCents: costCents,
-		EstimatedCostCents: costCents,
-		MaxCostCents:       req.MaxCost,
-		AMMMarket:          ammMarket,
-	}) */
-
-	trade, position, newBalance, err := h.executeTrade(r.Context(), executeTradeParams{
-		UserID:           userID,
-		MarketID:         marketID,
-		Outcome:          req.Outcome,
-		Shares:           sharesDecimal,
-		UserBalanceCents: balance.BalanceSmallestUnit,
-		AMMMarket:        ammMarket,
-	})
-
-	/* if err != nil {
-		// Log error for debugging
-		log.Printf("ERROR: Trade execution failed for user %s market %s: %v", userID, marketID, err)
-
-		// Return user-friendly error
-		ErrorJSON(w, 500, "Trade execution failed", map[string]interface{}{
-			"error_code": "TRADE_FAILED",
-			"hint":       "Your balance was not charged. Please try again.",
-		})
-		return
-	}
-	*/
-
-	if err != nil {
-		// Check for insufficient balance error
-		if strings.Contains(err.Error(), "exceeds max acceptable cost") ||
-			strings.Contains(err.Error(), "insufficient balance") {
-			ErrorJSON(w, 409, "Insufficient balance", map[string]interface{}{
-				"error_code": "INSUFFICIENT_BALANCE",
-				"hint":       "Reduce shares or add funds.",
-			})
-			return
-		}
-
-		// Log error for debugging
-		log.Printf("ERROR: Trade execution failed for user %s market %s: %v", userID, marketID, err)
-
-		// Return user-friendly error
-		ErrorJSON(w, 500, "Trade execution failed", map[string]interface{}{
-			"error_code": "TRADE_FAILED",
-			"hint":       "Your balance was not charged. Please try again.",
-		})
-		return
-	}
-
-	// CRITICAL: Add nil check before accessing trade
-	if trade == nil || position == nil {
-		log.Printf("ERROR: Trade or position is nil despite no error - this should never happen")
-		ErrorJSON(w, 500, "Trade execution failed", map[string]interface{}{
-			"error_code": "INTERNAL_ERROR",
-			"hint":       "Please try again.",
-		})
-		return
-	}
-	// avgPrice := float64(costCents) / req.Shares
-	avgPrice := float64(trade.CostPaid) / req.Shares
-
-	JSON(w, 201, map[string]interface{}{
-		"trade_id":  trade.ID,
-		"outcome":   req.Outcome,
-		"shares":    req.Shares,
-		"cost_paid": trade.CostPaid,
-		"avg_price": avgPrice,
-		"position": map[string]interface{}{
-			"yes_shares": position.YesShares,
-			"no_shares":  position.NoShares,
-			"cost_basis": position.CostBasis,
-		},
-		"balance_after": newBalance,
-		"timestamp":     trade.CreatedAt,
-	})
 }
 
 //
@@ -422,15 +438,16 @@ func (h *TradeHandler) PlaceTrade(w http.ResponseWriter, r *http.Request) {
 //
 
 type executeTradeParams struct {
-	UserID   string
-	MarketID string
-	Outcome  string
-	Shares   decimal.Decimal
-	// CostCents int64
+	Action    string
+	UserID    string
+	MarketID  string
+	Outcome   string
+	Shares    decimal.Decimal
+	CostCents int64
 	// EstimatedCostCents int64
 	UserBalanceCents int64
-	// MaxCostCents       int64
-	AMMMarket *amm.Market
+	MaxCostCents     int64
+	AMMMarket        *amm.Market
 }
 
 /*
@@ -480,8 +497,6 @@ func (h *TradeHandler) executeTrade(ctx context.Context, params executeTradePara
 		outcome = amm.BuyNO
 	}
 
-	maxCostDecimal := decimal.NewFromInt(params.UserBalanceCents).Div(decimal.NewFromInt(100))
-
 	// Get prices BEFORE trade (for audit trail)
 	// pricesBefore, err := params.AMMMarket.GetPrices()
 	pricesBefore, err := params.AMMMarket.GetPrices()
@@ -489,89 +504,187 @@ func (h *TradeHandler) executeTrade(ctx context.Context, params executeTradePara
 		return nil, nil, 0, fmt.Errorf("failed to get prices before trade: %w", err)
 	}
 
-	// debit balance
-	/* newBalance, err := h.balanceRepo.DebitTx(ctx, tx, params.UserID)
-	if err != nil {
-		return nil, nil, 0, fmt.Errorf("failed to debit alance: %w", err)
-	} */
+	var trade *repository.Trade
+	var position *repository.Position
+	var newBalance int64
+	var transactionAmountCents int64 // replaces actualcostcents / payoutcents
 
-	// 4. Execute trade in AMM FIRST (to get new prices)
-	receipt, err := params.AMMMarket.Buy(params.UserID, outcome, params.Shares, maxCostDecimal)
-	if err != nil {
-		return nil, nil, 0, fmt.Errorf("AMM trade failed: %w", err)
+	// BRANCH A: SELL
+	if params.Action == "SELL" {
+		// lock pos & verify ownership
+		pos, err := h.positionRepo.GetByUserAndMarketTx(ctx, tx, params.UserID, params.MarketID)
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("failed to fetch pos or no pos exists: %w", err)
+		}
+
+		availableShares := pos.YesShares
+		if params.Outcome == "NO" {
+			availableShares = pos.NoShares
+		}
+
+		dustThreshold := decimal.NewFromFloat(0.0001)
+		if availableShares.LessThan(params.Shares) {
+			return nil, nil, 0, fmt.Errorf("insufficient shares to sell: own %s, selling %s", availableShares.String(), params.Shares.String())
+		}
+
+		// selling everything
+		if availableShares.Sub(params.Shares).Abs().LessThan(dustThreshold) {
+			params.Shares = availableShares
+		}
+
+		receipt, err := params.AMMMarket.Sell(params.UserID, outcome, params.Shares)
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("AMM sell failed: %w", err)
+		}
+
+		transactionAmountCents := receipt.CostPaid.Mul(decimal.NewFromInt(100)).Floor().IntPart()
+
+		newBalance, err = h.balanceRepo.CreditTx(ctx, tx, params.UserID, transactionAmountCents)
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("failed to credit balance: %w", err)
+		}
+
+		// fin math (basis & pnl)
+
+		fractionSold := params.Shares.Div(availableShares)
+		basisReduction := decimal.NewFromInt(pos.CostBasis).Mul(fractionSold).IntPart()
+
+		// realized pnl = what you paid - what those spec shares cost you
+		pnl := transactionAmountCents - basisReduction
+
+		// update pos (send neg vals to upserttx to subtract)
+		position, err = h.positionRepo.DecreasePositionTx(ctx, tx, repository.UpsertPositionParams{
+			UserID:      params.UserID,
+			MarketID:    params.MarketID,
+			Outcome:     params.Outcome,
+			Shares:      params.Shares,  // positive value
+			Cost:        basisReduction, // positive value
+			RealizedPnL: pnl,
+		})
+
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("failed to update position: %w", err)
+		}
+
+		// record trade
+		trade, err = h.tradeRepo.CreateTx(ctx, tx, repository.CreateTradeParams{
+			Action:         "SELL",
+			UserID:         params.UserID,
+			MarketID:       params.MarketID,
+			Outcome:        params.Outcome,
+			Shares:         params.Shares,
+			CostPaid:       transactionAmountCents,
+			YesPriceBefore: pricesBefore.YesPrice,
+			YesPriceAfter:  receipt.YesPriceAfter,
+			NoPriceBefore:  pricesBefore.NoPrice,
+			NoPriceAfter:   receipt.NoPriceAfter,
+			RealizedPnL:    &pnl,
+		})
+
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("failed to record trade: %w", err)
+		}
+	} else {
+		maxCostDecimal := decimal.NewFromInt(params.MaxCostCents).Div(decimal.NewFromInt(100))
+
+		// debit balance
+		/* newBalance, err := h.balanceRepo.DebitTx(ctx, tx, params.UserID)
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("failed to debit alance: %w", err)
+		} */
+
+		// 4. Execute trade in AMM FIRST (to get new prices)
+		receipt, err := params.AMMMarket.Buy(params.UserID, outcome, params.Shares, maxCostDecimal)
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("AMM trade failed: %w", err)
+		}
+
+		transactionAmountCents = receipt.CostPaid.Mul(decimal.NewFromInt(100)).Ceil().IntPart()
+
+		// Get prices AFTER trade
+		pricesAfter := &amm.PriceQuote{
+			YesPrice: receipt.YesPriceAfter,
+			NoPrice:  receipt.NoPriceAfter,
+		}
+		/* if actualCostCents <= 0 {
+			return nil, nil, 0, fmt.Errorf("failed to get prices after trade: %w", err)
+		}
+		*/
+		// debit actual cost from user balance
+		newBalance, err = h.balanceRepo.DebitTx(ctx, tx, params.UserID, transactionAmountCents)
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("faield to debit balance: %w", err)
+		}
+
+		// 3. Update position
+		position, err = h.positionRepo.UpsertTx(ctx, tx, repository.UpsertPositionParams{
+			UserID:   params.UserID,
+			MarketID: params.MarketID,
+			Outcome:  params.Outcome,
+			Shares:   params.Shares,
+			Cost:     transactionAmountCents,
+		})
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("failed to update position: %w", err)
+		}
+
+		// create trade record
+		trade, err = h.tradeRepo.CreateTx(ctx, tx, repository.CreateTradeParams{
+			Action:         "BUY",
+			UserID:         params.UserID,
+			MarketID:       params.MarketID,
+			Outcome:        params.Outcome,
+			Shares:         params.Shares,
+			CostPaid:       transactionAmountCents,
+			YesPriceBefore: pricesBefore.YesPrice,
+			YesPriceAfter:  pricesAfter.YesPrice,
+			NoPriceBefore:  pricesBefore.NoPrice,
+			NoPriceAfter:   pricesAfter.NoPrice,
+		})
+
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("failed to create trade %w", err)
+		}
+
+		/* // 4. Execute trade in AMM
+		actualCost, err := params.AMMMarket.Buy(params.UserID, outcome, params.Shares, maxCostDecimal)
+
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("AMM trade failed: %w", err)
+		}
+
+		// Log actual cost for monitoring
+		log.Printf("Trade executed: expected=%d actual=%s", params.CostCents, actualCost)
+		*/
+		// 5. Persist AMM state
+		// quantities := params.AMMMarket.GetQuantities()
+		// quantitiesJSON := fmt.Sprintf(`{"quantities": [%f, %f]}`, quantities[0], quantities[1])
+		//state := params.AMMMarket.GetQuantities()
+		//quantitiesJSON := fmt.Sprintf(`{"quantities": [%f, %f]}`, state.Q0, stateQ1)
+
+		/* snapshot, err := params.AMMMarket.Snapshot()
+		if err != nil {
+			return nil, nil, 0, fmt.Errorf("failed to get mar snap: %w", err)
+		} */
 	}
 
-	actualCostCents := receipt.CostPaid.Mul(decimal.NewFromInt(100)).Ceil().IntPart()
-
-	// Get prices AFTER trade
-	pricesAfter := &amm.PriceQuote{
-		YesPrice: receipt.YesPriceAfter,
-		NoPrice:  receipt.NoPriceAfter,
-	}
-	if actualCostCents <= 0 {
-		return nil, nil, 0, fmt.Errorf("failed to get prices after trade: %w", err)
-	}
-
-	// debit actual cost from user balance
-	newBalance, err := h.balanceRepo.DebitTx(ctx, tx, params.UserID, actualCostCents)
+	quantities, err := params.AMMMarket.GetQuantities()
 	if err != nil {
-		return nil, nil, 0, fmt.Errorf("faield to debit balance: %w", err)
+		return nil, nil, 0, fmt.Errorf("failed to get amm quants")
 	}
 
-	// create trade record
-	trade, err := h.tradeRepo.CreateTx(ctx, tx, repository.CreateTradeParams{
-		UserID:         params.UserID,
-		MarketID:       params.MarketID,
-		Outcome:        params.Outcome,
-		Shares:         params.Shares,
-		CostPaid:       actualCostCents,
-		YesPriceBefore: pricesBefore.YesPrice,
-		YesPriceAfter:  pricesAfter.YesPrice,
-		NoPriceBefore:  pricesBefore.NoPrice,
-		NoPriceAfter:   pricesAfter.NoPrice,
-	})
-
-	if err != nil {
-		return nil, nil, 0, fmt.Errorf("failed to create trade %w", err)
+	if len(quantities) < 2 {
+		return nil, nil, 0, fmt.Errorf("invalid AMM quant len")
 	}
 
-	// 3. Update position
-	position, err := h.positionRepo.UpsertTx(ctx, tx, repository.UpsertPositionParams{
-		UserID:   params.UserID,
-		MarketID: params.MarketID,
-		Outcome:  params.Outcome,
-		Shares:   params.Shares,
-		Cost:     actualCostCents,
-	})
-	if err != nil {
-		return nil, nil, 0, fmt.Errorf("failed to update position: %w", err)
-	}
-	/* // 4. Execute trade in AMM
-	actualCost, err := params.AMMMarket.Buy(params.UserID, outcome, params.Shares, maxCostDecimal)
+	q0Float, _ := quantities[0].Float64()
+	q1Float, _ := quantities[1].Float64()
 
-	if err != nil {
-		return nil, nil, 0, fmt.Errorf("AMM trade failed: %w", err)
-	}
-
-	// Log actual cost for monitoring
-	log.Printf("Trade executed: expected=%d actual=%s", params.CostCents, actualCost)
-	*/
-	// 5. Persist AMM state
-	// quantities := params.AMMMarket.GetQuantities()
-	// quantitiesJSON := fmt.Sprintf(`{"quantities": [%f, %f]}`, quantities[0], quantities[1])
-	//state := params.AMMMarket.GetQuantities()
-	//quantitiesJSON := fmt.Sprintf(`{"quantities": [%f, %f]}`, state.Q0, stateQ1)
-
-	/* snapshot, err := params.AMMMarket.Snapshot()
-	if err != nil {
-		return nil, nil, 0, fmt.Errorf("failed to get mar snap: %w", err)
-	} */
-
-	yesPriceFloat, _ := receipt.YesPriceAfter.Float64()
-	noPriceFloat, _ := receipt.NoPriceAfter.Float64()
+	//yesPriceFloat, _ := receipt.YesPriceAfter.Float64()
+	//noPriceFloat, _ := receipt.NoPriceAfter.Float64()
 	// quantitiesJSON := fmt.Sprintf(`"{yes_price": %f, "no_price":%f}`, yesPriceFloat, noPriceFloat)
 
-	quantitiesJSON := fmt.Sprintf(`{"quantities": [%f, %f]}`, yesPriceFloat, noPriceFloat)
+	quantitiesJSON := fmt.Sprintf(`{"quantities": [%f, %f]}`, q0Float, q1Float)
 
 	err = h.marketRepo.UpdateQuantitiesStateTx(ctx, tx, params.MarketID, quantitiesJSON)
 	if err != nil {
@@ -584,8 +697,7 @@ func (h *TradeHandler) executeTrade(ctx context.Context, params executeTradePara
 	}
 
 	// Success!
-	log.Printf("Trade executed: user=%s market=%s outcome=%s shares=%s cost=%d cents",
-		params.UserID, params.MarketID, params.Outcome, params.Shares.String(), actualCostCents)
+	log.Printf("Trade executed: user=%s market=%s outcome=%s shares=%s cost=%d cents", params.UserID, params.MarketID, params.Outcome, params.Shares.String(), transactionAmountCents)
 
 	return trade, position, newBalance, nil
 }
@@ -625,7 +737,19 @@ func (h *TradeHandler) ListMarketTrades(w http.ResponseWriter, r *http.Request) 
 	limit := 50
 	offset := 0
 
-	// TODO: Parse query params for limit/offset
+	if lStr := r.URL.Query().Get("limit"); lStr != "" {
+		if l, err := strconv.Atoi(lStr); err == nil && l > 0 {
+			limit = l
+			if limit > 100 {
+				limit = 100
+			}
+		}
+	}
+	if oStr := r.URL.Query().Get("offset"); oStr != "" {
+		if o, err := strconv.Atoi(oStr); err == nil && o >= 0 {
+			offset = 0
+		}
+	}
 
 	// Fetch trades
 	trades, total, err := h.tradeRepo.ListByMarket(r.Context(), marketID, limit, offset)
@@ -635,8 +759,13 @@ func (h *TradeHandler) ListMarketTrades(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	formattedTrades := make([]TradeResponse, len(trades))
+	for i, t := range trades {
+		formattedTrades[i] = formatTradeResponse(t)
+	}
+
 	JSON(w, 200, map[string]interface{}{
-		"trades": trades,
+		"trades": formattedTrades,
 		"total":  total,
 		"limit":  limit,
 		"offset": offset,
@@ -681,4 +810,96 @@ func (h *TradeHandler) ListMyTrades(w http.ResponseWriter, r *http.Request) {
 		"limit":  limit,
 		"offset": offset,
 	})
+}
+
+// GET /markets/{marketID}/quote?outcome=YES&shares=10.5
+func (h *TradeHandler) GetQuote(w http.ResponseWriter, r *http.Request) {
+	marketID := chi.URLParam(r, "marketID")
+	outcomeStr := r.URL.Query().Get("outcome")
+	sharesStr := r.URL.Query().Get("shares")
+
+	if marketID == "" || outcomeStr == "" || sharesStr == "" {
+		ErrorJSON(w, 400, "Missing required parameters: marketID, outcome, and shares", nil)
+		return
+	}
+
+	var outcome amm.BinaryOutcome
+	if outcomeStr == "YES" {
+		outcome = amm.BuyYES
+	} else if outcomeStr == "NO" {
+		outcome = amm.BuyNO
+	} else {
+		ErrorJSON(w, 400, "Outcome must be YES or NO", nil)
+		return
+	}
+
+	sharesFloat, err := strconv.ParseFloat(sharesStr, 64)
+	if err != nil || sharesFloat <= 0 {
+		ErrorJSON(w, 400, "Shares must be a positive number", nil)
+		return
+	}
+
+	ammMarket, err := h.registry.GetMarket(marketID)
+	if err != nil || ammMarket == nil {
+		ErrorJSON(w, 404, "Market AMM not found", nil)
+		return
+	}
+
+	costKES, err := ammMarket.GetBuyQuote(outcome, decimal.NewFromFloat(sharesFloat))
+	if err != nil {
+		ErrorJSON(w, 500, "Failed to calculate quote", map[string]interface{}{
+			"details": err.Error(),
+		})
+		return
+	}
+
+	costCents := costKES.Mul(decimal.NewFromInt(100)).Ceil().IntPart()
+
+	JSON(w, 200, map[string]interface{}{
+		"market_id":      marketID,
+		"outcome":        outcomeStr,
+		"shares":         sharesFloat,
+		"projected_cost": costCents,
+		"projected_kes":  float64(costCents) / 100.0,
+	})
+}
+
+
+type Financials struct {
+	AmountCents      int64  `json:"amount_cents"`
+	Type             string `json:"type"` // CREDIT or DEBIT
+	RealizedPnLCents *int64 `json:"realized_pnl_cents,omitempty"`
+}
+
+type TradeResponse struct {
+	TradeID    string      `json:"trade_id"`
+	MarketID   string      `json:"market_id"`
+	Action     string      `json:"action"`
+	Outcome    string      `json:"outcome"`
+	Shares     float64     `json:"shares"`
+	Financials Financials  `json:"financials"`
+	Timestamp  time.Time   `json:"timestamp"`
+}
+
+func formatTradeResponse(t *repository.Trade) TradeResponse {
+	sharesFloat, _ := t.Shares.Float64()
+	
+	finType := "DEBIT"
+	if t.Action == "SELL" {
+		finType = "CREDIT"
+	}
+
+	return TradeResponse{
+		TradeID:  t.ID,
+		MarketID: t.MarketID,
+		Action:   t.Action,
+		Outcome:  t.Outcome,
+		Shares:   sharesFloat,
+		Financials: Financials{
+			AmountCents:      t.CostPaid,
+			Type:             finType,
+			RealizedPnLCents: t.RealizedPnL,
+		},
+		Timestamp: t.CreatedAt,
+	}
 }

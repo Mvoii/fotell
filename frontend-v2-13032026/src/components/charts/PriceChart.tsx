@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { MarketPrices, TimeRange } from '@/lib/api/types/api';
+import { formatPrice } from '@/lib/formatters';
 import {
   ResponsiveContainer,
   LineChart,
@@ -97,10 +98,9 @@ export function PriceChart({
               onClick={() => onTimeRangeChange(option.value)}
               className={`
                 px-3 py-1.5 text-xs font-medium rounded-md transition-all duration-150
-                ${
-                  timeRange === option.value
-                    ? 'bg-primary text-white'
-                    : 'bg-surface border border-subtle text-muted hover:text-primary hover:border-primary/50'
+                ${timeRange === option.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-surface border border-subtle text-muted-foreground hover:text-primary hover:border-primary/50'
                 }
               `}
             >
@@ -135,9 +135,11 @@ export function PriceChart({
                 borderRadius: '6px',
               }}
               labelStyle={{ color: '#9fa6b7' }}
-              formatter={(value: number, name: string) => [
-                `${value.toFixed(2)}¢`,
-                name === 'yes' ? 'Yes' : 'No',
+              formatter={(value, name) => [
+                value !== undefined && typeof value === 'number'
+                  ? formatPrice(value, 'cents')
+                  : '',
+                name === 'yes' ? 'Yes' : name === 'no' ? 'No' : '',
               ]}
             />
             <Line

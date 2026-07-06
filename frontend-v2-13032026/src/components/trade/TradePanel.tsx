@@ -1,79 +1,95 @@
-import React from 'react';
-import type { TradePanelProps, PlaceTradeRequest } from '@/lib/api/types/api';
+import React, { useState } from 'react';
+import type { TradePanelProps, PlaceTradeRequest, PlaceSellRequest } from '@/lib/api/types/api';
 import { MarketOrderForm } from './MarketOrderForm';
-import { LimitOrderForm } from './LimitOrderForm';
-import { useTrade } from '@/hooks/useTrade';
+import { useTrade, useSell } from '@/hooks/useTrade';
+import { TradeConfirmModal } from './TradeConfirmModal';
+import { estimateCostKES } from '@/lib/formatters';
 
+/**
+ * TradePanel — Market orders only.
+ * Limit orders are not supported by the backend API; the form has been removed.
+ */
 export function TradePanel({
   market,
   currentPrices,
   userBalance,
   userPosition,
-  defaultTab = 'market',
   defaultOutcome = 'YES',
 }: TradePanelProps) {
-  void defaultOutcome; // TODO: pass to MarketOrderForm once it supports defaultOutcome prop
+  void defaultOutcome; // passed through to MarketOrderForm
+
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [tradeType, setTradeType] = useState<'BUY' | 'SELL'>('BUY');
+  const [pendingBuyParams, setPendingBuyParams] = useState<PlaceTradeRequest | null>(null);
+  const [pendingSellParams, setPendingSellParams] = useState<PlaceSellRequest | null>(null);
 
   const tradeHook = useTrade(market.id);
-  const [orderType, setOrderType] = React.useState<'market' | 'limit'>(defaultTab);
+  const sellHook = useSell(market.id);
 
   const handleMarketOrderSubmit = (params: PlaceTradeRequest) => {
-    tradeHook.placeTrade(params);
+    setPendingBuyParams(params);
+    setTradeType('BUY');
+    setIsConfirmModalOpen(true);
   };
 
-  const handleLimitOrderSubmit = (params: {
-    marketId: string;
-    outcome: 'YES' | 'NO';
-    shares: number;
-    triggerPrice: number;
-    expiry: '1h' | '24h' | '7d' | 'GTC';
-  }) => {
-    // Limit orders use the same endpoint with max_cost set to triggerPrice
-    tradeHook.placeTrade({
-      outcome: params.outcome,
-      shares: params.shares,
-      max_cost: params.triggerPrice,
-    });
+  const handleSellSubmit = (params: PlaceSellRequest) => {
+    setPendingSellParams(params);
+    setTradeType('SELL');
+    setIsConfirmModalOpen(true);
   };
+
+  const handleConfirmTrade = () => {
+    if (tradeType === 'BUY' && pendingBuyParams) {
+      tradeHook.placeTrade(pendingBuyParams);
+    } else if (tradeType === 'SELL' && pendingSellParams) {
+      sellHook.placeSell(pendingSellParams);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsConfirmModalOpen(false);
+    // Reset receipt/error when closing
+    if (tradeHook.data || tradeHook.error) tradeHook.reset();
+    if (sellHook.data || sellHook.error) sellHook.reset();
+  };
+
+  const isSell = tradeType === 'SELL';
+
+  // Calculate estimated cost for the modal (in KES)
+  const currentPrice = tradeType === 'BUY' && pendingBuyParams
+    ? (pendingBuyParams.outcome === 'YES' ? currentPrices.yes_price : currentPrices.no_price)
+    : 0;
+  const estimatedAmount = isSell
+    ? 0 // Proceeds calculated at execution
+    : (pendingBuyParams ? estimateCostKES(pendingBuyParams.shares, currentPrice) : 0);
 
   return (
     <div className="bg-surface border border-subtle rounded-lg p-4 shadow-md w-full">
-      {/* ── Tab toggle */}
-      <div className="flex gap-2 mb-4">
-        <button
-          className={`px-3 py-1 rounded ${orderType === 'market' ? 'bg-primary text-white' : 'bg-subtle text-primary'}`}
-          onClick={() => setOrderType('market')}
-        >
-          Market Order
-        </button>
-        <button
-          className={`px-3 py-1 rounded ${orderType === 'limit' ? 'bg-primary text-white' : 'bg-subtle text-primary'}`}
-          onClick={() => setOrderType('limit')}
-        >
-          Limit Order
-        </button>
-      </div>
+      <MarketOrderForm
+        market={market}
+        currentPrices={currentPrices}
+        userBalance={userBalance}
+        userPosition={userPosition}
+        onSubmit={handleMarketOrderSubmit}
+        onSellSubmit={handleSellSubmit}
+        tradeHook={tradeHook}
+        sellHook={sellHook}
+        defaultOutcome={defaultOutcome}
+      />
 
-      {/* ── Active form */}
-      {orderType === 'market' ? (
-        <MarketOrderForm
-          market={market}
-          currentPrices={currentPrices}
-          userBalance={userBalance}
-          userPosition={userPosition}
-          onSubmit={handleMarketOrderSubmit}
-          tradeHook={tradeHook}
-        />
-      ) : (
-        <LimitOrderForm
-          market={market}
-          currentPrices={currentPrices}
-          userBalance={userBalance}
-          userPosition={userPosition}
-          onSubmit={handleLimitOrderSubmit}
-          tradeHook={tradeHook}
-        />
-      )}
+      <TradeConfirmModal
+        isOpen={isConfirmModalOpen}
+        onClose={handleCloseModal}
+        market={market}
+        currentPrices={currentPrices}
+        tradeType={tradeType}
+        tradeParams={isSell ? pendingSellParams : pendingBuyParams}
+        estimatedAmount={estimatedAmount}
+        isPending={isSell ? sellHook.isPending : tradeHook.isPending}
+        error={isSell ? sellHook.error : tradeHook.error}
+        receipt={(isSell ? sellHook.data : tradeHook.data) || null}
+        onConfirm={handleConfirmTrade}
+      />
     </div>
   );
 }

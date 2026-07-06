@@ -325,8 +325,8 @@ interface MarketFiltersProps {
 
 ### `TradePanel`
 
-> Container component that renders either `MarketOrderForm` or `LimitOrderForm`
-> based on the selected tab.
+> Container component that hosts the unified Buy/Sell tabs, Order Type switcher,
+> YES/NO outcome selectors, and either `MarketOrderForm` or `LimitOrderForm`.
 
 ```tsx
 interface TradePanelProps {
@@ -334,14 +334,17 @@ interface TradePanelProps {
   currentPrices: { yes_price: number; no_price: number };
   userBalance: number | null;
   userPosition: Position | null;
-  defaultTab?: 'market' | 'limit';
+  defaultSide?: 'BUY' | 'SELL';
+  defaultOrderType?: 'market' | 'limit';
   defaultOutcome?: 'YES' | 'NO';
 }
 ```
 
 Internal state:
-- `orderType: 'market' | 'limit'` — tab selection
-- Renders `<MarketOrderForm>` or `<LimitOrderForm>` based on `orderType`
+- `side: 'BUY' | 'SELL'` — top-level tabs
+- `orderType: 'market' | 'limit'` — dropdown/pill switcher
+- `outcome: 'YES' | 'NO'` — side-by-side selection cards
+- Renders `<MarketOrderForm>` or `<LimitOrderForm>` based on `orderType`, passing the parent state.
 
 ---
 
@@ -350,23 +353,33 @@ Internal state:
 ```tsx
 interface MarketOrderFormProps {
   market: Market;
+  outcome: 'YES' | 'NO';
+  side: 'BUY' | 'SELL';
   currentPrices: { yes_price: number; no_price: number };
   userBalance: number | null;
+  userPosition: Position | null;
   onSubmit: (params: MarketOrderParams) => void;
 }
 
 interface MarketOrderParams {
   outcome: 'YES' | 'NO';
-  shares: number;
+  side: 'BUY' | 'SELL';
+  inputMode: 'cash' | 'shares';
+  amount: number; // KES amount (cash mode) or number of shares (shares mode)
   maxSlippagePct: number;
 }
 ```
 
 Internal state:
-- `outcome: 'YES' | 'NO'`
-- `shares: number` (integer, min 1)
+- `inputMode: 'cash' | 'shares'` (allows toggling input mode)
+- `amount: number` (integer/decimal values)
 - `maxSlippagePct: number` (default 5)
-- `estimatedCost: number` — from `useTradeEstimate` hook
+- Computed estimates:
+  - `sharesCount: number` — number of shares (either input directly or calculated from cash amount)
+  - `totalCost: number` — total cost in KES (either input directly as cash or calculated from shares)
+  - `maxPayout: number` — potential payout if outcome resolves correct (`sharesCount × 1.00 KES`)
+  - `potentialProfit: number` — `maxPayout − totalCost`
+  - `potentialProfitPct: number` — `(potentialProfit / totalCost) × 100`
 
 On submit → opens `<TradeConfirmModal>`.
 
@@ -374,38 +387,47 @@ On submit → opens `<TradeConfirmModal>`.
 
 ### `LimitOrderForm`
 
-> **New in v2.** Allows placing orders that execute when price hits a target.
+> Allows placing orders that execute when price hits a target trigger.
 
 ```tsx
 interface LimitOrderFormProps {
   market: Market;
+  outcome: 'YES' | 'NO';
+  side: 'BUY' | 'SELL';
   currentPrices: { yes_price: number; no_price: number };
   userBalance: number | null;
+  userPosition: Position | null;
   onSubmit: (params: LimitOrderParams) => void;
 }
 
 interface LimitOrderParams {
   marketId: string;
   outcome: 'YES' | 'NO';
-  shares: number;
+  side: 'BUY' | 'SELL';
+  inputMode: 'cash' | 'shares';
+  amount: number; // KES amount (cash mode) or number of shares (shares mode)
   triggerPrice: number;    // in cents (0–100)
   expiry: '1h' | '24h' | '7d' | 'GTC';
 }
 ```
 
 Internal state:
-- `outcome: 'YES' | 'NO'`
-- `shares: number`
-- `triggerPrice: number` — defaults to `currentPrice - 10%`
+- `inputMode: 'cash' | 'shares'`
+- `amount: number`
+- `triggerPrice: number` — defaults to `currentPrices[outcome] - 10%`
 - `expiry: '1h' | '24h' | '7d' | 'GTC'` — pill toggle
-- `estimatedMaxCost: shares * triggerPrice / 100 * 100`
+- Computed estimates:
+  - `sharesCount: number` — quantity of shares (calculated from triggerPrice if in cash mode)
+  - `estimatedMaxCost: number` — `sharesCount × triggerPrice / 100`
+  - `maxPayout: number` — potential payout if filled and resolved correct (`sharesCount × 1.00 KES`)
+  - `potentialProfit: number` — `maxPayout − estimatedMaxCost`
 
 On submit → opens `<LimitOrderConfirmModal>`.
 
 **Validation:**
 - `triggerPrice` must be in range [1, 99]
-- For BUY YES: default trigger = current YES price − 10% (enter cheaper)
-- For BUY NO: default trigger = current NO price − 10%
+- For BUY: default trigger = current price − 10% (enter cheaper)
+- For SELL: default trigger = current price + 10% (sell for more)
 
 ---
 

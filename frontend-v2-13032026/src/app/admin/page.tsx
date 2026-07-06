@@ -1,0 +1,239 @@
+"use client";
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import { AuthGuard } from '@/components/layout/AuthGuard';
+import { AdminMarketTable } from '@/components/admin/AdminMarketTable';
+import { AppShell } from '@/components/layout/AppShell';
+import PageContainer from '@/components/layout/PageContainer';
+import { useUser } from '@/hooks/useUser';
+import { useMarkets } from '@/hooks/useMarkets';
+import { 
+  useCloseMarket, 
+  useOpenMarket, 
+  useResolveMarket, 
+  useAdminUsers, 
+  useSettlementStatus 
+} from '@/hooks/useAdmin';
+
+export default function AdminPage() {
+  const { data: user } = useUser();
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  // Fetch pending markets to show on dashboard as action items
+  const { data, isLoading } = useMarkets({ status: 'PENDING', limit: 10 });
+  const { data: allMarkets } = useMarkets({ limit: 1 });
+  const { data: openMarkets } = useMarkets({ status: 'OPEN', limit: 1 });
+  const { data: usersData } = useAdminUsers(100, 0);
+  const { data: settlementData } = useSettlementStatus();
+
+  const openMarketMutation = useOpenMarket();
+  const closeMarketMutation = useCloseMarket();
+  const resolveMarketMutation = useResolveMarket();
+
+  const actionLoading =
+    openMarketMutation.isPending || closeMarketMutation.isPending || resolveMarketMutation.isPending;
+
+  const handleOpen = async (marketId: string) => {
+    try {
+      setActionError(null);
+      await openMarketMutation.mutateAsync(marketId);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to open market');
+    }
+  };
+
+  const handleClose = async (marketId: string) => {
+    try {
+      setActionError(null);
+      await closeMarketMutation.mutateAsync(marketId);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to close market');
+    }
+  };
+
+  const handleResolve = async (marketId: string, outcome: 'YES' | 'NO') => {
+    try {
+      setActionError(null);
+      await resolveMarketMutation.mutateAsync({ marketId, outcome });
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to resolve market');
+    }
+  };
+
+  const totalMarkets = allMarkets?.total ?? '--';
+  const activeMarkets = openMarkets?.total ?? '--';
+  // Backend ListUsers doesn't return 'total' currently, using length of fetched array as fallback
+  const totalUsers = usersData?.users ? usersData.users.length : '--';
+  
+  // Aggregate total payouts from settlements as a proxy metric (since 24h volume isn't directly available)
+  const totalPayoutsKes = settlementData?.settlements 
+    ? settlementData.settlements.reduce((sum, s) => sum + (s.total_paid_cents || 0), 0) / 100
+    : null;
+
+  return (
+    <AuthGuard requireAdmin={true}>
+      <AppShell isAuthenticated={!!user}>
+        <PageContainer maxWidth="xl" inAppShell>
+          <div className="mb-8">
+            <h1 className="heading-xl text-primary mb-2">Admin Dashboard</h1>
+            <p className="text-primary">Manage prediction markets and system settings</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {/* Market Creation */}
+            <Link 
+              href="/admin/create-market"
+              className="block bg-surface border border-subtle rounded-lg p-6 hover:border-accent-blue transition-colors"
+            >
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-accent-blue/10 rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <h3 className="heading-lg text-primary">Create Market</h3>
+              </div>
+              <p className="text-primary text-sm">
+                Create a new prediction market with custom parameters
+              </p>
+            </Link>
+
+            {/* Market Management */}
+            <Link 
+              href="/admin/markets"
+              className="block bg-surface border border-subtle rounded-lg p-6 hover:border-accent-blue transition-colors"
+            >
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-accent-blue/10 rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <h3 className="heading-lg text-primary">Manage Markets</h3>
+              </div>
+              <p className="text-primary text-sm">
+                Open, close, and resolve existing markets
+              </p>
+            </Link>
+
+            {/* User Management */}
+            <Link 
+              href="/admin/users"
+              className="block bg-surface border border-subtle rounded-lg p-6 hover:border-accent-blue transition-colors"
+            >
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-accent-blue/10 rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-accent-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>
+                </div>
+                <h3 className="heading-lg text-primary">User Management</h3>
+              </div>
+              <p className="text-primary text-sm">
+                Manage user accounts and view statuses
+              </p>
+            </Link>
+
+            {/* System Settings */}
+            <div className="bg-surface border border-subtle rounded-lg p-6 opacity-60">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                </div>
+                <h3 className="heading-lg text-primary">System Settings</h3>
+              </div>
+              <p className="text-primary text-sm">
+                Configure system parameters and settings (Coming soon)
+              </p>
+            </div>
+
+            {/* Analytics */}
+            <div className="bg-surface border border-subtle rounded-lg p-6 opacity-60">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="heading-lg text-primary">Analytics</h3>
+              </div>
+              <p className="text-primary text-sm">
+                View system analytics and reports (Coming soon)
+              </p>
+            </div>
+
+            {/* Audit Logs */}
+            <div className="bg-surface border border-subtle rounded-lg p-6 opacity-60">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mr-4">
+                  <svg className="w-6 h-6 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="heading-lg text-primary">Audit Logs</h3>
+              </div>
+              <p className="text-primary text-sm">
+                View system activity and audit logs (Coming soon)
+              </p>
+            </div>
+          </div>
+
+          {/* Quick Stats */}
+          <div className="mt-8">
+            <h2 className="heading-lg text-primary mb-4">Quick Stats</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="bg-surface border border-subtle rounded-lg p-4">
+                <h3 className="text-sm text-primary mb-1">Total Markets</h3>
+                <p className="heading-xl text-primary">{totalMarkets}</p>
+              </div>
+              <div className="bg-surface border border-subtle rounded-lg p-4">
+                <h3 className="text-sm text-primary mb-1">Active Markets</h3>
+                <p className="heading-xl text-primary">{activeMarkets}</p>
+              </div>
+              <div className="bg-surface border border-subtle rounded-lg p-4">
+                <h3 className="text-sm text-primary mb-1">Total Users</h3>
+                <p className="heading-xl text-primary">{totalUsers}</p>
+              </div>
+              <div className="bg-surface border border-subtle rounded-lg p-4">
+                <h3 className="text-sm text-primary mb-1">Total Settled (KES)</h3>
+                <p className="heading-xl text-primary">
+                  {totalPayoutsKes !== null ? `KSh ${totalPayoutsKes.toLocaleString()}` : '--'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Admin Market Table */}
+          <div className="mt-12">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="heading-lg text-primary">Pending Markets</h2>
+              <Link 
+                href="/admin/markets" 
+                className="text-accent-blue hover:underline text-sm font-medium"
+              >
+                View All Markets →
+              </Link>
+            </div>
+            {actionError && (
+              <div className="mb-4 p-4 bg-error/10 border border-error/20 rounded-md">
+                <p className="text-error text-sm">{actionError}</p>
+              </div>
+            )}
+            <AdminMarketTable 
+              markets={data?.markets || []}
+              loading={isLoading}
+              actionLoading={actionLoading}
+              onOpen={handleOpen}
+              onClose={handleClose}
+              onResolve={handleResolve}
+            />
+          </div>
+        </PageContainer>
+      </AppShell>
+    </AuthGuard>
+  );
+}

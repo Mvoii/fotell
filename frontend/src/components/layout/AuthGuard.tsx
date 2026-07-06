@@ -15,7 +15,7 @@ interface AuthGuardProps {
 /**
  * Client-side auth guard.
  * Redirects to /auth/login?next={currentPath} if not authenticated.
- * Redirects to /home if authenticated but not admin (when requireAdmin).
+ * Redirects to /dashboard if authenticated but not admin (when requireAdmin).
  *
  * Note: Next.js middleware.ts handles the server-side redirect for
  * hard navigations. This component covers client-side transitions.
@@ -39,7 +39,7 @@ export default function AuthGuard({
     }
 
     if (requireAdmin && !isAdmin()) {
-      router.replace("/home");
+      router.replace("/dashboard");
     }
   }, [isAuthenticated, isAdmin, requireAdmin, pathname, router]);
 

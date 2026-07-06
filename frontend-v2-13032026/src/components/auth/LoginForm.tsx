@@ -6,6 +6,7 @@ import type { LoginRequest } from "@/lib/api/types/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 /**
  * LoginForm
@@ -22,7 +23,6 @@ export function LoginForm() {
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   // Simple inline validation
   const validate = (values: LoginRequest) => {
@@ -49,26 +49,33 @@ export function LoginForm() {
     const errors = validate(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
-    const res = await login(form, rememberMe);
+    const res = await login(form);
     if (res) {
-      router.push("/home");
+      router.push("/portfolio");
     }
   };
 
   return (
     <form
-      className="bg-surface rounded-lg shadow-lg p-6 max-w-md mx-auto space-y-6"
+      className="w-full max-w-sm mx-auto space-y-6"
       onSubmit={handleSubmit}
       autoComplete="off"
     >
-      <div className="text-center mb-4">
-        <span className="font-bold text-2xl text-accent-blue">🔮 FoTell</span>
-        <div className="mt-2 text-heading-lg text-primary font-semibold">Welcome back</div>
-        <div className="text-body-md text-primary mt-1">Sign in to your account</div>
+      <div className="text-center mb-8 flex flex-col items-center">
+        <Image
+          src="/logo1.svg"
+          alt="FoTell"
+          width={120}
+          height={40}
+          className="object-contain mb-6 lg:hidden"
+          priority
+        />
+        <h2 className="mt-2 heading-lg text-primary">Welcome back</h2>
+        <p className="text-body-md text-text-secondary mt-2">Sign in to your account</p>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-heading-md text-primary mb-1">Email</label>
+        <label htmlFor="email" className="block text-body-sm font-medium text-text-primary mb-1">Email address</label>
         <Input
           name="email"
           type="email"
@@ -84,7 +91,7 @@ export function LoginForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-heading-md text-primary mb-1">Password</label>
+        <label htmlFor="password" className="block text-body-sm font-medium text-text-primary mb-1">Password</label>
         <div className="relative">
           <Input
             name="password"
@@ -97,7 +104,7 @@ export function LoginForm() {
           />
           <button
             type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted hover:text-primary focus:outline-none"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground hover:text-primary focus:outline-none"
             onClick={() => setShowPassword((v) => !v)}
             tabIndex={-1}
             aria-label={showPassword ? "Hide password" : "Show password"}
@@ -114,34 +121,23 @@ export function LoginForm() {
         <div className="text-error text-sm mt-2 text-center">{error}</div>
       )}
 
-      <div className="flex items-center gap-2 mt-2">
-        <input
-          id="rememberMe"
-          type="checkbox"
-          checked={rememberMe}
-          onChange={e => setRememberMe(e.target.checked)}
-          className="accent-accent-blue"
-        />
-        <label htmlFor="rememberMe" className="text-body-sm text-primary select-none cursor-pointer">
-          Remember me
-        </label>
-      </div>
+
 
       <Button
         variant="default"
         size="lg"
         type="submit"
         disabled={loading}
-        className="w-full mt-2"
+        className="w-full mt-4 h-12 text-base font-semibold shadow-lg hover:shadow-accent-blue/20 transition-all duration-300 hover:scale-[1.02]"
       >
         Sign In
       </Button>
 
-      <div className="text-center text-body-sm mt-4">
+      <div className="text-center text-body-sm mt-6 text-text-secondary">
         Don&apos;t have an account?{" "}
         <a
           href="/auth/register"
-          className="text-accent-blue hover:underline"
+          className="text-accent-blue hover:text-accent-blue-hover font-medium hover:underline transition-colors"
         >
           Sign up →
         </a>

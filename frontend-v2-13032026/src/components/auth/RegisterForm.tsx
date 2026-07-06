@@ -6,6 +6,7 @@ import type { RegisterRequest } from "@/lib/api/types/api";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 /**
  * RegisterForm
@@ -14,7 +15,7 @@ import { useRouter } from "next/navigation";
  * - On success: redirects to /home, triggers welcome toast
  */
 export function RegisterForm() {
-//   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
+  //   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
   const router = useRouter();
   const { register, loading, error } = useRegister();
   const [form, setForm] = useState<RegisterRequest>({
@@ -25,7 +26,6 @@ export function RegisterForm() {
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
 
   // Simple inline validation
   const validate = (values: RegisterRequest) => {
@@ -60,26 +60,33 @@ export function RegisterForm() {
     const errors = validate(form);
     setFieldErrors(errors);
     if (Object.keys(errors).length > 0) return;
-    const res = await register(form, rememberMe);
+    const res = await register(form);
     if (res) {
-      router.push("/home");
+      router.push("/portfolio");
     }
   };
 
   return (
     <form
-      className="bg-surface rounded-lg shadow-lg p-6 max-w-md mx-auto space-y-6"
+      className="w-full max-w-sm mx-auto space-y-6"
       onSubmit={handleSubmit}
       autoComplete="off"
     >
-      <div className="text-center mb-4">
-        <span className="font-bold text-2xl text-accent-blue dark:text-accent-blue">🔮 FoTell</span>
-        <div className="mt-2 text-heading-lg text-primary font-semibold dark:text-primary">Create your account</div>
-        <div className="text-body-md text-accent-blue mt-1 dark:text-accent-blue">Start with 5,000 KES free</div>
+      <div className="text-center mb-8 flex flex-col items-center">
+        <Image
+          src="/logo1.svg"
+          alt="FoTell"
+          width={120}
+          height={40}
+          className="object-contain mb-6 lg:hidden"
+          priority
+        />
+        <h2 className="mt-2 heading-lg text-primary">Create an account</h2>
+        <p className="text-body-md text-accent-blue mt-2">Start with 5,000 KES free</p>
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="full_name" className="block text-heading-md text-primary mb-1">Full Name</label>
+        <label htmlFor="full_name" className="block text-body-sm font-medium text-text-primary mb-1">Full Name</label>
         <Input
           name="full_name"
           value={form.full_name}
@@ -94,7 +101,7 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="username" className="block text-heading-md text-primary mb-1">Username</label>
+        <label htmlFor="username" className="block text-body-sm font-medium text-text-primary mb-1">Username</label>
         <Input
           name="username"
           value={form.username}
@@ -109,7 +116,7 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="email" className="block text-heading-md text-primary mb-1">Email</label>
+        <label htmlFor="email" className="block text-body-sm font-medium text-text-primary mb-1">Email address</label>
         <Input
           name="email"
           type="email"
@@ -125,7 +132,7 @@ export function RegisterForm() {
       </div>
 
       <div className="space-y-2">
-        <label htmlFor="password" className="block text-heading-md text-primary mb-1">Password</label>
+        <label htmlFor="password" className="block text-body-sm font-medium text-text-primary mb-1">Password</label>
         <div className="relative">
           <Input
             name="password"
@@ -138,7 +145,7 @@ export function RegisterForm() {
           />
           <button
             type="button"
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted hover:text-primary focus:outline-none"
+            className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-muted-foreground hover:text-primary focus:outline-none"
             onClick={() => setShowPassword((v) => !v)}
             tabIndex={-1}
             aria-label={showPassword ? "Hide password" : "Show password"}
@@ -146,7 +153,7 @@ export function RegisterForm() {
             {showPassword ? "🙈" : "👁"}
           </button>
         </div>
-        <div className="text-body-sm text-muted mt-1">✓ 8+ chars  ✓ Has number</div>
+        <div className="text-body-sm text-muted-foreground mt-1">✓ 8+ chars  ✓ Has number</div>
         {fieldErrors.password && (
           <div className="text-error text-sm mt-1">{fieldErrors.password}</div>
         )}
@@ -156,34 +163,23 @@ export function RegisterForm() {
         <div className="text-error text-sm mt-2 text-center">{error}</div>
       )}
 
-      <div className="flex items-center gap-2 mt-2">
-        <input
-          id="rememberMe"
-          type="checkbox"
-          checked={rememberMe}
-          onChange={e => setRememberMe(e.target.checked)}
-          className="accent-accent-blue"
-        />
-        <label htmlFor="rememberMe" className="text-body-sm text-primary select-none cursor-pointer">
-          Remember me
-        </label>
-      </div>
+
 
       <Button
         variant="default"
         size="lg"
         type="submit"
         disabled={loading}
-        className="w-full mt-2"
+        className="w-full mt-4 h-12 text-base font-semibold shadow-lg hover:shadow-accent-blue/20 transition-all duration-300 hover:scale-[1.02]"
       >
         Create Account
       </Button>
 
-      <div className="text-center text-body-sm mt-4">
+      <div className="text-center text-body-sm mt-6 text-text-secondary">
         Already have an account?{" "}
         <a
           href="/auth/login"
-          className="text-accent-blue hover:underline"
+          className="text-accent-blue hover:text-accent-blue-hover font-medium hover:underline transition-colors"
         >
           Sign in →
         </a>

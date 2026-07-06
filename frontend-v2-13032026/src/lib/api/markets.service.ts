@@ -16,5 +16,12 @@ export const marketsService = {
     apiRequest<Market>(`/markets/${id}`, { method: 'GET' }),
   // Market prices timeline with optional time range
   getPrices: (id: string, params?: TimeRangeParams) =>
-    apiRequest<MarketPrices[]>(`/markets/${id}/prices`, { method: 'GET', params }),
+    apiRequest<MarketPrices>(`/markets/${id}/prices`, {
+      method: 'GET',
+      params: params
+        ? Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v !== undefined)
+          )
+        : undefined,
+    }),
 };
